@@ -11,15 +11,7 @@ from dataclasses import dataclass, asdict
 from toolz import thread_first, thread_last, get
 from typing import Dict, Any
 
-
-@dataclass
-class AirtableRecord:
-    name: str
-    rating: int
-    imdb_link: str
-    watched: str
-    tags: List[str]
-    service: List[str]
+from pull_airtable import AirtableRecord
 
 
 @dataclass
@@ -62,15 +54,8 @@ def load_cache(file: str) -> List[str]:
         return f.readlines()
 
 
-def make_airtable_record(dict_record: Dict[str, Any]) -> AirtableRecord:
-    return AirtableRecord(
-        name=dict_record["name"],
-        rating=dict_record["rating"],
-        imdb_link=dict_record["imdb_link"],
-        watched=dict_record["watched"],
-        tags=dict_record["tags"],
-        service=dict_record["service"],
-    )
+def hydrate_airtable_record(dict_record: Dict[str, Any]) -> AirtableRecord:
+    return AirtableRecord(**dict_record)
 
 
 def get_imdb_id(imdb_url: str) -> str:
@@ -107,32 +92,7 @@ def make_omdb_record(omdb_record_dict: Dict[str, Any]) -> OMDBRecord:
 
 
 def hydrate_omdb_record(omdb_record_dict: Dict[str, Any]) -> OMDBRecord:
-    return OMDBRecord(
-        title=omdb_record_dict["title"],
-        year=omdb_record_dict["year"],
-        rated=omdb_record_dict["rated"],
-        released=omdb_record_dict["released"],
-        runtime=omdb_record_dict["runtime"],
-        genre=omdb_record_dict["genre"],
-        director=omdb_record_dict["director"],
-        writer=omdb_record_dict["writer"],
-        actors=omdb_record_dict["actors"],
-        plot=omdb_record_dict["plot"],
-        language=omdb_record_dict["language"],
-        country=omdb_record_dict["country"],
-        awards=omdb_record_dict["awards"],
-        poster=omdb_record_dict["poster"],
-        ratings=omdb_record_dict["ratings"],
-        metascore=omdb_record_dict["metascore"],
-        imdb_rating=omdb_record_dict["imdb_rating"],
-        imdb_votes=omdb_record_dict["imdb_votes"],
-        imdb_id=omdb_record_dict["imdb_id"],
-        type=omdb_record_dict["type"],
-        dvd=omdb_record_dict["dvd"],
-        box_office=omdb_record_dict["box_office"],
-        production=omdb_record_dict["production"],
-        website=omdb_record_dict["website"],
-    )
+    return OMDBRecord(**omdb_record_dict)
 
 
 def load_omdb_records(file: str) -> List[OMDBRecord]:
@@ -172,7 +132,7 @@ def main(
     new_records = 0
     with open(airtable_file, "r") as f:
         airtable_entries = thread_last(
-            f, (map, json.loads), (map, make_airtable_record), list
+            f, (map, json.loads), (map, hydrate_airtable_record), list
         )
     logger.info(f"Loaded {len(airtable_entries)}.")
     for airtable_entry in airtable_entries:

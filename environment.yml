@@ -1,0 +1,17 @@
+name: movies-app
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8
+  - pip
+  - pip:
+    - requests
+    - dvc
+    - typer
+    - toolz
+    - python-dateutil
+    - pytimeparse
+    - python-dotenv
+    - flake8
+    - black

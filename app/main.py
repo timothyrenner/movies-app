@@ -8,7 +8,7 @@ from tinydb import TinyDB, where
 from toolz import get_in, pluck, groupby
 from loguru import logger
 from dateutil.parser import parse
-from dateutil.rrule import rrule, MONTHLY
+from dateutil.rrule import rrule, MONTHLY, WEEKLY
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
 from typing import List, Any, Dict
@@ -343,6 +343,65 @@ def year_graph(
                 hovertemplate="%{text}<extra><b>%{x}</b></extra>",
             )
         ],
+        layout=go.Layout(margin={"t": 0, "b": 0, "l": 0, "r": 0}),
+    )
+    return fig
+
+
+@dash_app.callback(Output("calendar-graph", "figure"), sidebar_inputs)
+def calendar_graph(
+    watched: List[int], year: List[int], genres: List[str], services: List[str]
+) -> go.Figure:
+    matching_movies = get_data(watched, year, genres, services)
+
+    watched_start = compute_month(watched[0])
+    watched_end = compute_month(watched[1])
+
+    days_of_week: List[str] = ["Sat", "Fri", "Thu", "Wed", "Tue", "Mon", "Sun"]
+    weeks: List[str] = [
+        w.strftime("%Y-%m-%d")
+        for w in rrule(WEEKLY, dtstart=watched_start, until=watched_end)
+    ]
+    movie_counts_on_day: List[List[int]] = [
+        [0 for ii in range(len(weeks))] for jj in range(len(days_of_week))
+    ]
+    movies_on_day: List[List[List[str]]] = [
+        [[] for ii in range(len(weeks))] for jj in range(len(days_of_week))
+    ]
+    # TODO: Remove color bar.
+    # TODO: Add full date to hover label.
+    # TODO: Add movie titles to hover label.
+    # TODO: Figure out how to make the plot stretch all the way.
+
+    for movie in matching_movies:
+        movie_watched_date = parse(movie["watched"])
+        movie_watched_year = movie_watched_date.year - watched_start.year
+        movie_watched_day_of_week = 6 - int(movie_watched_date.strftime("%w"))
+        # This arithmetic is: the week of the year, but with the zero point on
+        # the earliest watched date.
+        movie_watched_week_of_year = int(
+            movie_watched_date.strftime("%W")
+        ) - int(watched_start.strftime("%W"))
+
+        movie_counts_on_day[movie_watched_day_of_week][
+            # This arithmetic is: week of year + year offset, where year offset
+            # is the number of years we have data for.
+            movie_watched_week_of_year
+            + (52 * movie_watched_year)
+        ] += 1
+        # movies_on_day[movie_watched_week_of_year][
+        #     movie_watched_day_of_week
+        # ].append(movie["title"])
+
+    fig = go.Figure(
+        go.Heatmap(
+            z=movie_counts_on_day,
+            y=days_of_week,
+            x=weeks,
+            colorscale="greens",
+            xgap=1,
+            ygap=1,
+        ),
         layout=go.Layout(margin={"t": 0, "b": 0, "l": 0, "r": 0}),
     )
     return fig

@@ -274,5 +274,34 @@ def service_graph(
     return fig
 
 
+@dash_app.callback(Output("genre-graph", "figure"), sidebar_inputs)
+def genre_graph(
+    watched: List[int],
+    year: List[int],
+    genres: List[str],
+    services: List[str],
+) -> go.Figure:
+    matching_movies = get_data(watched, year, genres, services)
+
+    # Grab the "genres" field, flatten the list of lists, then count them.
+    movie_genre_counts = Counter(
+        chain.from_iterable(pluck("genre", matching_movies))
+    )
+    x: List[str] = []
+    y: List[int] = []
+
+    logger.debug(f"Found {len(movie_genre_counts)} counts.")
+
+    for genre, count in movie_genre_counts.most_common(None):
+        x.append(genre)
+        y.append(count)
+
+    fig = go.Figure(
+        data=[go.Bar(x=x, y=y)],
+        layout=go.Layout(margin={"t": 0, "b": 0, "l": 0, "r": 0}),
+    )
+    return fig
+
+
 if __name__ == "__main__":
     dash_app.run_server()

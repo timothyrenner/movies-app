@@ -195,6 +195,41 @@ sidebar = dbc.Card(
     body=True,
 )
 
+auto_margin = {"margin": "auto"}
+calendar_row = dbc.Row([dcc.Graph(id="calendar-graph", style=auto_margin)])
+breakdown_row = dbc.Row(
+    [
+        dbc.Col(
+            dcc.Graph(id="service-graph", style=auto_margin), md=3, lg=3, xl=3
+        ),
+        dbc.Col(
+            dcc.Graph(id="genre-graph", style=auto_margin), md=2, lg=3, xl=3
+        ),
+        dbc.Col(
+            dcc.Graph(id="year-graph", style=auto_margin), md=3, lg=3, xl=3
+        ),
+    ]
+)
+histogram_row = dbc.Row(
+    [
+        dbc.Col(
+            dcc.Graph(id="rt-histogram-graph", style=auto_margin),
+            md=4,
+            lg=4,
+            xl=4,
+        ),
+        # NOTE: maybe placeholder here.
+        dbc.Col(
+            dcc.Graph(id="imdb-histogram-graph", style=auto_margin),
+            md=4,
+            lg=4,
+            xl=4,
+        ),
+    ]
+)
+
+main_content = [calendar_row, breakdown_row, histogram_row]
+
 dash_app.layout = dbc.Container(
     [
         html.H1("Movies"),
@@ -202,6 +237,7 @@ dash_app.layout = dbc.Container(
         dbc.Row(
             [
                 dbc.Col(sidebar, md=4, lg=3, xl=3),
+                dbc.Col(main_content, md=8, lg=9, xl=9),
             ]
         ),
     ],

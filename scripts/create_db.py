@@ -32,7 +32,7 @@ def get_all_genres(movie_records: List[Dict[str, Any]]) -> Set[str]:
 
 
 def get_min_max_year(movie_records: List[Dict[str, Any]]) -> Tuple[int, int]:
-    min_year = 1970
+    min_year = 3030
     max_year = 1970
 
     for movie in movie_records:
@@ -49,7 +49,7 @@ def get_min_max_year(movie_records: List[Dict[str, Any]]) -> Tuple[int, int]:
 def get_min_max_watched(
     movie_records: List[Dict[str, Any]]
 ) -> Tuple[str, str]:
-    min_watched = datetime(1970, 1, 1)
+    min_watched = datetime(3030, 1, 1)
     max_watched = datetime(1970, 1, 1)
 
     for movie in movie_records:

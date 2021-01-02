@@ -2,6 +2,7 @@ import dash
 import dash_bootstrap_components as dbc
 import dash_html_components as html
 import dash_core_components as dcc
+import plotly.graph_objs as go
 
 from tinydb import TinyDB, where
 from toolz import get_in, pluck
@@ -11,6 +12,9 @@ from dateutil.rrule import rrule, MONTHLY
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
 from typing import List, Any, Dict
+from dash.dependencies import Input, Output
+from itertools import chain
+from collections import Counter
 
 # TODO: Fetch this from the data registry, eventually.
 logger.info("Loading database.")
@@ -75,7 +79,6 @@ def get_data(
     watched: List[int],
     year: List[int],
     genres: List[str],
-    tags: List[str],
     services: List[str],
 ) -> List[Dict[str, Any]]:
     if len(watched) != 2:
@@ -96,7 +99,6 @@ def get_data(
         & (where("year") >= min_year)
         & (where("year") <= max_year)
         & (where("genre").any(genres))
-        & (where("tags").any(tags))
         & (where("service").any(services))
     )
 
@@ -171,17 +173,6 @@ sidebar = dbc.Card(
         ),
         dbc.FormGroup(
             [
-                dbc.Label("Tags"),
-                dcc.Dropdown(
-                    id="tag-dropdown",
-                    options=[{"label": t, "value": t} for t in tags],
-                    value=tags,
-                    multi=True,
-                ),
-            ]
-        ),
-        dbc.FormGroup(
-            [
                 dbc.Label("Services"),
                 dcc.Dropdown(
                     id="service-dropdown",
@@ -195,32 +186,33 @@ sidebar = dbc.Card(
     body=True,
 )
 
-auto_margin = {"margin": "auto"}
-calendar_row = dbc.Row([dcc.Graph(id="calendar-graph", style=auto_margin)])
+no_margin = {"margin": 0}
+calendar_row = dbc.Row([dcc.Graph(id="calendar-graph", style=no_margin)])
 breakdown_row = dbc.Row(
     [
         dbc.Col(
-            dcc.Graph(id="service-graph", style=auto_margin), md=3, lg=3, xl=3
+            dcc.Graph(id="service-graph", style=no_margin),
+            md=3,
+            lg=3,
+            xl=3,
         ),
         dbc.Col(
-            dcc.Graph(id="genre-graph", style=auto_margin), md=2, lg=3, xl=3
+            dcc.Graph(id="genre-graph", style=no_margin), md=2, lg=3, xl=3
         ),
-        dbc.Col(
-            dcc.Graph(id="year-graph", style=auto_margin), md=3, lg=3, xl=3
-        ),
+        dbc.Col(dcc.Graph(id="year-graph", style=no_margin), md=3, lg=3, xl=3),
     ]
 )
 histogram_row = dbc.Row(
     [
         dbc.Col(
-            dcc.Graph(id="rt-histogram-graph", style=auto_margin),
+            dcc.Graph(id="rt-histogram-graph", style=no_margin),
             md=4,
             lg=4,
             xl=4,
         ),
         # NOTE: maybe placeholder here.
         dbc.Col(
-            dcc.Graph(id="imdb-histogram-graph", style=auto_margin),
+            dcc.Graph(id="imdb-histogram-graph", style=no_margin),
             md=4,
             lg=4,
             xl=4,
@@ -243,6 +235,43 @@ dash_app.layout = dbc.Container(
     ],
     fluid=True,
 )
+
+sidebar_inputs = [
+    Input("watched-slider", "value"),
+    Input("year-slider", "value"),
+    Input("genre-dropdown", "value"),
+    Input("service-dropdown", "value"),
+]
+
+
+@dash_app.callback(Output("service-graph", "figure"), sidebar_inputs)
+def service_graph(
+    watched: List[int],
+    year: List[int],
+    genres: List[str],
+    services: List[str],
+) -> go.Figure:
+    matching_movies = get_data(watched, year, genres, services)
+
+    # Grab the "services" field, flatten the list of lists, then count them.
+    # This avoids creating a pandas data frame only to pass it to plotly
+    # express, which would then promptly deconstruct it.
+    movie_service_counts = Counter(
+        chain.from_iterable(pluck("service", matching_movies))
+    )
+    x: List[str] = []
+    y: List[int] = []
+
+    logger.debug(f"Found {len(movie_service_counts)} counts.")
+
+    for service, count in movie_service_counts.most_common(None):
+        x.append(service)
+        y.append(count)
+
+    fig = go.Figure(data=[go.Bar(x=x, y=y)])
+    fig.layout = go.Layout(margin={"t": 0, "b": 0, "l": 0, "r": 0})
+
+    return fig
 
 
 if __name__ == "__main__":

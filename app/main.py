@@ -29,6 +29,8 @@ if len(min_max_years) != 1:
     )
 min_year = get_in([0, "min_year"], min_max_years)
 max_year = get_in([0, "max_year"], min_max_years)
+logger.debug(f"Min year: {min_year}.")
+logger.debug(f"Max year: {max_year}.")
 
 logger.info("Initializing min/max watched.")
 watched_table = db.table("min_max_watched")
@@ -319,7 +321,7 @@ def year_graph(
     y: List[int] = []
     text: List[str] = []
 
-    for movie_year in range(year[0], year[1]):
+    for movie_year in range(year[0], year[1] + 1):
         x.append(movie_year)
         if movie_year in movie_year_grouped:
             y.append(len(movie_year_grouped[movie_year]))
@@ -338,7 +340,7 @@ def year_graph(
                 x=x,
                 y=y,
                 text=text,
-                hovertemplate="<b>%{x}</b> <br> %{text}<extra></extra>",
+                hovertemplate="%{text}<extra><b>%{x}</b></extra>",
             )
         ],
         layout=go.Layout(margin={"t": 0, "b": 0, "l": 0, "r": 0}),

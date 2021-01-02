@@ -6,6 +6,8 @@ from loguru import logger
 from toolz import thread_last
 from tinydb import TinyDB
 from typing import Dict, Any, Set, List, Tuple
+from datetime import datetime
+from dateutil.parser import parse
 
 
 def get_all_tags(movie_records: List[Dict[str, Any]]) -> Set[str]:
@@ -30,24 +32,35 @@ def get_all_genres(movie_records: List[Dict[str, Any]]) -> Set[str]:
 
 
 def get_min_max_year(movie_records: List[Dict[str, Any]]) -> Tuple[int, int]:
-    min_year = None
-    max_year = None
+    min_year = 1970
+    max_year = 1970
 
     for movie in movie_records:
         year = movie["year"]
-
-        # Initialize if we need to.
-        if not min_year:
-            min_year = year
-        if not max_year:
-            max_year = year
 
         if year < min_year:
             min_year = year
         if year > max_year:
             max_year = year
 
-    return min_year, max_year  # type: ignore
+    return min_year, max_year
+
+
+def get_min_max_watched(
+    movie_records: List[Dict[str, Any]]
+) -> Tuple[str, str]:
+    min_watched = datetime(1970, 1, 1)
+    max_watched = datetime(1970, 1, 1)
+
+    for movie in movie_records:
+        watched = parse(movie["watched"])
+
+        if watched < min_watched:
+            min_watched = watched
+        if watched > max_watched:
+            max_watched = watched
+
+    return min_watched.strftime("%Y-%m-%d"), max_watched.strftime("%Y-%m-%d")
 
 
 def main(
@@ -66,6 +79,7 @@ def main(
     services_table = db.table("services")
     genres_table = db.table("genres")
     year_table = db.table("min_max_year")
+    watched_table = db.table("min_max_watched")
 
     logger.info("Clearing old values.")
     movies_table.truncate()
@@ -73,6 +87,7 @@ def main(
     services_table.truncate()
     genres_table.truncate()
     year_table.truncate()
+    watched_table.truncate()
 
     logger.info("Extracting all tags.")
     all_tags = [{"tag_name": tn} for tn in get_all_tags(movie_records)]
@@ -93,6 +108,13 @@ def main(
     min_max_year = {"min_year": min_year, "max_year": max_year}
     logger.info(f"Extracted min year {min_year} and max year {max_year}.")
 
+    logger.info("Extracting min max watched.")
+    min_watched, max_watched = get_min_max_watched(movie_records)
+    min_max_watched = {"min_watched": min_watched, "max_watched": max_watched}
+    logger.info(
+        f"Extracted min watched {min_watched} and max watched {max_watched}."
+    )
+
     logger.info("Inserting tags into database.")
     tags_table.insert_multiple(all_tags)
     logger.info("Done with tags.")
@@ -108,6 +130,9 @@ def main(
     logger.info("Inserting min/max year into database.")
     year_table.insert(min_max_year)
     logger.info("Done with min/max year.")
+
+    logger.info("Inserting min/max watched into database.")
+    watched_table.insert(min_max_watched)
 
     logger.info("Inserting movies into database.")
     movies_table.insert_multiple(movie_records)

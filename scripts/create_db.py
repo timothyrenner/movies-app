@@ -5,7 +5,7 @@ import json
 from loguru import logger
 from toolz import thread_last
 from tinydb import TinyDB
-from typing import Dict, Any, Set, List
+from typing import Dict, Any, Set, List, Tuple
 
 
 def get_all_tags(movie_records: List[Dict[str, Any]]) -> Set[str]:
@@ -29,6 +29,27 @@ def get_all_genres(movie_records: List[Dict[str, Any]]) -> Set[str]:
     return genres
 
 
+def get_min_max_year(movie_records: List[Dict[str, Any]]) -> Tuple[int, int]:
+    min_year = None
+    max_year = None
+
+    for movie in movie_records:
+        year = movie["year"]
+
+        # Initialize if we need to.
+        if not min_year:
+            min_year = year
+        if not max_year:
+            max_year = year
+
+        if year < min_year:
+            min_year = year
+        if year > max_year:
+            max_year = year
+
+    return min_year, max_year  # type: ignore
+
+
 def main(
     movie_records_file: str = "data/interim/merged_records.json",
     output_file: str = "data/processed/movie_database.json",
@@ -44,6 +65,14 @@ def main(
     tags_table = db.table("tags")
     services_table = db.table("services")
     genres_table = db.table("genres")
+    year_table = db.table("min_max_year")
+
+    logger.info("Clearing old values.")
+    movies_table.truncate()
+    tags_table.truncate()
+    services_table.truncate()
+    genres_table.truncate()
+    year_table.truncate()
 
     logger.info("Extracting all tags.")
     all_tags = [{"tag_name": tn} for tn in get_all_tags(movie_records)]
@@ -59,6 +88,11 @@ def main(
     all_genres = [{"genre_name": gn} for gn in get_all_genres(movie_records)]
     logger.info(f"Extracted {len(all_genres)}.")
 
+    logger.info("Extracting min max year.")
+    min_year, max_year = get_min_max_year(movie_records)
+    min_max_year = {"min_year": min_year, "max_year": max_year}
+    logger.info(f"Extracted min year {min_year} and max year {max_year}.")
+
     logger.info("Inserting tags into database.")
     tags_table.insert_multiple(all_tags)
     logger.info("Done with tags.")
@@ -70,6 +104,10 @@ def main(
     logger.info("Inserting genres into database.")
     genres_table.insert_multiple(all_genres)
     logger.info("Done with genres.")
+
+    logger.info("Inserting min/max year into database.")
+    year_table.insert(min_max_year)
+    logger.info("Done with min/max year.")
 
     logger.info("Inserting movies into database.")
     movies_table.insert_multiple(movie_records)

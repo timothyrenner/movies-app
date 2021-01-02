@@ -5,7 +5,7 @@ import dash_core_components as dcc
 import plotly.graph_objs as go
 
 from tinydb import TinyDB, where
-from toolz import get_in, pluck
+from toolz import get_in, pluck, groupby
 from loguru import logger
 from dateutil.parser import parse
 from dateutil.rrule import rrule, MONTHLY
@@ -192,14 +192,15 @@ breakdown_row = dbc.Row(
     [
         dbc.Col(
             dcc.Graph(id="service-graph", style=no_margin),
-            md=3,
-            lg=3,
-            xl=3,
         ),
         dbc.Col(
-            dcc.Graph(id="genre-graph", style=no_margin), md=2, lg=3, xl=3
+            dcc.Graph(id="genre-graph", style=no_margin),
         ),
-        dbc.Col(dcc.Graph(id="year-graph", style=no_margin), md=3, lg=3, xl=3),
+    ]
+)
+year_row = dbc.Row(
+    [
+        dbc.Col(dcc.Graph(id="year-graph", style=no_margin)),
     ]
 )
 histogram_row = dbc.Row(
@@ -220,7 +221,7 @@ histogram_row = dbc.Row(
     ]
 )
 
-main_content = [calendar_row, breakdown_row, histogram_row]
+main_content = [calendar_row, year_row, breakdown_row, histogram_row]
 
 dash_app.layout = dbc.Container(
     [
@@ -298,6 +299,48 @@ def genre_graph(
 
     fig = go.Figure(
         data=[go.Bar(x=x, y=y)],
+        layout=go.Layout(margin={"t": 0, "b": 0, "l": 0, "r": 0}),
+    )
+    return fig
+
+
+@dash_app.callback(Output("year-graph", "figure"), sidebar_inputs)
+def year_graph(
+    watched: List[int], year: List[int], genres: List[str], services: List[str]
+) -> go.Figure:
+    matching_movies = get_data(watched, year, genres, services)
+
+    # Grab the "year" field and count.
+    movie_year_grouped: Dict[int, List[Dict[str, Any]]] = groupby(
+        "year", matching_movies
+    )
+
+    x: List[int] = []
+    y: List[int] = []
+    text: List[str] = []
+
+    for movie_year in range(year[0], year[1]):
+        x.append(movie_year)
+        if movie_year in movie_year_grouped:
+            y.append(len(movie_year_grouped[movie_year]))
+            text.append(
+                # Line separate the titles. We need to pluck them out of the
+                # list because groupby groups entire documents.
+                "<br>".join(pluck("title", movie_year_grouped[movie_year]))
+            )
+        else:
+            y.append(0)
+            text.append("")
+
+    fig = go.Figure(
+        data=[
+            go.Bar(
+                x=x,
+                y=y,
+                text=text,
+                hovertemplate="<b>%{x}</b> <br> %{text}<extra></extra>",
+            )
+        ],
         layout=go.Layout(margin={"t": 0, "b": 0, "l": 0, "r": 0}),
     )
     return fig

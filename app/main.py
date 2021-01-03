@@ -189,7 +189,15 @@ sidebar = dbc.Card(
 )
 
 no_margin = {"margin": 0}
-calendar_row = dbc.Row([dcc.Graph(id="calendar-graph", style=no_margin)])
+calendar_row = dbc.Row(
+    [dbc.Col(dcc.Graph(id="calendar-graph", style=no_margin))]
+)
+# calendar_row = dcc.Graph(id="calendar-graph", style=no_margin)
+year_row = dbc.Row(
+    [
+        dbc.Col(dcc.Graph(id="year-graph", style=no_margin)),
+    ]
+)
 breakdown_row = dbc.Row(
     [
         dbc.Col(
@@ -198,11 +206,6 @@ breakdown_row = dbc.Row(
         dbc.Col(
             dcc.Graph(id="genre-graph", style=no_margin),
         ),
-    ]
-)
-year_row = dbc.Row(
-    [
-        dbc.Col(dcc.Graph(id="year-graph", style=no_margin)),
     ]
 )
 histogram_row = dbc.Row(
@@ -368,10 +371,15 @@ def calendar_graph(
     movies_on_day: List[List[List[str]]] = [
         [[] for ii in range(len(weeks))] for jj in range(len(days_of_week))
     ]
-    # TODO: Remove color bar.
+    movie_days: List[List[str]] = [
+        [
+            (w + relativedelta(days=ii)).strftime("%Y-%m-%d")
+            for w in rrule(WEEKLY, dtstart=watched_start, until=watched_end)
+        ]
+        for ii in range(len(days_of_week))
+    ]
     # TODO: Add full date to hover label.
     # TODO: Add movie titles to hover label.
-    # TODO: Figure out how to make the plot stretch all the way.
 
     for movie in matching_movies:
         movie_watched_date = parse(movie["watched"])
@@ -389,9 +397,19 @@ def calendar_graph(
             movie_watched_week_of_year
             + (52 * movie_watched_year)
         ] += 1
-        # movies_on_day[movie_watched_week_of_year][
-        #     movie_watched_day_of_week
-        # ].append(movie["title"])
+        movies_on_day[movie_watched_week_of_year][
+            # This arithmetic is: week of year + year offset, where year offset
+            # is the number of years we have data for.
+            movie_watched_week_of_year
+            + (52 * movie_watched_year)
+        ].append(movie["title"])
+
+    # Now generate the text by combining the movie days with the movies watched.
+    # TODO: Implement this.
+    text: List[List[str]] = []
+    for ii in range(len(days_of_week)):
+        for jj in range(len(weeks)):
+            pass
 
     fig = go.Figure(
         go.Heatmap(
@@ -401,6 +419,7 @@ def calendar_graph(
             colorscale="greens",
             xgap=1,
             ygap=1,
+            showscale=False,
         ),
         layout=go.Layout(margin={"t": 0, "b": 0, "l": 0, "r": 0}),
     )

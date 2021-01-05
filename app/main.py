@@ -11,7 +11,7 @@ from dateutil.parser import parse
 from dateutil.rrule import rrule, MONTHLY, WEEKLY
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
-from typing import List, Any, Dict
+from typing import List, Any, Dict, Tuple
 from dash.dependencies import Input, Output
 from itertools import chain
 from collections import Counter
@@ -378,8 +378,6 @@ def calendar_graph(
         ]
         for ii in range(len(days_of_week))
     ]
-    # TODO: Add full date to hover label.
-    # TODO: Add movie titles to hover label.
 
     for movie in matching_movies:
         movie_watched_date = parse(movie["watched"])
@@ -397,29 +395,39 @@ def calendar_graph(
             movie_watched_week_of_year
             + (52 * movie_watched_year)
         ] += 1
-        movies_on_day[movie_watched_week_of_year][
+        movies_on_day[movie_watched_day_of_week][
             # This arithmetic is: week of year + year offset, where year offset
             # is the number of years we have data for.
             movie_watched_week_of_year
             + (52 * movie_watched_year)
         ].append(movie["title"])
 
-    # Now generate the text by combining the movie days with the movies watched.
-    # TODO: Implement this.
-    text: List[List[str]] = []
+    # Now generate the text by combining the movie days with the movies
+    # watched.
+    custom_data: List[List[Tuple[str, str]]] = []
     for ii in range(len(days_of_week)):
+        custom_data_row: List[Tuple[str, str]] = []
         for jj in range(len(weeks)):
-            pass
+            movies = movies_on_day[ii][jj]
+            date = movie_days[ii][jj]
+            if not movies:
+                movie_str = " "
+            else:
+                movie_str = "<br>".join(movies)
+            custom_data_row.append((date, movie_str))
+        custom_data.append(custom_data_row)
 
     fig = go.Figure(
         go.Heatmap(
             z=movie_counts_on_day,
             y=days_of_week,
             x=weeks,
+            customdata=custom_data,
             colorscale="greens",
             xgap=1,
             ygap=1,
             showscale=False,
+            hovertemplate="%{customdata[1]}<extra>%{customdata[0]}</extra>",
         ),
         layout=go.Layout(margin={"t": 0, "b": 0, "l": 0, "r": 0}),
     )

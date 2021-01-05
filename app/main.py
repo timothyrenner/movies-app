@@ -15,6 +15,7 @@ from typing import List, Any, Dict, Tuple
 from dash.dependencies import Input, Output
 from itertools import chain
 from collections import Counter
+from random import sample
 
 # TODO: Fetch this from the data registry, eventually.
 logger.info("Loading database.")
@@ -189,6 +190,7 @@ sidebar = dbc.Card(
 )
 
 no_margin = {"margin": 0}
+plotly_margin = {"t": 50, "b": 50, "l": 0, "r": 0}
 calendar_row = dbc.Row(
     [dbc.Col(dcc.Graph(id="calendar-graph", style=no_margin))]
 )
@@ -212,16 +214,16 @@ histogram_row = dbc.Row(
     [
         dbc.Col(
             dcc.Graph(id="rt-histogram-graph", style=no_margin),
-            md=4,
-            lg=4,
-            xl=4,
+            md=6,
+            lg=6,
+            xl=6,
         ),
         # NOTE: maybe placeholder here.
         dbc.Col(
             dcc.Graph(id="imdb-histogram-graph", style=no_margin),
-            md=4,
-            lg=4,
-            xl=4,
+            md=6,
+            lg=6,
+            xl=6,
         ),
     ]
 )
@@ -275,7 +277,7 @@ def service_graph(
         y.append(count)
 
     fig = go.Figure(data=[go.Bar(x=x, y=y)])
-    fig.layout = go.Layout(margin={"t": 0, "b": 0, "l": 0, "r": 0})
+    fig.layout = go.Layout(margin=plotly_margin, title="Services")
 
     return fig
 
@@ -304,7 +306,7 @@ def genre_graph(
 
     fig = go.Figure(
         data=[go.Bar(x=x, y=y)],
-        layout=go.Layout(margin={"t": 0, "b": 0, "l": 0, "r": 0}),
+        layout=go.Layout(margin=plotly_margin, title="Genres"),
     )
     return fig
 
@@ -346,7 +348,7 @@ def year_graph(
                 hovertemplate="%{text}<extra><b>%{x}</b></extra>",
             )
         ],
-        layout=go.Layout(margin={"t": 0, "b": 0, "l": 0, "r": 0}),
+        layout=go.Layout(title="Release Year", margin=plotly_margin),
     )
     return fig
 
@@ -429,7 +431,73 @@ def calendar_graph(
             showscale=False,
             hovertemplate="%{customdata[1]}<extra>%{customdata[0]}</extra>",
         ),
-        layout=go.Layout(margin={"t": 0, "b": 0, "l": 0, "r": 0}),
+        layout=go.Layout(title="Calendar", margin=plotly_margin),
+    )
+    return fig
+
+
+@dash_app.callback(Output("rt-histogram-graph", "figure"), sidebar_inputs)
+def rt_histogram_graph(
+    watched: List[int], year: List[int], genres: List[str], services: List[str]
+) -> go.Figure:
+    matching_movies = get_data(watched, year, genres, services)
+
+    bin_labels = [f"{ii*10}%" for ii in range(11)]
+    movies_in_bin: List[List[str]] = [[] for _ in range(len(bin_labels))]
+    rating_bin_counts: List[int] = [0 for _ in range(len(bin_labels))]
+    for movie in matching_movies:
+        for rating in movie["ratings"]:
+            if rating["source"] == "Rotten Tomatoes":
+                rating_numeric = int(rating["value"][:-1])
+                rating_bin_index = rating_numeric // 10
+                movies_in_bin[rating_bin_index].append(movie["title"])
+                rating_bin_counts[rating_bin_index] += 1
+    text = ["<br>".join(m) for m in movies_in_bin]
+    fig = go.Figure(
+        go.Bar(
+            x=bin_labels,
+            y=rating_bin_counts,
+            text=text,
+            hovertemplate="%{text}<extra>%{x}</extra>",
+        ),
+        go.Layout(
+            title="Rotten Tomatoes",
+            margin=plotly_margin,
+        ),
+    )
+    return fig
+
+
+@dash_app.callback(Output("imdb-histogram-graph", "figure"), sidebar_inputs)
+def imdb_histogram_graph(
+    watched: List[int], year: List[int], genres: List[str], services: List[str]
+) -> go.Figure:
+    matching_movies = get_data(watched, year, genres, services)
+
+    bin_labels = [ii for ii in range(11)]
+    movies_in_bin: List[List[str]] = [[] for _ in range(len(bin_labels))]
+    rating_bin_counts: List[int] = [0 for _ in range(len(bin_labels))]
+    for movie in matching_movies:
+        for rating in movie["ratings"]:
+            if rating["source"] == "Internet Movie Database":
+                rating_bin_index = int(float(rating["value"].split("/")[0]))
+                movies_in_bin[rating_bin_index].append(movie["title"])
+                rating_bin_counts[rating_bin_index] += 1
+    text = [
+        "<br>".join(sample(m, 25) if len(m) >= 25 else m)
+        for m in movies_in_bin
+    ]
+    fig = go.Figure(
+        go.Bar(
+            x=bin_labels,
+            y=rating_bin_counts,
+            text=text,
+            hovertemplate="%{text}<extra>%{x}</extra>",
+        ),
+        go.Layout(
+            title="IMDB",
+            margin=plotly_margin,
+        ),
     )
     return fig
 

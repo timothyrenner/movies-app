@@ -14,7 +14,8 @@ stages:
     - data/raw/airtable_out.json
     - scripts/pull_omdb.py
     outs:
-    - data/raw/omdb_out.json
+    - data/raw/omdb_out.json:
+        persist: true
   merge_airtable_omdb:
     cmd: python scripts/merge_airtable_omdb.py --airtable-file data/raw/airtable_out.json
       --omdb-file data/raw/omdb_out.json --output-file data/interim/merged_records.json

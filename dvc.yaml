@@ -1,0 +1,18 @@
+stages:
+  merge_airtable_omdb:
+    cmd: python scripts/merge_airtable_omdb.py --airtable-file data/raw/airtable_out.json
+      --omdb-file data/raw/omdb_out.json --output-file data/interim/merged_records.json
+    deps:
+    - data/raw/airtable_out.json
+    - data/raw/omdb_out.json
+    - scripts/merge_airtable_omdb.py
+    outs:
+    - data/interim/merged_records.json
+  create_db:
+    cmd: python scripts/create_db.py --movie-records-file data/interim/merged_records.json
+      --output-file data/processed/movie_database.json
+    deps:
+    - data/interim/merged_records.json
+    - scripts/create_db.py
+    outs:
+    - data/processed/movie_database.json

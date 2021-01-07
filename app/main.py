@@ -5,7 +5,7 @@ import dash_core_components as dcc
 import plotly.graph_objs as go
 
 from tinydb import TinyDB, where
-from toolz import get_in, pluck, groupby
+from toolz import get_in, pluck, groupby, valmap
 from loguru import logger
 from dateutil.parser import parse
 from dateutil.rrule import rrule, MONTHLY, WEEKLY
@@ -13,8 +13,6 @@ from dateutil.relativedelta import relativedelta
 from datetime import datetime
 from typing import List, Any, Dict, Tuple
 from dash.dependencies import Input, Output
-from itertools import chain
-from collections import Counter
 from random import sample
 
 # TODO: Fetch this from the data registry, eventually.
@@ -260,23 +258,44 @@ def service_graph(
     services: List[str],
 ) -> go.Figure:
     matching_movies = get_data(watched, year, genres, services)
+    movies_by_service: Dict[str, List[str]] = {}
+    for movie in matching_movies:
+        for service in movie["service"]:
+            if service not in movies_by_service:
+                movies_by_service[service] = []
+            movies_by_service[service].append(movie["title"])
+    movie_counts_by_service = valmap(len, movies_by_service)
 
-    # Grab the "services" field, flatten the list of lists, then count them.
-    # This avoids creating a pandas data frame only to pass it to plotly
-    # express, which would then promptly deconstruct it.
-    movie_service_counts = Counter(
-        chain.from_iterable(pluck("service", matching_movies))
-    )
     x: List[str] = []
     y: List[int] = []
+    text: List[str] = []
 
-    logger.debug(f"Found {len(movie_service_counts)} counts.")
-
-    for service, count in movie_service_counts.most_common(None):
+    # Iterate over the dict sorted by keys, first to last.
+    # We only need the count dict to sort the values.
+    # See https://stackoverflow.com/a/3177911
+    for service in sorted(  # type: ignore
+        movie_counts_by_service,
+        key=movie_counts_by_service.get,  # type: ignore
+        reverse=True,
+    ):
+        service_movies = movies_by_service[service]
         x.append(service)
-        y.append(count)
+        y.append(len(service_movies))
+        text.append(
+            "<br>".join(
+                sample(service_movies, 25)
+                if len(service_movies) > 25
+                else service_movies
+            )
+        )
 
-    fig = go.Figure(data=[go.Bar(x=x, y=y)])
+    fig = go.Figure(
+        data=[
+            go.Bar(
+                x=x, y=y, text=text, hovertemplate="%{text}<extra>%{x}</extra>"
+            )
+        ]
+    )
     fig.layout = go.Layout(margin=plotly_margin, title="Services")
 
     return fig
@@ -291,21 +310,43 @@ def genre_graph(
 ) -> go.Figure:
     matching_movies = get_data(watched, year, genres, services)
 
-    # Grab the "genres" field, flatten the list of lists, then count them.
-    movie_genre_counts = Counter(
-        chain.from_iterable(pluck("genre", matching_movies))
-    )
+    movies_by_genre: Dict[str, List[str]] = {}
+    for movie in matching_movies:
+        for genre in movie["genre"]:
+            if genre not in movies_by_genre:
+                movies_by_genre[genre] = []
+            movies_by_genre[genre].append(movie["title"])
+    movie_counts_by_genre = valmap(len, movies_by_genre)
+
     x: List[str] = []
     y: List[int] = []
+    text: List[str] = []
 
-    logger.debug(f"Found {len(movie_genre_counts)} counts.")
-
-    for genre, count in movie_genre_counts.most_common(None):
+    # Iterate over the dict sorted by keys, first to last.
+    # We only need the count dict to sort the values.
+    # See https://stackoverflow.com/a/3177911
+    for genre in sorted(  # type: ignore
+        movie_counts_by_genre,
+        key=movie_counts_by_genre.get,  # type: ignore
+        reverse=True,
+    ):
+        genre_movies = movies_by_genre[genre]
         x.append(genre)
-        y.append(count)
+        y.append(len(genre_movies))
+        text.append(
+            "<br>".join(
+                sample(genre_movies, 25)
+                if len(genre_movies) > 25
+                else genre_movies
+            )
+        )
 
     fig = go.Figure(
-        data=[go.Bar(x=x, y=y)],
+        data=[
+            go.Bar(
+                x=x, y=y, text=text, hovertemplate="%{text}<extra>%{x}</extra>"
+            )
+        ],
         layout=go.Layout(margin=plotly_margin, title="Genres"),
     )
     return fig

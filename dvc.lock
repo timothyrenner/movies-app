@@ -1,3 +1,31 @@
+create_db:
+  cmd: python scripts/create_db.py --movie-records-file data/interim/merged_records.json
+    --output-file data/processed/movie_database.json
+  deps:
+  - path: data/interim/merged_records.json
+    md5: e06dc3b9303f0fb32a7b342b04df3ad1
+    size: 67250
+  - path: scripts/create_db.py
+    md5: 661f871778d2a7f92f444f80eb98681a
+    size: 4409
+  outs:
+  - path: data/processed/movie_database.json
+    md5: 9192eb3a5814353e2aa0daa2f28cb5ce
+    size: 68764
+pull_omdb:
+  cmd: python scripts/pull_omdb.py --airtable-file data/raw/airtable_out.json --output-file
+    data/raw/omdb_out.json
+  deps:
+  - path: data/raw/airtable_out.json
+    md5: 763946008aff709ec54771a53adafd8a
+    size: 16298
+  - path: scripts/pull_omdb.py
+    md5: 755e9764888d5e702c4fdfcb997c60d0
+    size: 5174
+  outs:
+  - path: data/raw/omdb_out.json
+    md5: fcf67a357546887bec57f3eb80a32f30
+    size: 91386
 merge_airtable_omdb:
   cmd: python scripts/merge_airtable_omdb.py --airtable-file data/raw/airtable_out.json
     --omdb-file data/raw/omdb_out.json --output-file data/interim/merged_records.json
@@ -6,26 +34,12 @@ merge_airtable_omdb:
     md5: 763946008aff709ec54771a53adafd8a
     size: 16298
   - path: data/raw/omdb_out.json
-    md5: 5939cddb4c50ce1a38772d866f6755a3
-    size: 91378
+    md5: fcf67a357546887bec57f3eb80a32f30
+    size: 91386
   - path: scripts/merge_airtable_omdb.py
     md5: 7a63e77f9b44548166e3411411008fa8
     size: 5728
   outs:
   - path: data/interim/merged_records.json
-    md5: b1867a474cbe3b0a08af6b98dcb1d7c1
-    size: 67240
-create_db:
-  cmd: python scripts/create_db.py --movie-records-file data/interim/merged_records.json
-    --output-file data/processed/movie_database.json
-  deps:
-  - path: data/interim/merged_records.json
-    md5: b1867a474cbe3b0a08af6b98dcb1d7c1
-    size: 67240
-  - path: scripts/create_db.py
-    md5: 661f871778d2a7f92f444f80eb98681a
-    size: 4409
-  outs:
-  - path: data/processed/movie_database.json
-    md5: 9db3e33b73ca6fcefa1194792c08af15
-    size: 68754
+    md5: e06dc3b9303f0fb32a7b342b04df3ad1
+    size: 67250

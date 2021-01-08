@@ -53,7 +53,8 @@ jobs:
       - name: git add
         run: |
           git add dvc.lock data/
-          git commit -m "Update datasets."
+          timestamp=$(date -u)
+          git commit -m "Update datasets: ${timestamp}."
 
       - name: git push
         # See https://github.com/marketplace/actions/github-push#example-workflow-file

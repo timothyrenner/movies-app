@@ -51,6 +51,7 @@ jobs:
         run: dvc repro
 
       - name: git add
+        continue-on-error: true
         run: |
           git add dvc.lock data/
           timestamp=$(date -u)

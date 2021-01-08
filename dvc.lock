@@ -17,8 +17,8 @@ pull_omdb:
     data/raw/omdb_out.json
   deps:
   - path: data/raw/airtable_out.json
-    md5: bbfabfdfc4daa665a25b5000cdf89cb8
-    size: 16806
+    md5: f009a17b8470f14b14e493aef6ff84e5
+    size: 16942
   - path: scripts/pull_omdb.py
     md5: 755e9764888d5e702c4fdfcb997c60d0
     size: 5174
@@ -31,8 +31,8 @@ merge_airtable_omdb:
     --omdb-file data/raw/omdb_out.json --output-file data/interim/merged_records.json
   deps:
   - path: data/raw/airtable_out.json
-    md5: bbfabfdfc4daa665a25b5000cdf89cb8
-    size: 16806
+    md5: f009a17b8470f14b14e493aef6ff84e5
+    size: 16942
   - path: data/raw/omdb_out.json
     md5: 66ceaf8c418671ca5846de47c70651a8
     size: 92396

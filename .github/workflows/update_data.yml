@@ -1,0 +1,56 @@
+name: Update Movie Data
+
+on: workflow_dispatch
+
+jobs:
+  update_data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        # See https://github.com/marketplace/actions/github-push#example-workflow-file
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Set up conda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          activate-environment: "movies-app"
+          environment-file: "environment.yml"
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: ${{ secrets.PERSONAL_PROJECT_ID }}
+          service_account_key: ${{ secrets.MOVIE_DVC_PUSHER_SA_CREDS }}
+          export_default_credentials: true
+
+      - name: Set up git.
+        # See https://github.com/marketplace/actions/github-push#example-workflow-file
+        run: |
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: Pull Airtable data
+        run: python scripts/pull_airtable.py --output-file data/raw/airtable_out.json
+
+      - name: Run dvc repro
+        run: dvc repro
+
+      - name: git add
+        run: |
+          git add dvc.lock
+          git add data
+
+      - name: git push
+        # See https://github.com/marketplace/actions/github-push#example-workflow-file
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+
+      - name: dvc push
+        run: dvc push

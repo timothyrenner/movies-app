@@ -52,8 +52,7 @@ jobs:
 
       - name: git add
         run: |
-          git add dvc.lock
-          git add data
+          git add dvc.lock data/
 
       - name: git push
         # See https://github.com/marketplace/actions/github-push#example-workflow-file

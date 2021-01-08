@@ -107,7 +107,13 @@ def get_omdb(movie_id: str, session: requests.Session) -> OMDBRecord:
     raw_results = session.get(
         OMBD_ENDPOINT, params={"apikey": API_KEY, "i": movie_id}
     ).json()
-    return make_omdb_record(raw_results)
+    try:
+        omdb_record = make_omdb_record(raw_results)
+    except Exception:
+        logger.exception(
+            f"Encountered exception for {json.dumps(omdb_record)}."
+        )
+    return omdb_record
 
 
 def main(
@@ -150,7 +156,9 @@ def main(
             )
             continue
 
-        logger.info(f"Pulling OMDB data for {imdb_id}.")
+        logger.info(
+            f"Pulling OMDB data for {airtable_entry.name} ({imdb_id})."
+        )
         try:
             omdb_record = get_omdb(imdb_id, session)
             omdb_records.append(omdb_record)

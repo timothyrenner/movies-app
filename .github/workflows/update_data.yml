@@ -40,6 +40,9 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Pull omdb cache
+        run: dvc pull pull_omdb
+
       - name: Pull Airtable data
         run: python scripts/pull_airtable.py --output-file data/raw/airtable_out.json
 

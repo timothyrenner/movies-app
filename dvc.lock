@@ -10,7 +10,7 @@ create_db:
     size: 4409
   outs:
   - path: data/processed/movie_database.json
-    md5: 8d3d59cb07ae77b608ab3be87abcc925
+    md5: c9c7a34c2b0db9a8224aa9b1374196d6
     size: 70043
 pull_omdb:
   cmd: python scripts/pull_omdb.py --airtable-file data/raw/airtable_out.json --output-file

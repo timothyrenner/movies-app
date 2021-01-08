@@ -75,6 +75,13 @@ def airtable_get_all(
 
 
 def main(output_file: str = "data/raw/airtable_out.json"):
+    # Validate environment.
+    if not API_KEY:
+        raise ValueError("AIRTABLE_KEY not in .env file or environment.")
+    if not BASE_ID:
+        raise ValueError(
+            "AIRTABLE_MOVIE_BASE_ID not in .env file or environment."
+        )
     request_url = f"{AIRTABLE_ENDPOINT}/{BASE_ID}/Movies"
     session = requests.Session()
     session.headers.update({"Authorization": f"Bearer {API_KEY}"})

@@ -14,6 +14,11 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
+      - name: Set up environment
+        run: |
+          echo AIRTABLE_MOVE_BASE_ID=${{ secrets.AIRTABLE_MOVIE_BASE_ID }} >> $GITHUB_ENV
+          echo AIRTABLE_KEY=${{ secrets.AIRTABLE_KEY }} >> $GITHUB_ENV
+
       - name: Set up python
         uses: actions/setup-python@v2
         with:

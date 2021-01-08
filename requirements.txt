@@ -1,5 +1,5 @@
 requests
-dvc
+dvc[gs]
 typer
 toolz
 python-dateutil

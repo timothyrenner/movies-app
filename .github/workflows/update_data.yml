@@ -30,17 +30,21 @@ jobs:
 
       - name: Set up git.
         # See https://github.com/marketplace/actions/github-push#example-workflow-file
+        shell: bash -l {0} # see https://github.com/marketplace/actions/setup-miniconda#IMPORTANT
         run: |
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
       - name: Pull Airtable data
+        shell: bash -l {0} # see https://github.com/marketplace/actions/setup-miniconda#IMPORTANT
         run: python scripts/pull_airtable.py --output-file data/raw/airtable_out.json
 
       - name: Run dvc repro
+        shell: bash -l {0} # see https://github.com/marketplace/actions/setup-miniconda#IMPORTANT
         run: dvc repro
 
       - name: git add
+        shell: bash -l {0} # see https://github.com/marketplace/actions/setup-miniconda#IMPORTANT
         run: |
           git add dvc.lock
           git add data
@@ -53,4 +57,5 @@ jobs:
           branch: ${{ github.ref }}
 
       - name: dvc push
+        shell: bash -l {0} # see https://github.com/marketplace/actions/setup-miniconda#IMPORTANT
         run: dvc push

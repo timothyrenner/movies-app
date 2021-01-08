@@ -109,10 +109,11 @@ def get_omdb(movie_id: str, session: requests.Session) -> OMDBRecord:
     ).json()
     try:
         omdb_record = make_omdb_record(raw_results)
-    except Exception:
+    except Exception as e:
         logger.exception(
-            f"Encountered exception for {json.dumps(omdb_record)}."
+            f"Encountered exception for {json.dumps(raw_results)}."
         )
+        raise e
     return omdb_record
 
 

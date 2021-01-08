@@ -83,9 +83,6 @@ def main(output_file: str = "data/raw/airtable_out.json"):
             "AIRTABLE_MOVIE_BASE_ID not in .env file or environment."
         )
 
-    # DEBUG.
-    print(API_KEY)
-    # END DEBUG.
     request_url = f"{AIRTABLE_ENDPOINT}/{BASE_ID}/Movies"
     session = requests.Session()
     session.headers.update({"Authorization": f"Bearer {API_KEY}"})

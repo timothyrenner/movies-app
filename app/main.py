@@ -17,12 +17,20 @@ from datetime import datetime
 from typing import List, Any, Dict, Tuple
 from dash.dependencies import Input, Output
 from random import sample
-from google.cloud import storage
+from google.cloud import storage, secretmanager
 from dotenv import load_dotenv, find_dotenv
 
 logger.info("Loading .env (if applicable).")
 load_dotenv(find_dotenv())
-MOVIE_ACCESS_TOKEN = os.getenv("MOVIE_ACCESS_TOKEN")
+
+logger.info("Fetching movie access token.")
+GOOGLE_CLOUD_PROJECT = os.getenv("GOOGLE_CLOUD_PROJECT")
+secret_client = secretmanager.SecretManagerServiceClient()
+secret_path = (
+    f"projects/{GOOGLE_CLOUD_PROJECT}/secrets/MOVIE_ACCESS_TOKEN/versions/1"
+)
+secret = secret_client.access_secret_version(name=secret_path)
+MOVIE_ACCESS_TOKEN = secret.payload.data.decode("UTF-8")
 
 logger.info("Fetching database location from DVC.")
 dataset_url = dvc.api.get_url(

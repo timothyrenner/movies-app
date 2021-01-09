@@ -6,3 +6,4 @@ loguru
 python-dateutil>=2.8,<3.0
 dvc>=1.11,<2.0
 google-cloud-storage>=1.19,<2.0
+google-cloud-secret-manager>=2.1,<3.0

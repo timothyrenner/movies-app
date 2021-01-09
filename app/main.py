@@ -3,6 +3,8 @@ import dash_bootstrap_components as dbc
 import dash_html_components as html
 import dash_core_components as dcc
 import plotly.graph_objs as go
+import dvc.api
+import os
 
 from tinydb import TinyDB, where
 from toolz import get_in, pluck, groupby, valmap
@@ -14,9 +16,30 @@ from datetime import datetime
 from typing import List, Any, Dict, Tuple
 from dash.dependencies import Input, Output
 from random import sample
+from google.cloud import storage
+from dotenv import load_dotenv, find_dotenv
 
-# TODO: Fetch this from the data registry, eventually.
-logger.info("Loading database.")
+logger.info("Loading .env (if applicable).")
+load_dotenv(find_dotenv())
+MOVIE_ACCESS_TOKEN = os.getenv("MOVIE_ACCESS_TOKEN")
+
+logger.info("Fetching database location from DVC.")
+dataset_url = dvc.api.get_url(
+    "data/processed/movie_database.json",
+    repo=f"https://{MOVIE_ACCESS_TOKEN}@github.com/timothyrenner/movies-app",
+)
+# The url is a fully qualified URI for the dataset.
+# e.g. gs://bucket/path/path/
+# So we don't need to initialize the bucket with the client, we can just
+# grab the file as long as we can write to it. We do need `wb` permission for
+# some reason. 🤷‍♂️
+
+logger.info("Fetching database from GCS.")
+storage_client = storage.Client()
+with open("movie_database.json", "wb") as f:
+    storage_client.download_blob_to_file(dataset_url, f)
+
+logger.info("Initializing database.")
 db = TinyDB("../data/processed/movie_database.json")
 
 logger.info("Initializing min/max year.")

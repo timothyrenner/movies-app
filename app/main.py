@@ -11,7 +11,8 @@ from toolz import get_in, pluck, groupby, valmap
 from loguru import logger
 from dateutil.parser import parse
 from dateutil.rrule import rrule, MONTHLY, WEEKLY
-from dateutil.relativedelta import relativedelta
+from dateutil.relativedelta import relativedelta, SU, MO, TU, WE, TH, FR, SA
+from dateutil._common import weekday
 from datetime import datetime
 from typing import List, Any, Dict, Tuple
 from dash.dependencies import Input, Output
@@ -425,8 +426,11 @@ def calendar_graph(
 
     watched_start = compute_month(watched[0])
     watched_end = compute_month(watched[1])
+    # Find the nearest Saturday to start.
+    movie_days_start = watched_start + relativedelta(weekday=SU(-1))
+    movie_days_end = watched_end + relativedelta(weekday=SU(1))
 
-    days_of_week: List[str] = ["Sat", "Fri", "Thu", "Wed", "Tue", "Mon", "Sun"]
+    days_of_week: List[weekday] = [SA, FR, TH, WE, TU, MO, SU]
     weeks: List[str] = [
         w.strftime("%Y-%m-%d")
         for w in rrule(WEEKLY, dtstart=watched_start, until=watched_end)
@@ -439,10 +443,12 @@ def calendar_graph(
     ]
     movie_days: List[List[str]] = [
         [
-            (w + relativedelta(days=ii)).strftime("%Y-%m-%d")
-            for w in rrule(WEEKLY, dtstart=watched_start, until=watched_end)
+            (w + relativedelta(weekday=wd)).strftime("%Y-%m-%d")
+            for w in rrule(
+                WEEKLY, dtstart=movie_days_start, until=movie_days_end
+            )
         ]
-        for ii in range(len(days_of_week))
+        for wd in days_of_week
     ]
 
     for movie in matching_movies:
@@ -486,7 +492,7 @@ def calendar_graph(
     fig = go.Figure(
         go.Heatmap(
             z=movie_counts_on_day,
-            y=days_of_week,
+            y=["Sat", "Fri", "Thu", "Wed", "Tue", "Mon", "Sun"],
             x=weeks,
             customdata=custom_data,
             colorscale="greens",

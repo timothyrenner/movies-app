@@ -49,7 +49,7 @@ with open("movie_database.json", "wb") as f:
     storage_client.download_blob_to_file(dataset_url, f)
 
 logger.info("Initializing database.")
-db = TinyDB("../data/processed/movie_database.json")
+db = TinyDB("movie_database.json")
 
 logger.info("Initializing min/max year.")
 year_table = db.table("min_max_year")

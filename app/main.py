@@ -113,6 +113,7 @@ def get_data(
     year: List[int],
     genres: List[str],
     services: List[str],
+    tags: List[str] = [],
 ) -> List[Dict[str, Any]]:
     if len(watched) != 2:
         raise ValueError(
@@ -126,7 +127,7 @@ def get_data(
         raise ValueError(f"Expected year to have 2 values: got {len(year)}.")
     min_year, max_year = year
 
-    return movies_table.search(
+    query = (
         (where("watched") >= min_watched)  # type: ignore
         & (where("watched") <= max_watched)
         & (where("year") >= min_year)
@@ -134,6 +135,11 @@ def get_data(
         & (where("genre").any(genres))
         & (where("service").any(services))
     )
+
+    if tags:
+        query = query & where("tags").any(tags)
+
+    return movies_table.search(query)  # type: ignore
 
 
 external_stylesheets = [dbc.themes.BOOTSTRAP]
@@ -172,7 +178,7 @@ sidebar = dbc.Card(
         ),
         dbc.FormGroup(
             [
-                dbc.Label("Years"),
+                dbc.Label("Release Years"),
                 dcc.RangeSlider(
                     id="year-slider",
                     min=min_year,
@@ -215,6 +221,17 @@ sidebar = dbc.Card(
                 ),
             ]
         ),
+        dbc.FormGroup(
+            [
+                dbc.Label("Tags"),
+                dcc.Dropdown(
+                    id="tag-dropdown",
+                    options=[{"label": t, "value": t} for t in tags],
+                    value=[],
+                    multi=True,
+                ),
+            ]
+        ),
     ],
     body=True,
 )
@@ -224,7 +241,6 @@ plotly_margin = {"t": 50, "b": 50, "l": 0, "r": 0}
 calendar_row = dbc.Row(
     [dbc.Col(dcc.Graph(id="calendar-graph", style=no_margin))]
 )
-# calendar_row = dcc.Graph(id="calendar-graph", style=no_margin)
 year_row = dbc.Row(
     [
         dbc.Col(dcc.Graph(id="year-graph", style=no_margin)),
@@ -279,6 +295,7 @@ sidebar_inputs = [
     Input("year-slider", "value"),
     Input("genre-dropdown", "value"),
     Input("service-dropdown", "value"),
+    Input("tag-dropdown", "value"),
 ]
 
 
@@ -288,8 +305,9 @@ def service_graph(
     year: List[int],
     genres: List[str],
     services: List[str],
+    tags: List[str],
 ) -> go.Figure:
-    matching_movies = get_data(watched, year, genres, services)
+    matching_movies = get_data(watched, year, genres, services, tags)
     movies_by_service: Dict[str, List[str]] = {}
     for movie in matching_movies:
         for service in movie["service"]:
@@ -339,8 +357,9 @@ def genre_graph(
     year: List[int],
     genres: List[str],
     services: List[str],
+    tags: List[str],
 ) -> go.Figure:
-    matching_movies = get_data(watched, year, genres, services)
+    matching_movies = get_data(watched, year, genres, services, tags)
 
     movies_by_genre: Dict[str, List[str]] = {}
     for movie in matching_movies:
@@ -386,9 +405,13 @@ def genre_graph(
 
 @dash_app.callback(Output("year-graph", "figure"), sidebar_inputs)
 def year_graph(
-    watched: List[int], year: List[int], genres: List[str], services: List[str]
+    watched: List[int],
+    year: List[int],
+    genres: List[str],
+    services: List[str],
+    tags: List[str],
 ) -> go.Figure:
-    matching_movies = get_data(watched, year, genres, services)
+    matching_movies = get_data(watched, year, genres, services, tags)
 
     # Grab the "year" field and count.
     movie_year_grouped: Dict[int, List[Dict[str, Any]]] = groupby(
@@ -428,9 +451,13 @@ def year_graph(
 
 @dash_app.callback(Output("calendar-graph", "figure"), sidebar_inputs)
 def calendar_graph(
-    watched: List[int], year: List[int], genres: List[str], services: List[str]
+    watched: List[int],
+    year: List[int],
+    genres: List[str],
+    services: List[str],
+    tags: List[str],
 ) -> go.Figure:
-    matching_movies = get_data(watched, year, genres, services)
+    matching_movies = get_data(watched, year, genres, services, tags)
 
     watched_start = compute_month(watched[0])
     watched_end = compute_month(watched[1])
@@ -516,9 +543,13 @@ def calendar_graph(
 
 @dash_app.callback(Output("rt-histogram-graph", "figure"), sidebar_inputs)
 def rt_histogram_graph(
-    watched: List[int], year: List[int], genres: List[str], services: List[str]
+    watched: List[int],
+    year: List[int],
+    genres: List[str],
+    services: List[str],
+    tags: List[str],
 ) -> go.Figure:
-    matching_movies = get_data(watched, year, genres, services)
+    matching_movies = get_data(watched, year, genres, services, tags)
 
     bin_labels = [f"{ii*10}%" for ii in range(11)]
     movies_in_bin: List[List[str]] = [[] for _ in range(len(bin_labels))]
@@ -548,9 +579,13 @@ def rt_histogram_graph(
 
 @dash_app.callback(Output("imdb-histogram-graph", "figure"), sidebar_inputs)
 def imdb_histogram_graph(
-    watched: List[int], year: List[int], genres: List[str], services: List[str]
+    watched: List[int],
+    year: List[int],
+    genres: List[str],
+    services: List[str],
+    tags: List[str],
 ) -> go.Figure:
-    matching_movies = get_data(watched, year, genres, services)
+    matching_movies = get_data(watched, year, genres, services, tags)
 
     bin_labels = [ii for ii in range(11)]
     movies_in_bin: List[List[str]] = [[] for _ in range(len(bin_labels))]

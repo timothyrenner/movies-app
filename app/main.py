@@ -237,7 +237,8 @@ sidebar = dbc.Card(
 )
 
 no_margin = {"margin": 0}
-plotly_margin = {"t": 50, "b": 50, "l": 0, "r": 0}
+plotly_margin = {"t": 50, "b": 0, "l": 0, "r": 0}
+plotly_margin_notitle = {"t": 0, "b": 0, "l": 0, "r": 0}
 
 calendar_row = dbc.Row(
     [
@@ -596,7 +597,7 @@ def year_graph(
                 hovertemplate="%{text}<extra><b>%{x}</b></extra>",
             )
         ],
-        layout=go.Layout(title="Release Year", margin=plotly_margin),
+        layout=go.Layout(margin=plotly_margin_notitle),
     )
     return fig
 
@@ -688,7 +689,7 @@ def calendar_graph(
             showscale=False,
             hovertemplate="%{customdata[1]}<extra>%{customdata[0]}</extra>",
         ),
-        layout=go.Layout(title="Calendar", margin=plotly_margin),
+        layout=go.Layout(margin=plotly_margin_notitle),
     )
     return fig
 

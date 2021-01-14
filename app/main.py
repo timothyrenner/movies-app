@@ -15,7 +15,7 @@ from dateutil.relativedelta import relativedelta, SU, MO, TU, WE, TH, FR, SA
 from dateutil._common import weekday
 from datetime import datetime
 from typing import List, Any, Dict, Tuple
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 from random import sample
 from google.cloud import storage, secretmanager
 from dotenv import load_dotenv, find_dotenv
@@ -238,39 +238,146 @@ sidebar = dbc.Card(
 
 no_margin = {"margin": 0}
 plotly_margin = {"t": 50, "b": 50, "l": 0, "r": 0}
+
 calendar_row = dbc.Row(
-    [dbc.Col(dcc.Graph(id="calendar-graph", style=no_margin))]
+    [
+        dbc.Col(
+            dbc.Card(
+                [
+                    dbc.CardHeader(
+                        dbc.Button(
+                            "Calendar",
+                            id="calendar-button",
+                            color="light",
+                            block=True,
+                        )
+                    ),
+                    dbc.Collapse(
+                        dbc.CardBody(
+                            dcc.Graph(id="calendar-graph", style=no_margin)
+                        ),
+                        is_open=True,
+                        id="calendar-collapse",
+                    ),
+                ]
+            )
+        )
+    ]
 )
 year_row = dbc.Row(
     [
-        dbc.Col(dcc.Graph(id="year-graph", style=no_margin)),
+        dbc.Col(
+            dbc.Card(
+                [
+                    dbc.CardHeader(
+                        dbc.Button(
+                            "Release Years",
+                            id="year-button",
+                            color="light",
+                            block=True,
+                        ),
+                    ),
+                    dbc.Collapse(
+                        dbc.CardBody(
+                            dcc.Graph(id="year-graph", style=no_margin)
+                        ),
+                        is_open=True,
+                        id="year-collapse",
+                    ),
+                ]
+            )
+        )
     ]
 )
 breakdown_row = dbc.Row(
     [
         dbc.Col(
-            dcc.Graph(id="service-graph", style=no_margin),
-        ),
-        dbc.Col(
-            dcc.Graph(id="genre-graph", style=no_margin),
-        ),
+            dbc.Card(
+                [
+                    dbc.CardHeader(
+                        dbc.Button(
+                            "Services & Genres",
+                            id="services-genres-button",
+                            color="light",
+                            block=True,
+                        ),
+                    ),
+                    dbc.Collapse(
+                        dbc.CardBody(
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        dcc.Graph(
+                                            id="service-graph", style=no_margin
+                                        ),
+                                        md=6,
+                                        lg=6,
+                                        xl=6,
+                                    ),
+                                    dbc.Col(
+                                        dcc.Graph(
+                                            id="genre-graph", style=no_margin
+                                        ),
+                                        md=6,
+                                        lg=6,
+                                        xl=6,
+                                    ),
+                                ]
+                            )
+                        ),
+                        is_open=False,
+                        id="services-genres-collapse",
+                    ),
+                ]
+            )
+        )
     ]
 )
 histogram_row = dbc.Row(
     [
         dbc.Col(
-            dcc.Graph(id="rt-histogram-graph", style=no_margin),
-            md=6,
-            lg=6,
-            xl=6,
-        ),
-        # NOTE: maybe placeholder here.
-        dbc.Col(
-            dcc.Graph(id="imdb-histogram-graph", style=no_margin),
-            md=6,
-            lg=6,
-            xl=6,
-        ),
+            dbc.Card(
+                [
+                    dbc.CardHeader(
+                        dbc.Button(
+                            "Ratings & Reviews",
+                            id="ratings-reviews-button",
+                            color="light",
+                            block=True,
+                        )
+                    ),
+                    dbc.Collapse(
+                        dbc.CardBody(
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        dcc.Graph(
+                                            id="rt-histogram-graph",
+                                            style=no_margin,
+                                        ),
+                                        md=6,
+                                        lg=6,
+                                        xl=6,
+                                    ),
+                                    # NOTE: maybe placeholder here.
+                                    dbc.Col(
+                                        dcc.Graph(
+                                            id="imdb-histogram-graph",
+                                            style=no_margin,
+                                        ),
+                                        md=6,
+                                        lg=6,
+                                        xl=6,
+                                    ),
+                                ]
+                            )
+                        ),
+                        is_open=False,
+                        id="ratings-reviews-collapse",
+                    ),
+                ]
+            )
+        )
     ]
 )
 
@@ -289,6 +396,51 @@ dash_app.layout = dbc.Container(
     ],
     fluid=True,
 )
+
+
+@dash_app.callback(
+    Output("calendar-collapse", "is_open"),
+    [Input("calendar-button", "n_clicks")],
+    [State("calendar-collapse", "is_open")],
+)
+def calendar_collapse(n_clicks: int, is_open: bool) -> bool:
+    if n_clicks:
+        return not is_open
+    return is_open
+
+
+@dash_app.callback(
+    Output("year-collapse", "is_open"),
+    [Input("year-button", "n_clicks")],
+    [State("year-collapse", "is_open")],
+)
+def year_collapse(n_clicks: int, is_open: bool) -> bool:
+    if n_clicks:
+        return not is_open
+    return is_open
+
+
+@dash_app.callback(
+    Output("services-genres-collapse", "is_open"),
+    [Input("services-genres-button", "n_clicks")],
+    [State("services-genres-collapse", "is_open")],
+)
+def services_genres_collapse(n_clicks: int, is_open: bool) -> bool:
+    if n_clicks:
+        return not is_open
+    return is_open
+
+
+@dash_app.callback(
+    Output("ratings-reviews-collapse", "is_open"),
+    [Input("ratings-reviews-button", "n_clicks")],
+    [State("ratings-reviews-collapse", "is_open")],
+)
+def ratings_reviews_collapse(n_clicks: int, is_open: bool) -> bool:
+    if n_clicks:
+        return not is_open
+    return is_open
+
 
 sidebar_inputs = [
     Input("watched-slider", "value"),

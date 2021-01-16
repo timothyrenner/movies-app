@@ -24,9 +24,9 @@ jobs:
           export_default_credentials: true
 
       - name: Run Cloud Build
-        working_directory: app
+        working-directory: app
         run: make build
 
       - name: Deploy Cloud Run Service
-        working_directory: app
+        working-directory: app
         run: make deploy

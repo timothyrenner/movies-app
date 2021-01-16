@@ -1,7 +1,9 @@
 TAG_NAME?=dev-local
 
 build:
-	gcloud builds submit . --tag gcr.io/$(PERSONAL_GCP_PROJECT)/movies-app:$(TAG_NAME)
+	gcloud builds submit . \
+		--tag gcr.io/$(PERSONAL_GCP_PROJECT)/movies-app:$(TAG_NAME) \
+		--logs-dir $(PERSONAL_GCP_PROJECT)/build-logs
 
 deploy:
 	gcloud run deploy movies-app \

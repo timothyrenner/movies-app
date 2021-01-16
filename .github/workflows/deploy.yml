@@ -1,0 +1,32 @@
+name: Deploy
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up environment.
+        run: |
+          echo PERSONAL_GCP_PROJECT=${{ secrets.PERSONAL_PROJECT_ID }} >> $GITHUB_ENV
+          echo TAG_NAME=${{ github.event.release.tag_name }} >> $GITHUB_ENV
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: ${{ secrets.PERSONAL_PROJECT_ID }}
+          service_account_key: ${{ secrets.MOVIES_APP_CICD_SERVICE_ACCOUNT_KEY }}
+          export_default_credentials: true
+
+      - name: Run Cloud Build
+        working_directory: app
+        run: make build
+
+      - name: Deploy Cloud Run Service
+        working_directory: app
+        run: make deploy

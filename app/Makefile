@@ -1,9 +1,11 @@
+TAG_NAME?=dev-local
+
 build:
-	gcloud builds submit --tag gcr.io/$(PERSONAL_GCP_PROJECT)/movies-app
+	gcloud builds submit . --tag gcr.io/$(PERSONAL_GCP_PROJECT)/movies-app:$(TAG_NAME)
 
 deploy:
 	gcloud run deploy movies-app \
-		--image gcr.io/$(PERSONAL_GCP_PROJECT)/movies-app \
+		--image gcr.io/$(PERSONAL_GCP_PROJECT)/movies-app:$(TAG_NAME) \
 		--platform managed \
 		--max-instances 1 \
 		--service-account movies-app@$(PERSONAL_GCP_PROJECT).iam.gserviceaccount.com \

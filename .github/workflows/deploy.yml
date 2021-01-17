@@ -37,9 +37,6 @@ jobs:
           push: true
           tags: gcr.io/${{ secrets.PERSONAL_PROJECT_ID }}/movies-app:${{ github.event.release.tag_name }}
 
-      # - name: Docker Push
-      #   run: docker push gcr.io/${{ secrets.PERSONAL_PROJECT_ID }}/movies-app:${{ github.event.release.tag_name }}
-
       - name: Setup Google Cloud SDK
         uses: google-github-actions/setup-gcloud@master
         with:

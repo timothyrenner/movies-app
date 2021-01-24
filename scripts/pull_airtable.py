@@ -21,8 +21,8 @@ AIRTABLE_ENDPOINT = "https://api.airtable.com/v0"
 @dataclass
 class AirtableRecord:
     name: str
-    rating: int
-    imdb_link: str
+    rating: Optional[int]
+    imdb_link: Optional[str]
     watched: str
     tags: List[str]
     service: List[str]
@@ -33,7 +33,7 @@ def make_record(dict_record: Dict[str, Any]) -> AirtableRecord:
 
     return AirtableRecord(
         name=get("Name", record_fields),
-        rating=get("Rating", record_fields),
+        rating=get("Rating", record_fields, None),
         imdb_link=get("IMDB Link", record_fields, None),
         watched=get("Watched", record_fields),
         tags=get("Tags", record_fields, []),

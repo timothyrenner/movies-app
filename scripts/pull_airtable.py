@@ -5,7 +5,7 @@ import json
 
 from dotenv import load_dotenv, find_dotenv
 from loguru import logger
-from typing import Any, List, Dict
+from typing import Any, List, Dict, Optional
 from toolz import get
 from dataclasses import dataclass, asdict
 

@@ -123,7 +123,7 @@ def main(
     skip_cache: bool = False,
 ):
     if not API_KEY:
-        raise ValueError(f"No OMDB key found in environment.")
+        raise ValueError("No OMDB key found in environment.")
     imdb_ids: Set[str] = set()
     omdb_records: List[OMDBRecord] = []
     if skip_cache:

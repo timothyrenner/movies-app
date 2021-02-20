@@ -57,7 +57,7 @@ class MovieRecord:
     watched: str
     ratings: List[Rating]
     service: List[str]
-    imdb_link: str
+    imdb_link: Optional[str]
     imdb_id: str
 
 
@@ -154,13 +154,9 @@ def main(
 ):
     logger.info(f"Reading airtable file {airtable_file}.")
     with open(airtable_file, "r") as f:
-        airtable_records = {
-            get_imdb_id(r.imdb_link): r
-            for r in thread_last(
-                f, (map, json.loads), (map, lambda x: AirtableRecord(**x))
-            )
-            if r.imdb_link
-        }
+        airtable_records = thread_last(
+            f, (map, json.loads), (map, lambda x: AirtableRecord(**x)), list
+        )
     logger.info(f"Read {len(airtable_records)} from {airtable_file}.")
 
     logger.info(f"Reading OMDB file {omdb_file}.")
@@ -175,8 +171,8 @@ def main(
 
     logger.info("Merging records.")
     movie_records: List[MovieRecord] = []
-    for imdb_id in airtable_records.keys():
-        airtable_record = airtable_records[imdb_id]
+    for airtable_record in airtable_records:
+        imdb_id = get_imdb_id(airtable_record.imdb_link)
         omdb_record = omdb_records[imdb_id]
 
         movie_record = merge_airtable_omdb(airtable_record, omdb_record)

@@ -60,7 +60,7 @@ try:
         storage_client.download_blob_to_file(dataset_url, f)
     movie_database_path = "movie_database.json"
 except Exception:
-    logger.warning(
+    logger.exception(
         "Some bullshit went wrong loading the DB. Trying local path."
     )
     movie_database_path = "../data/processed/movie_database.json"

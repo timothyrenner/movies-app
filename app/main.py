@@ -35,7 +35,7 @@ try:
     secret_client = secretmanager.SecretManagerServiceClient()
     secret_path = (
         f"projects/{GOOGLE_CLOUD_PROJECT}/secrets/"
-        "MOVIE_ACCESS_TOKEN/versions/1"
+        "MOVIE_ACCESS_TOKEN/versions/2"
     )
     secret = secret_client.access_secret_version(name=secret_path)
     MOVIE_ACCESS_TOKEN = secret.payload.data.decode("UTF-8")

@@ -5,43 +5,43 @@ stages:
       --output-file data/processed/movie_database.json
     deps:
     - path: data/interim/merged_records.json
-      md5: f945b815e767de1b8647094e923b3f25
-      size: 164289
+      md5: 020bc976c8a9ea771c89369780f2c515
+      size: 166615
     - path: scripts/create_db.py
       md5: 661f871778d2a7f92f444f80eb98681a
       size: 4409
     outs:
     - path: data/processed/movie_database.json
-      md5: ff498ed318f2cb1a194a648344537443
-      size: 167176
+      md5: 61808b75fe9b4858f3ff78c78d2bb06f
+      size: 169526
   pull_omdb:
     cmd: python scripts/pull_omdb.py --airtable-file data/raw/airtable_out.json --output-file
       data/raw/omdb_out.json
     deps:
     - path: data/raw/airtable_out.json
-      md5: e32846ca584fab6f10459e1472ad6912
-      size: 36023
+      md5: bab88d5aa15325abcdfeb133226588de
+      size: 36491
     - path: scripts/pull_omdb.py
       md5: ca6f1d08278411bb707597f08feeae16
       size: 5492
     outs:
     - path: data/raw/omdb_out.json
-      md5: 29a5a2e2c6a9b36836df9882717e3f58
-      size: 212041
+      md5: 8890050b4c9b56386425ae6177691c4c
+      size: 215163
   merge_airtable_omdb:
     cmd: python scripts/merge_airtable_omdb.py --airtable-file data/raw/airtable_out.json
       --omdb-file data/raw/omdb_out.json --output-file data/interim/merged_records.json
     deps:
     - path: data/raw/airtable_out.json
-      md5: e32846ca584fab6f10459e1472ad6912
-      size: 36023
+      md5: bab88d5aa15325abcdfeb133226588de
+      size: 36491
     - path: data/raw/omdb_out.json
-      md5: 29a5a2e2c6a9b36836df9882717e3f58
-      size: 212041
+      md5: 8890050b4c9b56386425ae6177691c4c
+      size: 215163
     - path: scripts/merge_airtable_omdb.py
       md5: ae94a820f646ff49c96dbf9cbbdd0689
       size: 5642
     outs:
     - path: data/interim/merged_records.json
-      md5: f945b815e767de1b8647094e923b3f25
-      size: 164289
+      md5: 020bc976c8a9ea771c89369780f2c515
+      size: 166615

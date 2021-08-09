@@ -44,7 +44,7 @@ class Rating:
 class MovieRecord:
     title: str
     year: int
-    runtime_minutes: int
+    runtime_minutes: Optional[int]
     release_date: Optional[str]
     genre: List[str]
     country: str

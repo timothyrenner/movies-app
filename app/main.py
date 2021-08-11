@@ -178,7 +178,7 @@ sidebar = dbc.Card(
                     min=0,
                     max=month_max,
                     step=1,
-                    value=[0, month_max],
+                    value=[max(0, month_max - 12), month_max],
                     marks={
                         m: {
                             "label": compute_month(m).strftime("%m/%Y"),

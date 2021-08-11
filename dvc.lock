@@ -5,43 +5,43 @@ stages:
       --output-file data/processed/movie_database.json
     deps:
     - path: data/interim/merged_records.json
-      md5: a449d6e6a4f0a6e0bf9e5930e3d302db
-      size: 174014
+      md5: cfb318a0536902395a186769bd77ec16
+      size: 177413
     - path: scripts/create_db.py
       md5: 661f871778d2a7f92f444f80eb98681a
       size: 4409
     outs:
     - path: data/processed/movie_database.json
-      md5: 3e876fe3bf6faca39c043dfc6e5f7051
-      size: 177005
+      md5: 8a01885177b1b4eb366c89f47ed6676b
+      size: 180444
   pull_omdb:
     cmd: python scripts/pull_omdb.py --airtable-file data/raw/airtable_out.json --output-file
       data/raw/omdb_out.json
     deps:
     - path: data/raw/airtable_out.json
-      md5: eac173a0911655aa80cdf79593d48d54
-      size: 38098
+      md5: dedcc5f5b5a8f44e95268bb5a97e4fe9
+      size: 38914
     - path: scripts/pull_omdb.py
       md5: ca6f1d08278411bb707597f08feeae16
       size: 5492
     outs:
     - path: data/raw/omdb_out.json
-      md5: 68d84d3906cb35a6d1f86a8a330cd8a6
-      size: 225280
+      md5: 33a84bd8a82c8de853b42abefcf37716
+      size: 229962
   merge_airtable_omdb:
     cmd: python scripts/merge_airtable_omdb.py --airtable-file data/raw/airtable_out.json
       --omdb-file data/raw/omdb_out.json --output-file data/interim/merged_records.json
     deps:
     - path: data/raw/airtable_out.json
-      md5: eac173a0911655aa80cdf79593d48d54
-      size: 38098
+      md5: dedcc5f5b5a8f44e95268bb5a97e4fe9
+      size: 38914
     - path: data/raw/omdb_out.json
-      md5: 68d84d3906cb35a6d1f86a8a330cd8a6
-      size: 225280
+      md5: 33a84bd8a82c8de853b42abefcf37716
+      size: 229962
     - path: scripts/merge_airtable_omdb.py
-      md5: ae94a820f646ff49c96dbf9cbbdd0689
-      size: 5642
+      md5: 4452ec2b70aaab4a831a99d2f6c61e46
+      size: 5755
     outs:
     - path: data/interim/merged_records.json
-      md5: a449d6e6a4f0a6e0bf9e5930e3d302db
-      size: 174014
+      md5: cfb318a0536902395a186769bd77ec16
+      size: 177413

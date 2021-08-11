@@ -44,7 +44,7 @@ class Rating:
 class MovieRecord:
     title: str
     year: int
-    runtime_minutes: int
+    runtime_minutes: Optional[int]
     release_date: Optional[str]
     genre: List[str]
     country: str
@@ -69,8 +69,12 @@ def convert_date(date_str: str) -> Optional[str]:
         return None
 
 
-def convert_time(time_str: str) -> int:
-    return int(parse_time(time_str) / 60)
+def convert_time(time_str: str) -> Optional[int]:
+    parsed_time = parse_time(time_str)
+    if parsed_time:
+        return int(parse_time(time_str) / 60)
+    else:
+        return None
 
 
 def split_commas(comma_sep_str: str) -> List[str]:

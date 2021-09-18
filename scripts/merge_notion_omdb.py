@@ -10,7 +10,7 @@ from typing import List, Optional
 from enum import Enum
 from loguru import logger
 from dataclasses import dataclass, asdict
-from pull_airtable import AirtableRecord
+from pull_notion import MovieRecord as NotionMovieRecord
 from pull_omdb import OMDBRecord, get_imdb_id
 
 
@@ -56,7 +56,7 @@ class MovieRecord:
     tags: List[str]
     watched: str
     ratings: List[Rating]
-    service: List[str]
+    service: str
     imdb_link: Optional[str]
     imdb_id: str
 
@@ -122,7 +122,7 @@ def get_writer(writer_str: str) -> Writer:
 
 
 def merge_airtable_omdb(
-    airtable_record: AirtableRecord, omdb_record: OMDBRecord
+    notion_movie_record: NotionMovieRecord, omdb_record: OMDBRecord
 ) -> MovieRecord:
     return MovieRecord(
         title=omdb_record.title,
@@ -138,30 +138,29 @@ def merge_airtable_omdb(
         writer=thread_last(
             omdb_record.writer, split_commas, (map, get_writer), list
         ),
-        tags=airtable_record.tags,
-        watched=airtable_record.watched,
+        tags=notion_movie_record.tags,
+        watched=notion_movie_record.watched,
         ratings=[
             Rating(source=x["Source"], value=x["Value"])
             for x in omdb_record.ratings
-        ]
-        + [Rating(source="me", value=str(airtable_record.rating))],
-        service=airtable_record.service,
-        imdb_link=airtable_record.imdb_link,
+        ],
+        service=notion_movie_record.service,
+        imdb_link=notion_movie_record.imdb_link,
         imdb_id=omdb_record.imdb_id,
     )
 
 
 def main(
-    airtable_file: str = "data/raw/airtable_out.json",
+    movie_file: str = "data/raw/notion_out.json",
     omdb_file: str = "data/raw/omdb_out.json",
     output_file: str = "data/interim/merged_records.json",
 ):
-    logger.info(f"Reading airtable file {airtable_file}.")
-    with open(airtable_file, "r") as f:
-        airtable_records = thread_last(
-            f, (map, json.loads), (map, lambda x: AirtableRecord(**x)), list
+    logger.info(f"Reading movie file {movie_file}.")
+    with open(movie_file, "r") as f:
+        notion_movie_records = thread_last(
+            f, (map, json.loads), (map, lambda x: NotionMovieRecord(**x)), list
         )
-    logger.info(f"Read {len(airtable_records)} from {airtable_file}.")
+    logger.info(f"Read {len(notion_movie_records)} from {movie_file}.")
 
     logger.info(f"Reading OMDB file {omdb_file}.")
     with open(omdb_file, "r") as f:
@@ -175,11 +174,11 @@ def main(
 
     logger.info("Merging records.")
     movie_records: List[MovieRecord] = []
-    for airtable_record in airtable_records:
-        imdb_id = get_imdb_id(airtable_record.imdb_link)
+    for notion_movie_record in notion_movie_records:
+        imdb_id = get_imdb_id(notion_movie_record.imdb_link)
         omdb_record = omdb_records[imdb_id]
 
-        movie_record = merge_airtable_omdb(airtable_record, omdb_record)
+        movie_record = merge_airtable_omdb(notion_movie_record, omdb_record)
         movie_records.append(movie_record)
     logger.info(f"Created {len(movie_records)} merged records.")
 

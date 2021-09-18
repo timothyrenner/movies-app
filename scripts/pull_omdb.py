@@ -11,7 +11,7 @@ from dataclasses import dataclass, asdict
 from toolz import thread_first, thread_last, get
 from typing import Dict, Any
 
-from pull_airtable import AirtableRecord
+from pull_notion import MovieRecord
 
 
 @dataclass
@@ -54,8 +54,8 @@ def load_cache(file: str) -> List[str]:
         return f.readlines()
 
 
-def hydrate_airtable_record(dict_record: Dict[str, Any]) -> AirtableRecord:
-    return AirtableRecord(**dict_record)
+def hydrate_movie_record(dict_record: Dict[str, Any]) -> MovieRecord:
+    return MovieRecord(**dict_record)
 
 
 def get_imdb_id(imdb_url: str) -> str:
@@ -118,7 +118,7 @@ def get_omdb(movie_id: str, session: requests.Session) -> OMDBRecord:
 
 
 def main(
-    airtable_file: str = "data/raw/airtable_out.json",
+    movie_file: str = "data/raw/notion_out.json",
     output_file: str = "data/raw/omdb_out.json",
     skip_cache: bool = False,
 ):
@@ -139,29 +139,27 @@ def main(
     session = requests.Session()
     logger.info("Loading airtable entries and fetching OMDB data.")
     new_records = 0
-    with open(airtable_file, "r") as f:
-        airtable_entries = thread_last(
-            f, (map, json.loads), (map, hydrate_airtable_record), list
+    with open(movie_file, "r") as f:
+        movie_entries = thread_last(
+            f, (map, json.loads), (map, hydrate_movie_record), list
         )
-    logger.info(f"Loaded {len(airtable_entries)}.")
-    for airtable_entry in airtable_entries:
-        if not airtable_entry.imdb_link:
+    logger.info(f"Loaded {len(movie_entries)}.")
+    for movie_entry in movie_entries:
+        if not movie_entry.imdb_link:
             logger.warning(
-                f"{airtable_entry.name} does not have an IMDB link. Skipping."
+                f"{movie_entry.name} does not have an IMDB link. Skipping."
             )
             continue
 
-        imdb_id = get_imdb_id(airtable_entry.imdb_link)
+        imdb_id = get_imdb_id(movie_entry.imdb_link)
 
         if imdb_id in imdb_ids:
             logger.info(
-                f"Found {airtable_entry.name} ({imdb_id}) in cache. Skipping."
+                f"Found {movie_entry.name} ({imdb_id}) in cache. Skipping."
             )
             continue
 
-        logger.info(
-            f"Pulling OMDB data for {airtable_entry.name} ({imdb_id})."
-        )
+        logger.info(f"Pulling OMDB data for {movie_entry.name} ({imdb_id}).")
         try:
             omdb_record = get_omdb(imdb_id, session)
             omdb_records.append(omdb_record)

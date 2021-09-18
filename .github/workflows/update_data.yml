@@ -47,8 +47,8 @@ jobs:
       - name: Pull DVC
         run: dvc pull
 
-      - name: Pull Airtable data
-        run: python scripts/pull_airtable.py --output-file data/raw/airtable_out.json
+      - name: Pull Notion data
+        run: python scripts/pull_notion.py --output-file data/raw/notion_out.json
 
       - name: Run DVC repro
         run: dvc repro

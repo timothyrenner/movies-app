@@ -1,22 +1,22 @@
 stages:
   pull_omdb:
     cmd:
-      python scripts/pull_omdb.py --airtable-file data/raw/airtable_out.json --output-file
+      python scripts/pull_omdb.py --movie-file data/raw/notion_out.json --output-file
       data/raw/omdb_out.json
     deps:
-      - data/raw/airtable_out.json
+      - data/raw/notion_out.json
       - scripts/pull_omdb.py
     outs:
       - data/raw/omdb_out.json:
           persist: true
-  merge_airtable_omdb:
+  merge_notion_omdb:
     cmd:
-      python scripts/merge_airtable_omdb.py --airtable-file data/raw/airtable_out.json
+      python scripts/merge_notion_omdb.py --movie-file data/raw/notion_out.json
       --omdb-file data/raw/omdb_out.json --output-file data/interim/merged_records.json
     deps:
-      - data/raw/airtable_out.json
+      - data/raw/notion_out.json
       - data/raw/omdb_out.json
-      - scripts/merge_airtable_omdb.py
+      - scripts/merge_notion_omdb.py
     outs:
       - data/interim/merged_records.json
   create_db:

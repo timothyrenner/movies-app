@@ -99,7 +99,19 @@ def fetch_data(
 
     response = session.post(
         f"{NOTION_URL}/v1/databases/{database_id}/query",
-        json={"page_size": 100},
+        json={
+            # Only pull movies I've watched, no the ones on the "To Watch"
+            # list.
+            "filter": {
+                "and": [
+                    {
+                        "property": "Watched",
+                        "date": {"is_not_empty": True},
+                    }
+                ]
+            },
+            "page_size": 100
+        }
     )
     if not response.ok:
         logger.error("Query to the database failed.")

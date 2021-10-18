@@ -5,29 +5,29 @@ stages:
       --output-file data/processed/movie_database.json
     deps:
     - path: data/interim/merged_records.json
-      md5: 7a9001f4bc4f3e38b2f2be999afffab4
-      size: 189788
+      md5: 6e34d1422ccc140ddd29898288099f71
+      size: 192614
     - path: scripts/create_db.py
       md5: 661f871778d2a7f92f444f80eb98681a
       size: 4409
     outs:
     - path: data/processed/movie_database.json
-      md5: 27019230a521313acc3a677e8747ab81
-      size: 193718
+      md5: 2b668cd9826f04ed8463e4fcdd66021a
+      size: 196634
   pull_omdb:
     cmd: python scripts/pull_omdb.py --movie-file data/raw/notion_out.json --output-file
       data/raw/omdb_out.json
     deps:
     - path: data/raw/notion_out.json
-      md5: a6fb0f48e8791211d51399d0c59e2f48
-      size: 44789
+      md5: c336fde5f6eae824759f11ed79612fde
+      size: 45455
     - path: scripts/pull_omdb.py
       md5: 2a4747a0b5363d1c8006094af0404383
       size: 5418
     outs:
     - path: data/raw/omdb_out.json
-      md5: 8e414a042dcba5e82282203902e3f36c
-      size: 257097
+      md5: 7eb7eaa630849f8bd77563875af4bb66
+      size: 258869
   merge_airtable_omdb:
     cmd: python scripts/merge_airtable_omdb.py --airtable-file data/raw/airtable_out.json
       --omdb-file data/raw/omdb_out.json --output-file data/interim/merged_records.json
@@ -50,15 +50,15 @@ stages:
       --omdb-file data/raw/omdb_out.json --output-file data/interim/merged_records.json
     deps:
     - path: data/raw/notion_out.json
-      md5: a6fb0f48e8791211d51399d0c59e2f48
-      size: 44789
+      md5: c336fde5f6eae824759f11ed79612fde
+      size: 45455
     - path: data/raw/omdb_out.json
-      md5: 8e414a042dcba5e82282203902e3f36c
-      size: 257097
+      md5: 7eb7eaa630849f8bd77563875af4bb66
+      size: 258869
     - path: scripts/merge_notion_omdb.py
       md5: 86131136f8937305830b56bbdb51fe91
       size: 5731
     outs:
     - path: data/interim/merged_records.json
-      md5: 7a9001f4bc4f3e38b2f2be999afffab4
-      size: 189788
+      md5: 6e34d1422ccc140ddd29898288099f71
+      size: 192614

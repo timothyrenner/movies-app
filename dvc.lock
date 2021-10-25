@@ -5,29 +5,29 @@ stages:
       --output-file data/processed/movie_database.json
     deps:
     - path: data/interim/merged_records.json
-      md5: 6e34d1422ccc140ddd29898288099f71
-      size: 192614
+      md5: a9caba340c8b739cb4d06fc11762ffff
+      size: 193250
     - path: scripts/create_db.py
       md5: 661f871778d2a7f92f444f80eb98681a
       size: 4409
     outs:
     - path: data/processed/movie_database.json
-      md5: 2b668cd9826f04ed8463e4fcdd66021a
-      size: 196634
+      md5: 2d8c04b1ff19a2486f9f9ff64997a71f
+      size: 197278
   pull_omdb:
     cmd: python scripts/pull_omdb.py --movie-file data/raw/notion_out.json --output-file
       data/raw/omdb_out.json
     deps:
     - path: data/raw/notion_out.json
-      md5: c336fde5f6eae824759f11ed79612fde
-      size: 45455
+      md5: 4e9042ed0b6336f452bcd9e1b266489b
+      size: 45611
     - path: scripts/pull_omdb.py
       md5: 2a4747a0b5363d1c8006094af0404383
       size: 5418
     outs:
     - path: data/raw/omdb_out.json
-      md5: 7eb7eaa630849f8bd77563875af4bb66
-      size: 258869
+      md5: 4cd19245ab8c8bf35f53b788f4b4a5a5
+      size: 259776
   merge_airtable_omdb:
     cmd: python scripts/merge_airtable_omdb.py --airtable-file data/raw/airtable_out.json
       --omdb-file data/raw/omdb_out.json --output-file data/interim/merged_records.json
@@ -50,15 +50,15 @@ stages:
       --omdb-file data/raw/omdb_out.json --output-file data/interim/merged_records.json
     deps:
     - path: data/raw/notion_out.json
-      md5: c336fde5f6eae824759f11ed79612fde
-      size: 45455
+      md5: 4e9042ed0b6336f452bcd9e1b266489b
+      size: 45611
     - path: data/raw/omdb_out.json
-      md5: 7eb7eaa630849f8bd77563875af4bb66
-      size: 258869
+      md5: 4cd19245ab8c8bf35f53b788f4b4a5a5
+      size: 259776
     - path: scripts/merge_notion_omdb.py
       md5: 86131136f8937305830b56bbdb51fe91
       size: 5731
     outs:
     - path: data/interim/merged_records.json
-      md5: 6e34d1422ccc140ddd29898288099f71
-      size: 192614
+      md5: a9caba340c8b739cb4d06fc11762ffff
+      size: 193250

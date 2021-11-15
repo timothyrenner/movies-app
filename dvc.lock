@@ -5,29 +5,29 @@ stages:
       --output-file data/processed/movie_database.json
     deps:
     - path: data/interim/merged_records.json
-      md5: 83c1e5d2b7496cc541fdd6fbdac4c93c
-      size: 196510
+      md5: 1d1b0bf47751929554186d4836563d06
+      size: 198526
     - path: scripts/create_db.py
       md5: 661f871778d2a7f92f444f80eb98681a
       size: 4409
     outs:
     - path: data/processed/movie_database.json
-      md5: c59453322ffd8cf5147cab805bdbe487
-      size: 200578
+      md5: 593f78cdcf4db2b96effbec6a86bd544
+      size: 202618
   pull_omdb:
     cmd: python scripts/pull_omdb.py --movie-file data/raw/notion_out.json --output-file
       data/raw/omdb_out.json
     deps:
     - path: data/raw/notion_out.json
-      md5: 867739b7b9ca48534d3069ca80685c18
-      size: 46450
+      md5: 0565ead15f15b0b061e1c94d751cc4af
+      size: 46914
     - path: scripts/pull_omdb.py
       md5: 2a4747a0b5363d1c8006094af0404383
       size: 5418
     outs:
     - path: data/raw/omdb_out.json
-      md5: 7d59ea9605240a13e1bac0c46e2b3ebb
-      size: 262769
+      md5: cadb0ef6f629575da3b93233cc0bb992
+      size: 265788
   merge_airtable_omdb:
     cmd: python scripts/merge_airtable_omdb.py --airtable-file data/raw/airtable_out.json
       --omdb-file data/raw/omdb_out.json --output-file data/interim/merged_records.json
@@ -50,15 +50,15 @@ stages:
       --omdb-file data/raw/omdb_out.json --output-file data/interim/merged_records.json
     deps:
     - path: data/raw/notion_out.json
-      md5: 867739b7b9ca48534d3069ca80685c18
-      size: 46450
+      md5: 0565ead15f15b0b061e1c94d751cc4af
+      size: 46914
     - path: data/raw/omdb_out.json
-      md5: 7d59ea9605240a13e1bac0c46e2b3ebb
-      size: 262769
+      md5: cadb0ef6f629575da3b93233cc0bb992
+      size: 265788
     - path: scripts/merge_notion_omdb.py
       md5: 86131136f8937305830b56bbdb51fe91
       size: 5731
     outs:
     - path: data/interim/merged_records.json
-      md5: 83c1e5d2b7496cc541fdd6fbdac4c93c
-      size: 196510
+      md5: 1d1b0bf47751929554186d4836563d06
+      size: 198526

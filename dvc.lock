@@ -5,29 +5,29 @@ stages:
       --output-file data/processed/movie_database.json
     deps:
     - path: data/interim/merged_records.json
-      md5: 14676ceade2f6154d5067a104d2edf5d
-      size: 199906
+      md5: 2a515f4364a652e9104188953bb6ac77
+      size: 202358
     - path: scripts/create_db.py
       md5: 661f871778d2a7f92f444f80eb98681a
       size: 4409
     outs:
     - path: data/processed/movie_database.json
-      md5: deac7d7f8e73a4f4a2fb587cb2ff2032
-      size: 204014
+      md5: 46ab72da868acae3f03bfc8474930fc2
+      size: 206498
   pull_omdb:
     cmd: python scripts/pull_omdb.py --movie-file data/raw/notion_out.json --output-file
       data/raw/omdb_out.json
     deps:
     - path: data/raw/notion_out.json
-      md5: 272e73a38a5a3706cba3aea7e90f2b3d
-      size: 47263
+      md5: 680dbf6d640d67775b263537f9b3c733
+      size: 48000
     - path: scripts/pull_omdb.py
       md5: 2a4747a0b5363d1c8006094af0404383
       size: 5418
     outs:
     - path: data/raw/omdb_out.json
-      md5: 0c11f122cdeb8902e50b58b6975449c9
-      size: 266704
+      md5: e7ec76517ce522e408dc94508be1f341
+      size: 269541
   merge_airtable_omdb:
     cmd: python scripts/merge_airtable_omdb.py --airtable-file data/raw/airtable_out.json
       --omdb-file data/raw/omdb_out.json --output-file data/interim/merged_records.json
@@ -50,15 +50,15 @@ stages:
       --omdb-file data/raw/omdb_out.json --output-file data/interim/merged_records.json
     deps:
     - path: data/raw/notion_out.json
-      md5: 272e73a38a5a3706cba3aea7e90f2b3d
-      size: 47263
+      md5: 680dbf6d640d67775b263537f9b3c733
+      size: 48000
     - path: data/raw/omdb_out.json
-      md5: 0c11f122cdeb8902e50b58b6975449c9
-      size: 266704
+      md5: e7ec76517ce522e408dc94508be1f341
+      size: 269541
     - path: scripts/merge_notion_omdb.py
       md5: 86131136f8937305830b56bbdb51fe91
       size: 5731
     outs:
     - path: data/interim/merged_records.json
-      md5: 14676ceade2f6154d5067a104d2edf5d
-      size: 199906
+      md5: 2a515f4364a652e9104188953bb6ac77
+      size: 202358

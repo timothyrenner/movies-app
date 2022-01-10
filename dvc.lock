@@ -5,29 +5,29 @@ stages:
       --output-file data/processed/movie_database.json
     deps:
     - path: data/interim/merged_records.json
-      md5: e72845ac7d7b4756254bcc7453e92581
-      size: 215055
+      md5: 2fb987b47ceb6cfbf2c8c49889dc1d9d
+      size: 217103
     - path: scripts/create_db.py
       md5: 661f871778d2a7f92f444f80eb98681a
       size: 4409
     outs:
     - path: data/processed/movie_database.json
-      md5: beaf2249038405d7c558ae8b6de48bc9
-      size: 219339
+      md5: f2d1c0e18e9a55c0d77202399d4fd8b7
+      size: 221411
   pull_omdb:
     cmd: python scripts/pull_omdb.py --movie-file data/raw/notion_out.json --output-file
       data/raw/omdb_out.json
     deps:
     - path: data/raw/notion_out.json
-      md5: 731d5e330a6305fab8af2af63c96180e
-      size: 51053
+      md5: cd7d3079a05b002759047d467ac72ff3
+      size: 51572
     - path: scripts/pull_omdb.py
       md5: 2a4747a0b5363d1c8006094af0404383
       size: 5418
     outs:
     - path: data/raw/omdb_out.json
-      md5: ed34afeb4445e9dda77c818f01536ddb
-      size: 283900
+      md5: d4886ed2df273c5ca1b79b2e78d20bde
+      size: 285644
   merge_airtable_omdb:
     cmd: python scripts/merge_airtable_omdb.py --airtable-file data/raw/airtable_out.json
       --omdb-file data/raw/omdb_out.json --output-file data/interim/merged_records.json
@@ -50,15 +50,15 @@ stages:
       --omdb-file data/raw/omdb_out.json --output-file data/interim/merged_records.json
     deps:
     - path: data/raw/notion_out.json
-      md5: 731d5e330a6305fab8af2af63c96180e
-      size: 51053
+      md5: cd7d3079a05b002759047d467ac72ff3
+      size: 51572
     - path: data/raw/omdb_out.json
-      md5: ed34afeb4445e9dda77c818f01536ddb
-      size: 283900
+      md5: d4886ed2df273c5ca1b79b2e78d20bde
+      size: 285644
     - path: scripts/merge_notion_omdb.py
       md5: 86131136f8937305830b56bbdb51fe91
       size: 5731
     outs:
     - path: data/interim/merged_records.json
-      md5: e72845ac7d7b4756254bcc7453e92581
-      size: 215055
+      md5: 2fb987b47ceb6cfbf2c8c49889dc1d9d
+      size: 217103

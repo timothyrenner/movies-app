@@ -5,29 +5,29 @@ stages:
       --output-file data/processed/movie_database.json
     deps:
     - path: data/interim/merged_records.json
-      md5: de1539daa8dbc950ef4639c54c236b77
-      size: 224131
+      md5: 615c79cf650908526522917577722beb
+      size: 226257
     - path: scripts/create_db.py
       md5: 661f871778d2a7f92f444f80eb98681a
       size: 4409
     outs:
     - path: data/processed/movie_database.json
-      md5: a070193e72b96b44fb421ba9f45f313f
-      size: 228527
+      md5: 72f894737c1f187c30462063e0957137
+      size: 230677
   pull_omdb:
     cmd: python scripts/pull_omdb.py --movie-file data/raw/notion_out.json --output-file
       data/raw/omdb_out.json
     deps:
     - path: data/raw/notion_out.json
-      md5: 52d13cbbade786b0ba51b0e9c08c5468
-      size: 53384
+      md5: 97070afe25692d1c3e2f08d16e08e46f
+      size: 53882
     - path: scripts/pull_omdb.py
       md5: 2a4747a0b5363d1c8006094af0404383
       size: 5418
     outs:
     - path: data/raw/omdb_out.json
-      md5: 158f289618908196848d92ec2806cd06
-      size: 296507
+      md5: bf36c09e8941fd8637acf33592dd50bb
+      size: 299380
   merge_airtable_omdb:
     cmd: python scripts/merge_airtable_omdb.py --airtable-file data/raw/airtable_out.json
       --omdb-file data/raw/omdb_out.json --output-file data/interim/merged_records.json
@@ -50,15 +50,15 @@ stages:
       --omdb-file data/raw/omdb_out.json --output-file data/interim/merged_records.json
     deps:
     - path: data/raw/notion_out.json
-      md5: 52d13cbbade786b0ba51b0e9c08c5468
-      size: 53384
+      md5: 97070afe25692d1c3e2f08d16e08e46f
+      size: 53882
     - path: data/raw/omdb_out.json
-      md5: 158f289618908196848d92ec2806cd06
-      size: 296507
+      md5: bf36c09e8941fd8637acf33592dd50bb
+      size: 299380
     - path: scripts/merge_notion_omdb.py
       md5: 86131136f8937305830b56bbdb51fe91
       size: 5731
     outs:
     - path: data/interim/merged_records.json
-      md5: de1539daa8dbc950ef4639c54c236b77
-      size: 224131
+      md5: 615c79cf650908526522917577722beb
+      size: 226257

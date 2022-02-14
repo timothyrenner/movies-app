@@ -5,29 +5,29 @@ stages:
       --output-file data/processed/movie_database.json
     deps:
     - path: data/interim/merged_records.json
-      md5: 615c79cf650908526522917577722beb
-      size: 226257
+      md5: 8bc89eb7f0546c0c9c82f016ced5465c
+      size: 228284
     - path: scripts/create_db.py
       md5: 661f871778d2a7f92f444f80eb98681a
       size: 4409
     outs:
     - path: data/processed/movie_database.json
-      md5: 72f894737c1f187c30462063e0957137
-      size: 230677
+      md5: 5618a9a14190d7c6025ee37d2e85fb76
+      size: 232728
   pull_omdb:
     cmd: python scripts/pull_omdb.py --movie-file data/raw/notion_out.json --output-file
       data/raw/omdb_out.json
     deps:
     - path: data/raw/notion_out.json
-      md5: 97070afe25692d1c3e2f08d16e08e46f
-      size: 53882
+      md5: ad48d208e6962a7cabae1a40ed96d5ee
+      size: 54400
     - path: scripts/pull_omdb.py
       md5: 2a4747a0b5363d1c8006094af0404383
       size: 5418
     outs:
     - path: data/raw/omdb_out.json
-      md5: bf36c09e8941fd8637acf33592dd50bb
-      size: 299380
+      md5: 3398edd409e4ae1993f091566a3914ff
+      size: 301201
   merge_airtable_omdb:
     cmd: python scripts/merge_airtable_omdb.py --airtable-file data/raw/airtable_out.json
       --omdb-file data/raw/omdb_out.json --output-file data/interim/merged_records.json
@@ -50,15 +50,15 @@ stages:
       --omdb-file data/raw/omdb_out.json --output-file data/interim/merged_records.json
     deps:
     - path: data/raw/notion_out.json
-      md5: 97070afe25692d1c3e2f08d16e08e46f
-      size: 53882
+      md5: ad48d208e6962a7cabae1a40ed96d5ee
+      size: 54400
     - path: data/raw/omdb_out.json
-      md5: bf36c09e8941fd8637acf33592dd50bb
-      size: 299380
+      md5: 3398edd409e4ae1993f091566a3914ff
+      size: 301201
     - path: scripts/merge_notion_omdb.py
       md5: 86131136f8937305830b56bbdb51fe91
       size: 5731
     outs:
     - path: data/interim/merged_records.json
-      md5: 615c79cf650908526522917577722beb
-      size: 226257
+      md5: 8bc89eb7f0546c0c9c82f016ced5465c
+      size: 228284

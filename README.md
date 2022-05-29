@@ -7,6 +7,9 @@ The app is a dashboard in Grist that gets updated as well because I got tired of
 
 Mostly I built this to develop an understanding of how to automate DVC-based workflows and use DVC to distribute data to endpoints and applications. At some point that turned into me wanting to rewrite it in Go cause I got tired of python.
 
+
+## Data Model
+
 The movie_watch table is an instance of the watched movie, everything else is effectively a dimension against the movie itself.
 
 ```mermaid
@@ -67,4 +70,29 @@ MOVIE-RATING {
     string source
     string value
 }
+```
+
+## Pipeline
+
+```mermaid
+sequenceDiagram
+    participant code
+    participant database
+    participant grist
+    participant omdb
+
+    code ->>database: query
+    database -->> code: latest creation time
+    code ->> grist: API call
+    grist -->> code: movie watches since latest time
+    code ->> database: query
+    database -->> code: movies missing from database
+    loop For each new movie
+        code ->> omdb: api call
+        omdb -->> code: movie details
+        code ->> database: insert movie details
+        code ->> grist: add movie details
+    end
+
+
 ```

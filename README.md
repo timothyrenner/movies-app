@@ -46,6 +46,11 @@ MOVIE-ACTOR {
     string movie_uuid FK
     string name
 }
+MOVIE-DIRECTOR {
+    string uuid PK
+    string movie_uuid FK
+    string name
+}
 MOVIE-PRODUCER {
     string uuid PK
     string movie_uuid FK

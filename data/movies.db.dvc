@@ -1,0 +1,4 @@
+outs:
+- md5: ea2cd0e39bc545201f4f6b5d278a96e6
+  size: 126976
+  path: movies.db

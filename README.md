@@ -12,65 +12,88 @@ Mostly I built this to develop an understanding of how to automate DVC-based wor
 
 The movie_watch table is an instance of the watched movie, everything else is effectively a dimension against the movie itself.
 
-```mermaid
-erDiagram
-MOVIE {
-    string uuid PK
-    string title
-    int year
-    string rated
-    string released
-    int runtime_minutes
-    string plot
-    string country
-    string box_office
-    string production
-    int call_felissa
-    int slasher
-    int zombies
-    int beast
-    int godzilla
-}
-MOVIE-WATCH {
-    string uuid PK
-    string movie_uuid FK
-    string watched
-    string service
-    int first_time
-    int joe_bob
-}
-MOVIE-GENRE {
-    string uuid PK
-    string movie_uuid FK
-    string genre
-}
-MOVIE-ACTOR {
-    string uuid PK
-    string movie_uuid FK
-    string name
-}
-MOVIE-DIRECTOR {
-    string uuid PK
-    string movie_uuid FK
-    string name
-}
-MOVIE-PRODUCER {
-    string uuid PK
-    string movie_uuid FK
-    string name
-}
-MOVIE-WRITER {
-    string uuid PK
-    string movie_uuid FK
-    string name
-}
-MOVIE-RATING {
-    string uuid PK
-    string movie_uuid FK
-    string source
-    string value
-}
-```
+### Movie
+
+| column           | type    | constraint  | default     |
+| ---------------- | ------- | ----------- | ----------- |
+| uuid             | TEXT    | PRIMARY KEY |             |
+| title            | TEXT    | NOT NULL    |             |
+| year             | INTEGER | NOT NULL    |             |
+| rated            | TEXT    |             |             |
+| released         | TEXT    |             |             |
+| runtime_minutes  | INTEGER |             |             |
+| plot             | TEXT    |             |             |
+| country          | TEXT    |             |             |
+| box_office       | TEXT    |             |             |
+| production       | TEXT    |             |             |
+| call_felissa     | INTEGER | NOT NULL    |             |
+| slasher          | INTEGER | NOT NULL    |             |
+| zombies          | INTEGER | NOT NULL    |             |
+| beast            | INTEGER | NOT NULL    |             |
+| godzilla         | INTEGER | NOT NULL    |             |
+| grist_id         | INTEGER | UNIQUE      | NULL        |
+| created_datetime | INTEGER | NOT NULL    | UNIXEPOCH() |
+
+### Movie Watch
+
+| column           | type    | constraint  | default     |
+| ---------------- | ------- | ----------- | ----------- |
+| uuid             | TEXT    | PRIMARY KEY |             |
+| movie_uuid       | TEXT    | FOREIGN KEY |             |
+| name             | TEXT    | NOT NULL    |             |
+| grist_id         | INTEGER | UNIQUE      | NULL        |
+| created_datetime | INTEGER | NOT NULL    | UNIXEPOCH() |
+
+
+### Movie Genre
+| column           | type    | constraint  | default     |
+| ---------------- | ------- | ----------- | ----------- |
+| uuid             | TEXT    | PRIMARY KEY |             |
+| movie_uuid       | TEXT    | FOREIGN KEY |             |
+| name             | TEXT    | NOT NULL    |             |
+| grist_id         | INTEGER | UNIQUE      | NULL        |
+| created_datetime | INTEGER | NOT NULL    | UNIXEPOCH() |
+
+### Movie Actor
+
+| column           | type    | constraint  | default     |
+| ---------------- | ------- | ----------- | ----------- |
+| uuid             | TEXT    | PRIMARY KEY |             |
+| movie_uuid       | TEXT    | FOREIGN KEY |             |
+| name             | TEXT    | NOT NULL    |             |
+| grist_id         | INTEGER | UNIQUE      | NULL        |
+| created_datetime | INTEGER | NOT NULL    | UNIXEPOCH() |
+
+### Movie Director
+
+| column           | type    | constraint  | default     |
+| ---------------- | ------- | ----------- | ----------- |
+| uuid             | TEXT    | PRIMARY KEY |             |
+| movie_uuid       | TEXT    | FOREIGN KEY |             |
+| name             | TEXT    | NOT NULL    |             |
+| grist_id         | INTEGER | UNIQUE      | NULL        |
+| created_datetime | INTEGER | NOT NULL    | UNIXEPOCH() |
+
+### Movie Producer
+
+| column           | type    | constraint  | default      |
+| ---------------- | ------- | ----------- | ------------ |
+| uuid             | TEXT    | PRIMARY KEY |              |
+| movie_uuid       | TEXT    | FOREIGN KEY |              |
+| name             | TEXT    | NOT NULL    |              |
+| grist_id         | INTEGER | UNIQUE      | DEFAULT NULL |
+| created_datetime | INTEGER | NOT NULL    | UNIXEPOCH()  |
+
+### Movie Writer
+
+| column           | type    | constraint  | default     |
+| ---------------- | ------- | ----------- | ----------- |
+| uuid             | TEXT    | PRIMARY KEY |             |
+| movie_uuid       | TEXT    | FOREIGN KEY |             |
+| source           | TEXT    | NOT NULL    |             |
+| value            | TEXT    | NOT NULL    |             |
+| grist_id         | INTEGER | UNIQUE      | NULL        |
+| created_datetime | INTEGER | NOT NULL    | UNIXEPOCH() |
 
 ## Pipeline
 
@@ -87,12 +110,15 @@ sequenceDiagram
     grist -->> code: movie watches since latest time
     code ->> database: query
     database -->> code: movies missing from database
+    loop For each movie watch
+        code ->> grist: Update uuid
+    end
     loop For each new movie
         code ->> omdb: api call
         omdb -->> code: movie details
         code ->> database: insert movie details
         code ->> grist: add movie details
+        grist -->> code: document ids
+        code ->> database: Update with document id
     end
-
-
 ```

@@ -25,6 +25,7 @@ CREATE INDEX IF NOT EXISTS idx_movie_year ON movie(year);
 CREATE TABLE IF NOT EXISTS movie_watch (
     uuid TEXT PRIMARY KEY,
     movie_uuid TEXT,
+    movie_title TEXT,
     watched INTEGER NOT NULL,
     service TEXT NOT NULL,
     first_time INTEGER NOT NULL,
@@ -34,7 +35,7 @@ CREATE TABLE IF NOT EXISTS movie_watch (
     FOREIGN KEY(movie_uuid) REFERENCES movie(uuid)
 );
 CREATE INDEX IF NOT EXISTS idx_movie_watch_movie_uuid ON movie_watch(movie_uuid);
-CREATE INDEX IF NOT EXISTS idx_movie_watch_watched ON movie_watch(watched);
+CREATE INDEX IF NOT EXISTS idx_movie_watch_title_watched ON movie_watch(movie_title, watched);
 -- Auxiliary table for genre.
 CREATE TABLE IF NOT EXISTS movie_genre (
     uuid TEXT PRIMARY KEY,

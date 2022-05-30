@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS movie (
     zombies INTEGER NOT NULL,
     beast INTEGER NOT NULL,
     godzilla INTEGER NOT NULL,
+    grist_id INTEGER UNIQUE DEFAULT NULL,
     created_datetime INTEGER NOT NULL DEFAULT (UNIXEPOCH())
 );
 CREATE INDEX IF NOT EXISTS idx_movie_title ON movie(title);
@@ -28,6 +29,7 @@ CREATE TABLE IF NOT EXISTS movie_watch (
     service TEXT NOT NULL,
     first_time INTEGER NOT NULL,
     joe_bob INTEGER NOT NULL,
+    grist_id INTEGER UNIQUE DEFAULT NULL,
     created_datetime INTEGER NOT NULL DEFAULT (UNIXEPOCH()),
     FOREIGN KEY(movie_uuid) REFERENCES movie(uuid)
 );
@@ -38,6 +40,7 @@ CREATE TABLE IF NOT EXISTS movie_genre (
     uuid TEXT PRIMARY KEY,
     movie_uuid TEXT,
     name TEXT NOT NULL,
+    grist_id INTEGER UNIQUE DEFAULT NULL,
     created_datetime INTEGER NOT NULL DEFAULT (UNIXEPOCH()),
     FOREIGN KEY(movie_uuid) REFERENCES movie(uuid)
 );
@@ -47,6 +50,7 @@ CREATE TABLE IF NOT EXISTS movie_actor (
     uuid TEXT PRIMARY KEY,
     movie_uuid TEXT,
     name TEXT NOT NULL,
+    grist_id INTEGER UNIQUE DEFAULT NULL,
     created_datetime INTEGER NOT NULL DEFAULT (UNIXEPOCH()),
     FOREIGN KEY(movie_uuid) REFERENCES movie(uuid)
 );
@@ -56,6 +60,7 @@ CREATE TABLE IF NOT EXISTS movie_director (
     uuid TEXT PRIMARY KEY,
     movie_uuid TEXT,
     name TEXT NOT NULL,
+    grist_id INTEGER UNIQUE DEFAULT NULL,
     created_datetime INTEGER NOT NULL DEFAULT (UNIXEPOCH()),
     FOREIGN KEY(movie_uuid) REFERENCES movie(uuid)
 );
@@ -65,6 +70,8 @@ CREATE TABLE IF NOT EXISTS movie_producer (
     uuid TEXT PRIMARY KEY,
     movie_uuid TEXT,
     name TEXT NOT NULL,
+    grist_id INTEGER UNIQUE DEFAULT NULL,
+    created_datetime INTEGER NOT NULL DEFAULT (UNIXEPOCH()),
     FOREIGN KEY(movie_uuid) REFERENCES movie(uuid)
 );
 CREATE INDEX IF NOT EXISTS idx_movie_producer_movie_uuid ON movie_producer(movie_uuid);
@@ -73,6 +80,7 @@ CREATE TABLE IF NOT EXISTS movie_writer (
     uuid TEXT PRIMARY KEY,
     movie_uuid TEXT,
     name TEXT NOT NULL,
+    grist_id INTEGER UNIQUE DEFAULT NULL,
     created_datetime INTEGER NOT NULL DEFAULT (UNIXEPOCH()),
     FOREIGN KEY(movie_uuid) REFERENCES movie(uuid)
 );
@@ -83,6 +91,7 @@ CREATE TABLE IF NOT EXISTS movie_rating (
     movie_uuid TEXT,
     source TEXT NOT NULL,
     value TEXT NOT NULL,
+    grist_id INTEGER UNIQUE DEFAULT NULL,
     created_datetime INTEGER NOT NULL DEFAULT (UNIXEPOCH()),
     FOREIGN KEY(movie_uuid) REFERENCES movie(uuid)
 );

@@ -36,7 +36,8 @@ func TestGetRecords(t *testing.T) {
 								"L",
 								"Shudder"
 							],
-							"First_Time": false
+							"First_Time": false,
+							"uuid": null
 						}
 					},
 					{
@@ -55,7 +56,8 @@ func TestGetRecords(t *testing.T) {
 								"L",
 								"Shudder"
 							],
-							"First_Time": false
+							"First_Time": false,
+							"uuid": null
 						}
 					},
 					{
@@ -74,7 +76,8 @@ func TestGetRecords(t *testing.T) {
 								"L",
 								"Google Play"
 							],
-							"First_Time": false
+							"First_Time": false,
+							"uuid": null
 						}
 					}
 				]

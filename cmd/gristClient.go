@@ -41,6 +41,7 @@ type GristMovieWatchFields struct {
 	Zombies     bool     `json:"Zombies"`
 	Slasher     bool     `json:"Slasher"`
 	Service     []string `json:"Service"`
+	Uuid        string   `json:"uuid"`
 }
 
 func NewGristClient(key string) *GristClient {

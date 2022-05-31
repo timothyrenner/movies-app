@@ -3,6 +3,7 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS movie (
     uuid TEXT PRIMARY KEY,
     title TEXT NOT NULL,
+    imdb_link TEXT,
     year INTEGER NOT NULL,
     rated TEXT,
     released TEXT,

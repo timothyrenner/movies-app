@@ -104,21 +104,19 @@ sequenceDiagram
     participant grist
     participant omdb
 
-    code ->>database: query
-    database -->> code: latest creation time
     code ->> grist: API call
     grist -->> code: movie watches since latest time
     code ->> database: query
     database -->> code: movies missing from database
-    loop For each movie watch
-        code ->> grist: Update uuid
-    end
     loop For each new movie
         code ->> omdb: api call
         omdb -->> code: movie details
         code ->> database: insert movie details
         code ->> grist: add movie details
-        grist -->> code: document ids
-        code ->> database: Update with document id
+        grist -->> code: record ids
+        code ->> database: Update with record id
+    end
+    loop For each movie watch
+        code ->> grist: Update uuid
     end
 ```

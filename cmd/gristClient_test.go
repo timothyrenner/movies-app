@@ -85,7 +85,7 @@ func TestGetRecords(t *testing.T) {
 		),
 	)
 
-	records, err := client.GetRecords(
+	records, err := client.GetMovieWatchRecords(
 		"abc123",
 		"Movie_watches",
 		nil,
@@ -95,7 +95,7 @@ func TestGetRecords(t *testing.T) {
 	if err != nil {
 		t.Errorf("Encountered error: %v", err)
 	}
-	truth := GetMovieWatchRecordsResponse{
+	truth := GristMovieWatchRecords{
 		Records: []GristMovieWatchRecord{
 			{
 				GristRecord: GristRecord{Id: 375},
@@ -159,5 +159,38 @@ func TestGetRecords(t *testing.T) {
 				)
 			}
 		}
+	}
+}
+
+func TestUpdateRecords(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	responder, err := httpmock.NewJsonResponder(200, nil)
+	if err != nil {
+		t.Errorf("Error creating JSON responder: %v", err)
+	}
+	httpmock.RegisterResponder(
+		"PATCH",
+		"https://docs.getgrist.com/api/docs/abc123/tables/Movie_watches/records",
+		responder,
+	)
+
+	client := NewGristClient("abc-123")
+	documentId := "abc123"
+	tableId := "Movie_watches"
+	records := GristMovieWatchRecords{
+		Records: []GristMovieWatchRecord{
+			{
+				GristRecord: GristRecord{Id: 1},
+				Fields: GristMovieWatchFields{
+					Uuid: "abc-123",
+				},
+			},
+		},
+	}
+	err = client.UpdateMovieWatchRecords(documentId, tableId, &records)
+	if err != nil {
+		t.Errorf("Encountered error: %v", err)
 	}
 }

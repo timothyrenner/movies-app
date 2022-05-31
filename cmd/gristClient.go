@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -16,7 +17,7 @@ type GristClient struct {
 	rootUrl string
 }
 
-type GetMovieWatchRecordsResponse struct {
+type GristMovieWatchRecords struct {
 	Records []GristMovieWatchRecord `json:"records"`
 }
 
@@ -30,18 +31,18 @@ type GristMovieWatchRecord struct {
 }
 
 type GristMovieWatchFields struct {
-	Name        string   `json:"name"`
-	ImdbLink    string   `json:"IMDB_Link"`
-	FirstTime   bool     `json:"First_Time"`
-	Watched     int      `json:"Watched"`
-	JoeBob      bool     `json:"Joe_Bob"`
-	CallFelissa bool     `json:"Call_Felissa"`
-	Beast       bool     `json:"Beast"`
-	Godzilla    bool     `json:"Godzilla"`
-	Zombies     bool     `json:"Zombies"`
-	Slasher     bool     `json:"Slasher"`
-	Service     []string `json:"Service"`
-	Uuid        string   `json:"uuid"`
+	Name        string   `json:"name,omitempty"`
+	ImdbLink    string   `json:"IMDB_Link,omitempty"`
+	FirstTime   bool     `json:"First_Time,omitempty"`
+	Watched     int      `json:"Watched,omitempty"`
+	JoeBob      bool     `json:"Joe_Bob,omitempty"`
+	CallFelissa bool     `json:"Call_Felissa,omitempty"`
+	Beast       bool     `json:"Beast,omitempty"`
+	Godzilla    bool     `json:"Godzilla,omitempty"`
+	Zombies     bool     `json:"Zombies,omitempty"`
+	Slasher     bool     `json:"Slasher,omitempty"`
+	Service     []string `json:"Service,omitempty"`
+	Uuid        string   `json:"uuid,omitempty"`
 }
 
 func NewGristClient(key string) *GristClient {
@@ -55,13 +56,13 @@ func NewGristClient(key string) *GristClient {
 	return &client
 }
 
-func (c *GristClient) GetRecords(
+func (c *GristClient) GetMovieWatchRecords(
 	documentId string,
 	tableId string,
 	filter *map[string]any,
 	sort string,
 	limit int,
-) (*GetMovieWatchRecordsResponse, error) {
+) (*GristMovieWatchRecords, error) {
 	params := url.Values{}
 	if filter != nil {
 		bytes, err := json.Marshal(*filter)
@@ -102,10 +103,41 @@ func (c *GristClient) GetRecords(
 		return nil, fmt.Errorf("error reading response body: %v", err)
 	}
 
-	var movieWatchResponse GetMovieWatchRecordsResponse
+	var movieWatchResponse GristMovieWatchRecords
 	if err = json.Unmarshal(body, &movieWatchResponse); err != nil {
 		return nil, fmt.Errorf("error unmarshalling response: %v", err)
 	}
 
 	return &movieWatchResponse, nil
+}
+
+func (c *GristClient) UpdateMovieWatchRecords(
+	documentId string,
+	tableId string,
+	records *GristMovieWatchRecords,
+) error {
+	url := fmt.Sprintf(
+		"%v/docs/%v/tables/%v/records",
+		c.rootUrl,
+		documentId,
+		tableId,
+	)
+
+	payload, err := json.Marshal(records)
+	if err != nil {
+		return fmt.Errorf("encountered error marshalling records: %v", err)
+	}
+	request, err := http.NewRequest(
+		http.MethodPatch, url, bytes.NewBuffer(payload),
+	)
+	if err != nil {
+		return fmt.Errorf("encountered error creating request: %v", err)
+	}
+	request.Header.Set("Content-Type", "application/json")
+	_, err = c.client.Do(request)
+	if err != nil {
+		return fmt.Errorf("encountered error making request: %v", err)
+	}
+
+	return nil
 }

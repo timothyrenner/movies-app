@@ -194,3 +194,29 @@ func TestUpdateRecords(t *testing.T) {
 		t.Errorf("Encountered error: %v", err)
 	}
 }
+
+func TestImdbId(t *testing.T) {
+	record := GristMovieWatchRecord{
+		GristRecord: GristRecord{Id: 372},
+		Fields: GristMovieWatchFields{
+			Name:        "John Wick Chapter 3 - Parabellum",
+			ImdbLink:    "https://www.imdb.com/title/tt6146586/",
+			Watched:     1653436800,
+			JoeBob:      false,
+			CallFelissa: true,
+			Beast:       false,
+			Godzilla:    false,
+			Zombies:     false,
+			Slasher:     false,
+			FirstTime:   false,
+			Service:     []string{"L", "Google Play"},
+		},
+	}
+
+	truth := "tt6146586"
+	answer := record.ImdbId()
+
+	if truth != answer {
+		t.Errorf("Expected %v, got %v", truth, answer)
+	}
+}

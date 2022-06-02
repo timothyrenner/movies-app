@@ -10,8 +10,10 @@ require (
 )
 
 require (
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
+	github.com/karrick/tparse v2.4.2+incompatible // indirect
 	github.com/mattn/go-sqlite3 v1.14.13 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 )

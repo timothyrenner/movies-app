@@ -15,6 +15,7 @@ import (
 
 var GRIST_KEY string
 var GRIST_DOCUMENT_ID string
+var OMDB_KEY string
 var DB *sql.DB
 
 // rootCmd represents the base command when called without any subcommands
@@ -50,6 +51,12 @@ func init() {
 		log.Println("Could not find GRIST_DOCUMENT_ID in environment or .env.")
 	}
 	GRIST_DOCUMENT_ID = gristDocumentId
+
+	omdbKey, exists := os.LookupEnv("OMDB_KEY")
+	if !exists {
+		log.Println("Could not find OMDB_KEY in environment or .env.")
+	}
+	OMDB_KEY = omdbKey
 
 	db, err := sql.Open("sqlite3", "./data/movies.db")
 	if err != nil {

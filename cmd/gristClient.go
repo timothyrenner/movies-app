@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -28,6 +30,14 @@ type GristRecord struct {
 type GristMovieWatchRecord struct {
 	GristRecord
 	Fields GristMovieWatchFields `json:"fields"`
+}
+
+func (r *GristMovieWatchRecord) ImdbId() string {
+	urlComponents := strings.Split(r.Fields.ImdbLink, "/")
+	if urlComponents[len(urlComponents)-1] != "" {
+		log.Panicf("Encountered error getting ID from %v", r.Fields.ImdbLink)
+	}
+	return urlComponents[len(urlComponents)-2]
 }
 
 type GristMovieWatchFields struct {

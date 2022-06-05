@@ -63,15 +63,6 @@ CREATE TABLE IF NOT EXISTS movie_director (
     FOREIGN KEY(movie_uuid) REFERENCES movie(uuid)
 );
 CREATE INDEX IF NOT EXISTS idx_movie_director_movie_uuid ON movie_director(movie_uuid);
--- Auxiliary table for producers.
-CREATE TABLE IF NOT EXISTS movie_producer (
-    uuid TEXT PRIMARY KEY,
-    movie_uuid TEXT,
-    name TEXT NOT NULL,
-    created_datetime INTEGER NOT NULL DEFAULT (UNIXEPOCH()),
-    FOREIGN KEY(movie_uuid) REFERENCES movie(uuid)
-);
-CREATE INDEX IF NOT EXISTS idx_movie_producer_movie_uuid ON movie_producer(movie_uuid);
 -- Auxiliary table for writers.
 CREATE TABLE IF NOT EXISTS movie_writer (
     uuid TEXT PRIMARY KEY,

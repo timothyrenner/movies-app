@@ -29,6 +29,10 @@ func updateMovies(cmd *cobra.Command, args []string) {
 		log.Panic("GRIST_DOCUMENT_ID must be present for this script to run.")
 	}
 
+	if OMDB_KEY == "" {
+		log.Panic("OMDB_KEY must be present for this script to run.")
+	}
+
 	limit, err := cmd.Flags().GetInt("limit")
 	if err != nil {
 		log.Panicf("Error obtaining limit: %v", err)
@@ -40,6 +44,8 @@ func updateMovies(cmd *cobra.Command, args []string) {
 	} else {
 		log.Println("Pulling all records from Grist.")
 	}
+
+	omdbClient := NewOmdbClient(OMDB_KEY)
 
 	records, err := gristClient.GetMovieWatchRecords(
 		GRIST_DOCUMENT_ID,
@@ -56,24 +62,6 @@ func updateMovies(cmd *cobra.Command, args []string) {
 		"Pulled %v documents from Grist, processing.", len(records.Records),
 	)
 
-	movieWatchUpdateChan := make(chan *GristMovieWatchRecord)
-	go func() {
-		records := make([]GristMovieWatchRecord, 0)
-		for record := range movieWatchUpdateChan {
-			records = append(records, *record)
-		}
-		err = gristClient.UpdateMovieWatchRecords(
-			GRIST_DOCUMENT_ID,
-			"Movie_watches",
-			&GristMovieWatchRecords{
-				Records: records,
-			},
-		)
-		if err != nil {
-			log.Panicf("Error updating movie watch records: %v", err)
-		}
-	}()
-
 	movieWatchAddChan := make(chan *GristMovieWatchRecord)
 	go func() {
 		records := make([]GristMovieWatchRecord, 0)
@@ -85,49 +73,42 @@ func updateMovies(cmd *cobra.Command, args []string) {
 				log.Panicf("Error finding movie: %v", err)
 			}
 			if movieUuid == "" {
-				// TODO: Fetch the move info from OMDB and load that into the
-				// TODO: database.
+				omdbResponse, err := omdbClient.GetMovie(record.ImdbId())
+				if err != nil {
+					log.Panicf("Error fetching movie from OMDB: %v", err)
+				}
+				_, err = InsertMovieDetails(omdbResponse, record)
+				if err != nil {
+					log.Panicf(
+						"Error inserting movie details into database: %v", err,
+					)
+				}
 				continue
 			}
 		}
-		// TODO: Add the records to the database, and send the UUIDs over
-		// TODO: to be updated.
+		// TODO: Add the records to the database.
 		// Update the records in the database with the grist IDs.
 	}()
 
 	for ii := range records.Records {
 		record := &records.Records[ii]
 		// Determine if it's already in the database.
-
-		// If there's a uuid in the Grist record, we know it's in the DB
-		// already. Skip.
-		if record.Fields.Uuid != "" {
-			continue
-		}
-
-		// There might be a case where it _is_ in the database, but has not
-		// been synced to Grist yet.
 		movieWatchUuid, err := FindMovieWatch(record)
 		if err != nil {
 			log.Panicf("Encountered error obtaining movie watch: %v", err)
 		}
 
+		// If there's a uuid in the Grist record, we know it's in the DB
+		// already. Skip.
 		if movieWatchUuid != "" {
-			// TODO: It's worth considering _not_ updating Grist with our
-			// TODO: uuids and going straight for the relations instead, as
-			// TODO: part of a later step in the pipeline.
-			// TODO: We store the Grist ID in our database as its own table:
-			// TODO: grist id <> uuid.
-			record.Fields.Uuid = movieWatchUuid
-			// Update Grist to hold the new Uuid value.
-			movieWatchUpdateChan <- record
-		} else {
-			// Make new record in database.
-			movieWatchAddChan <- record
+			log.Printf(
+				"Already found %v in database, skipping.", record.Fields.Name,
+			)
+			continue
 		}
+
+		movieWatchAddChan <- record
 	}
-	close(movieWatchUpdateChan)
-	close(movieWatchAddChan)
 }
 
 func init() {

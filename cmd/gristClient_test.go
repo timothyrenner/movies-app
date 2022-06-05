@@ -183,9 +183,7 @@ func TestUpdateRecords(t *testing.T) {
 		Records: []GristMovieWatchRecord{
 			{
 				GristRecord: GristRecord{Id: 1},
-				Fields: GristMovieWatchFields{
-					Uuid: "abc-123",
-				},
+				Fields:      GristMovieWatchFields{},
 			},
 		},
 	}

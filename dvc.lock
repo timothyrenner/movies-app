@@ -5,29 +5,29 @@ stages:
       --output-file data/processed/movie_database.json
     deps:
     - path: data/interim/merged_records.json
-      md5: 7862858ae837db0c4cd1704af5b87a06
-      size: 267004
+      md5: 0b9380f289aaf74bbb3bba7252c1c0f8
+      size: 269713
     - path: scripts/create_db.py
       md5: 661f871778d2a7f92f444f80eb98681a
       size: 4409
     outs:
     - path: data/processed/movie_database.json
-      md5: 687a7cb4ffae587ee59fc2819133a699
-      size: 271904
+      md5: 846f5c20e914b50f1aff67a66a5852b3
+      size: 274715
   pull_omdb:
     cmd: python scripts/pull_omdb.py --movie-file data/raw/notion_out.json --output-file
       data/raw/omdb_out.json
     deps:
     - path: data/raw/notion_out.json
-      md5: 563d62ff8d883f48731149c459df917f
-      size: 64008
+      md5: 6f1747745d4fabd77a00c543ee531c87
+      size: 64694
     - path: scripts/pull_omdb.py
       md5: 2a4747a0b5363d1c8006094af0404383
       size: 5418
     outs:
     - path: data/raw/omdb_out.json
-      md5: e791e095cbb232d56e1f2720cb3446d3
-      size: 350330
+      md5: 9c4a9be9641422a57b05e9caeed57693
+      size: 353361
   merge_airtable_omdb:
     cmd: python scripts/merge_airtable_omdb.py --airtable-file data/raw/airtable_out.json
       --omdb-file data/raw/omdb_out.json --output-file data/interim/merged_records.json
@@ -50,15 +50,15 @@ stages:
       --omdb-file data/raw/omdb_out.json --output-file data/interim/merged_records.json
     deps:
     - path: data/raw/notion_out.json
-      md5: 563d62ff8d883f48731149c459df917f
-      size: 64008
+      md5: 6f1747745d4fabd77a00c543ee531c87
+      size: 64694
     - path: data/raw/omdb_out.json
-      md5: e791e095cbb232d56e1f2720cb3446d3
-      size: 350330
+      md5: 9c4a9be9641422a57b05e9caeed57693
+      size: 353361
     - path: scripts/merge_notion_omdb.py
       md5: 86131136f8937305830b56bbdb51fe91
       size: 5731
     outs:
     - path: data/interim/merged_records.json
-      md5: 7862858ae837db0c4cd1704af5b87a06
-      size: 267004
+      md5: 0b9380f289aaf74bbb3bba7252c1c0f8
+      size: 269713

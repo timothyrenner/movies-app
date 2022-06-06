@@ -19,14 +19,14 @@ type MovieRow struct {
 	Title          string
 	ImdbLink       string
 	Year           int
-	Rated          string
-	Released       string
+	Rated          sql.NullString
+	Released       sql.NullString
 	RuntimeMinutes int
-	Plot           string
-	Country        string
-	Language       string
-	BoxOffice      string
-	Production     string
+	Plot           sql.NullString
+	Country        sql.NullString
+	Language       sql.NullString
+	BoxOffice      sql.NullString
+	Production     sql.NullString
 	CallFelissa    bool
 	Slasher        bool
 	Zombies        bool
@@ -45,11 +45,17 @@ func CreateMovieRow(
 		)
 	}
 
-	releasedDate, err := time.Parse("2 Jan 2006", movieRecord.Released)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"error parsing date %v: %v", movieRecord.Released, err,
-		)
+	var releasedDate string
+	if movieRecord.Released == "N/A" {
+		releasedDate = movieRecord.Released
+	} else {
+		released, err := time.Parse("2 Jan 2006", movieRecord.Released)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"error parsing date %v: %v", movieRecord.Released, err,
+			)
+		}
+		releasedDate = released.Format("2006-01-02")
 	}
 
 	runtimeMatch := runtimeRegex.FindStringSubmatch(movieRecord.Runtime)
@@ -72,14 +78,14 @@ func CreateMovieRow(
 		Title:          movieWatch.Fields.Name,
 		ImdbLink:       movieWatch.Fields.ImdbLink,
 		Year:           year,
-		Rated:          movieRecord.Rated,
-		Released:       releasedDate.Format("2006-01-02"),
+		Rated:          textToNullString(movieRecord.Rated),
+		Released:       textToNullString(releasedDate),
 		RuntimeMinutes: runtimeInt,
-		Plot:           movieRecord.Plot,
-		Country:        movieRecord.Country,
-		Language:       movieRecord.Language,
-		BoxOffice:      movieRecord.BoxOffice,
-		Production:     movieRecord.Production,
+		Plot:           textToNullString(movieRecord.Plot),
+		Country:        textToNullString(movieRecord.Country),
+		Language:       textToNullString(movieRecord.Language),
+		BoxOffice:      textToNullString(movieRecord.BoxOffice),
+		Production:     textToNullString(movieRecord.Production),
 		CallFelissa:    movieWatch.Fields.CallFelissa,
 		Slasher:        movieWatch.Fields.Slasher,
 		Beast:          movieWatch.Fields.Beast,
@@ -296,6 +302,7 @@ func InsertMovieDetails(
 			runtime_minutes,
 			plot,
 			country,
+			language,
 			box_office,
 			production,
 			call_felissa,
@@ -304,20 +311,21 @@ func InsertMovieDetails(
 			beast,
 			godzilla
 		) VALUES(
-			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 		)
 	`,
 		movieRow.Uuid,
 		movieRow.Title,
 		movieRow.ImdbLink,
 		movieRow.Year,
-		textToNullString(movieRow.Rated),
-		textToNullString(movieRow.Released),
+		movieRow.Rated,
+		movieRow.Released,
 		movieRow.RuntimeMinutes,
-		textToNullString(movieRow.Plot),
-		textToNullString(movieRow.Country),
-		textToNullString(movieRow.BoxOffice),
-		textToNullString(movieRow.Production),
+		movieRow.Plot,
+		movieRow.Country,
+		movieRow.Language,
+		movieRow.BoxOffice,
+		movieRow.Production,
 		movieRow.CallFelissa,
 		movieRow.Slasher,
 		movieRow.Zombies,
@@ -417,11 +425,11 @@ func InsertMovieDetails(
 			uuid,
 			movie_uuid,
 			name
-		), VALUES %v
+		) VALUES %v
 		`, strings.Join(values, ",")), args...,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error inserting movie producer: %v", err)
+		return nil, fmt.Errorf("error inserting movie writer: %v", err)
 	}
 
 	movieRatingRows := CreateMovieRatingRows(movie, movieRow.Uuid)
@@ -442,7 +450,7 @@ func InsertMovieDetails(
 			movie_uuid,
 			source,
 			value
-		), VALUES %v
+		) VALUES %v
 		`, strings.Join(values, ",")), args...,
 	)
 	if err != nil {

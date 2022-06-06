@@ -257,14 +257,14 @@ func TestCreateMovieRow(t *testing.T) {
 		Title:          "Tenebrae",
 		ImdbLink:       "https://www.imdb.com/title/tt0084777/",
 		Year:           1982,
-		Rated:          "R",
-		Released:       "1984-02-17",
+		Rated:          sql.NullString{String: "R", Valid: true},
+		Released:       sql.NullString{String: "1984-02-17", Valid: true},
 		RuntimeMinutes: 101,
-		Plot:           "An American writer in Rome is stalked and harassed by a serial killer who is murdering everyone associated with his work on his latest book.",
-		Country:        "Italy",
-		Language:       "Italian, Spanish",
-		BoxOffice:      "N/A",
-		Production:     "N/A",
+		Plot:           sql.NullString{String: "An American writer in Rome is stalked and harassed by a serial killer who is murdering everyone associated with his work on his latest book.", Valid: true},
+		Country:        sql.NullString{String: "Italy", Valid: true},
+		Language:       sql.NullString{String: "Italian, Spanish", Valid: true},
+		BoxOffice:      sql.NullString{String: "", Valid: false},
+		Production:     sql.NullString{String: "", Valid: false},
 		CallFelissa:    false,
 		Beast:          false,
 		Slasher:        true,
@@ -424,4 +424,307 @@ func TestCreateMovieRatingRows(t *testing.T) {
 	if !cmp.Equal(truth, answer) {
 		t.Errorf("Expected %v, got %v", truth, answer)
 	}
+}
+
+func TestInsertMovieDetails(t *testing.T) {
+	m := setupDatabase()
+	defer teardownDatabase(m)
+
+	movie := omdbSampleMovie()
+	movieWatch := gristSampleMovieWatch()
+
+	answer, err := InsertMovieDetails(movie, movieWatch)
+	if err != nil {
+		t.Errorf("Encountered error: %v", err)
+	}
+
+	movieRows, err := DB.Query(
+		`SELECT
+			uuid,
+			title,
+			imdb_link,
+			year,
+			rated,
+			released,
+			runtime_minutes,
+			plot,
+			country,
+			language,
+			box_office,
+			production,
+			call_felissa,
+			slasher,
+			zombies,
+			beast,
+			godzilla
+		FROM movie
+		WHERE uuid=?`,
+		answer.Movie,
+	)
+	if err != nil {
+		t.Errorf("Encountered error: %v", err)
+	}
+	defer func() {
+		if err = movieRows.Close(); err != nil {
+			t.Errorf("Encountered error: %v", err)
+		}
+	}()
+	movieRowsTruth := []MovieRow{
+		{
+			Uuid:           answer.Movie,
+			Title:          "Tenebrae",
+			ImdbLink:       "https://www.imdb.com/title/tt0084777/",
+			Year:           1982,
+			Rated:          sql.NullString{String: "R", Valid: true},
+			Released:       sql.NullString{String: "1984-02-17", Valid: true},
+			RuntimeMinutes: 101,
+			Plot:           sql.NullString{String: "An American writer in Rome is stalked and harassed by a serial killer who is murdering everyone associated with his work on his latest book.", Valid: true},
+			Country:        sql.NullString{String: "Italy", Valid: true},
+			Language:       sql.NullString{String: "Italian, Spanish", Valid: true},
+			BoxOffice:      sql.NullString{String: "", Valid: false},
+			Production:     sql.NullString{String: "", Valid: false},
+			CallFelissa:    false,
+			Slasher:        true,
+			Zombies:        false,
+			Beast:          false,
+			Godzilla:       false,
+		},
+	}
+	movieRowsAnswer := make([]MovieRow, 0)
+	for movieRows.Next() {
+		movieRowAnswer := MovieRow{}
+		if err = movieRows.Scan(
+			&movieRowAnswer.Uuid,
+			&movieRowAnswer.Title,
+			&movieRowAnswer.ImdbLink,
+			&movieRowAnswer.Year,
+			&movieRowAnswer.Rated,
+			&movieRowAnswer.Released,
+			&movieRowAnswer.RuntimeMinutes,
+			&movieRowAnswer.Plot,
+			&movieRowAnswer.Country,
+			&movieRowAnswer.Language,
+			&movieRowAnswer.BoxOffice,
+			&movieRowAnswer.Production,
+			&movieRowAnswer.CallFelissa,
+			&movieRowAnswer.Slasher,
+			&movieRowAnswer.Zombies,
+			&movieRowAnswer.Beast,
+			&movieRowAnswer.Godzilla,
+		); err != nil {
+			t.Errorf("Encountered error scanning movie row: %v", err)
+		}
+		movieRowsAnswer = append(movieRowsAnswer, movieRowAnswer)
+	}
+	if !cmp.Equal(movieRowsTruth, movieRowsAnswer) {
+		t.Errorf("Expected %v, got %v", movieRowsTruth, movieRowsAnswer)
+	}
+
+	// Movie genre rows.
+
+	if len(answer.Genre) != 3 {
+		t.Errorf("Expected 3 genre uuids, got %v", len(answer.Genre))
+	}
+	movieGenreTruth := []MovieGenreRow{
+		{
+			Uuid:      answer.Genre[0],
+			MovieUuid: answer.Movie,
+			Name:      "Horror",
+		}, {
+			Uuid:      answer.Genre[1],
+			MovieUuid: answer.Movie,
+			Name:      "Mystery",
+		}, {
+			Uuid:      answer.Genre[2],
+			MovieUuid: answer.Movie,
+			Name:      "Thriller",
+		},
+	}
+
+	genreRows, err := DB.Query(
+		`SELECT 
+			uuid, movie_uuid, name 
+		FROM movie_genre 
+		WHERE movie_uuid = ? 
+		`,
+		answer.Movie,
+	)
+	if err != nil {
+		t.Errorf("Encountered error querying for movie genre: %v", err)
+	}
+	movieGenreAnswer := make([]MovieGenreRow, 0)
+	for genreRows.Next() {
+		movieGenreRowsAnswer := MovieGenreRow{}
+		if err = genreRows.Scan(
+			&movieGenreRowsAnswer.Uuid,
+			&movieGenreRowsAnswer.MovieUuid,
+			&movieGenreRowsAnswer.Name,
+		); err != nil {
+			t.Errorf("Encountered error scanning genre row: %v", err)
+		}
+		movieGenreAnswer = append(movieGenreAnswer, movieGenreRowsAnswer)
+	}
+	if !cmp.Equal(movieGenreTruth, movieGenreAnswer) {
+		t.Errorf("Expected %v, got %v", movieGenreTruth, movieGenreAnswer)
+	}
+
+	// Movie actor rows.
+	if len(answer.Actor) != 3 {
+		t.Errorf("Expected 3 actors, got %v", len(answer.Actor))
+	}
+	movieActorTruth := []MovieActorRow{
+		{
+			Uuid:      answer.Actor[0],
+			MovieUuid: answer.Movie,
+			Name:      "Anthony Franciosa",
+		}, {
+			Uuid:      answer.Actor[1],
+			MovieUuid: answer.Movie,
+			Name:      "Giuliano Gemma",
+		}, {
+			Uuid:      answer.Actor[2],
+			MovieUuid: answer.Movie,
+			Name:      "John Saxon",
+		},
+	}
+	actorRows, err := DB.Query(
+		`SELECT uuid, movie_uuid, name
+		FROM movie_actor WHERE movie_uuid = ?`,
+		answer.Movie,
+	)
+	if err != nil {
+		t.Errorf("Encountered error querying movie_actor: %v", err)
+	}
+	movieActorAnswer := make([]MovieActorRow, 0)
+	for actorRows.Next() {
+		movieActorRowAnswer := MovieActorRow{}
+		if err = actorRows.Scan(
+			&movieActorRowAnswer.Uuid,
+			&movieActorRowAnswer.MovieUuid,
+			&movieActorRowAnswer.Name,
+		); err != nil {
+			t.Errorf("Encountered error scanning actor row: %v", err)
+		}
+		movieActorAnswer = append(movieActorAnswer, movieActorRowAnswer)
+	}
+	if !cmp.Equal(movieActorTruth, movieActorAnswer) {
+		t.Errorf("Expected %v, got %v", movieActorTruth, movieActorAnswer)
+	}
+
+	// Movie director rows.
+	if len(answer.Director) != 1 {
+		t.Errorf("Expected 1 director uuid, got %v", len(answer.Director))
+	}
+	movieDirectorTruth := []MovieDirectorRow{
+		{
+			Uuid:      answer.Director[0],
+			MovieUuid: answer.Movie,
+			Name:      "Dario Argento",
+		},
+	}
+	directorRows, err := DB.Query(
+		` SELECT uuid, movie_uuid, name
+		FROM movie_director WHERE movie_uuid = ?`,
+		answer.Movie,
+	)
+	if err != nil {
+		t.Errorf("Encountered error querying for movie director: %v", err)
+	}
+	movieDirectorAnswer := make([]MovieDirectorRow, 0)
+	for directorRows.Next() {
+		movieDirectorRowAnswer := MovieDirectorRow{}
+		if err = directorRows.Scan(
+			&movieDirectorRowAnswer.Uuid,
+			&movieDirectorRowAnswer.MovieUuid,
+			&movieDirectorRowAnswer.Name,
+		); err != nil {
+			t.Errorf("Encountered error scanning director row: %v", err)
+		}
+		movieDirectorAnswer = append(movieDirectorAnswer, movieDirectorRowAnswer)
+	}
+	if !cmp.Equal(movieDirectorTruth, movieDirectorAnswer) {
+		t.Errorf("Expected %v, got %v", movieDirectorTruth, movieDirectorAnswer)
+	}
+
+	// Movie writer rows.
+	if len(answer.Writer) != 1 {
+		t.Errorf("Expected 1 writer uuid, got %v", len(answer.Writer))
+	}
+	movieWriterTruth := []MovieWriterRow{
+		{
+			Uuid:      answer.Writer[0],
+			MovieUuid: answer.Movie,
+			Name:      "Dario Argento",
+		},
+	}
+	writerRows, err := DB.Query(
+		`SELECT uuid, movie_uuid, name
+		FROM movie_writer WHERE movie_uuid = ?`,
+		answer.Movie,
+	)
+	if err != nil {
+		t.Errorf("Encountered error querying for movie writer: %v", err)
+	}
+	movieWriterAnswer := make([]MovieWriterRow, 0)
+	for writerRows.Next() {
+		movieWriterRowAnswer := MovieWriterRow{}
+		if err = writerRows.Scan(
+			&movieWriterRowAnswer.Uuid,
+			&movieWriterRowAnswer.MovieUuid,
+			&movieWriterRowAnswer.Name,
+		); err != nil {
+			t.Errorf("Encountered error scanning writer row: %v", err)
+		}
+		movieWriterAnswer = append(movieWriterAnswer, movieWriterRowAnswer)
+	}
+	if !cmp.Equal(movieWriterTruth, movieWriterAnswer) {
+		t.Errorf("Expected %v, got %v", movieWriterTruth, movieWriterAnswer)
+	}
+	// Movie rating rows.
+	if len(answer.Rating) != 3 {
+		t.Errorf("Expected 1 rating uuid, got %v", len(answer.Rating))
+	}
+	movieRatingTruth := []MovieRatingRow{
+		{
+			Uuid:      answer.Rating[0],
+			MovieUuid: answer.Movie,
+			Source:    "Internet Movie Database",
+			Value:     "7.0/10",
+		}, {
+			Uuid:      answer.Rating[1],
+			MovieUuid: answer.Movie,
+			Source:    "Rotten Tomatoes",
+			Value:     "77%",
+		}, {
+			Uuid:      answer.Rating[2],
+			MovieUuid: answer.Movie,
+			Source:    "Metacritic",
+			Value:     "83/100",
+		},
+	}
+	ratingRows, err := DB.Query(
+		`SELECT uuid, movie_uuid, source, value
+		FROM movie_rating WHERE movie_uuid = ?`,
+		answer.Movie,
+	)
+	if err != nil {
+		t.Errorf("Encountered error querying for movie ratings: %v", err)
+	}
+	movieRatingAnswer := make([]MovieRatingRow, 0)
+	for ratingRows.Next() {
+		movieRatingRowAnswer := MovieRatingRow{}
+		if err = ratingRows.Scan(
+			&movieRatingRowAnswer.Uuid,
+			&movieRatingRowAnswer.MovieUuid,
+			&movieRatingRowAnswer.Source,
+			&movieRatingRowAnswer.Value,
+		); err != nil {
+			t.Errorf("Encountered error scanning movie rating row: %v", err)
+		}
+		movieRatingAnswer = append(movieRatingAnswer, movieRatingRowAnswer)
+	}
+	if !cmp.Equal(movieRatingTruth, movieRatingAnswer) {
+		t.Errorf("Expected %v, got %v", movieRatingTruth, movieRatingAnswer)
+	}
+
 }

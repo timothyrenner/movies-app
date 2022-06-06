@@ -426,6 +426,28 @@ func TestCreateMovieRatingRows(t *testing.T) {
 	}
 }
 
+func TestCreateMovieWatchRow(t *testing.T) {
+	movieWatchRecord := gristSampleMovieWatch()
+	movieUuid := "abc-123"
+
+	answer, err := CreateMovieWatchRow(movieWatchRecord, movieUuid)
+	if err != nil {
+		t.Errorf("Encountered error creating movie watch row: %v", err)
+	}
+	truth := &MovieWatchRow{
+		Uuid:       answer.Uuid,
+		MovieUuid:  "abc-123",
+		MovieTitle: "Tenebrae",
+		Watched:    1653609600,
+		Service:    "Shudder",
+		FirstTime:  false,
+		JoeBob:     true,
+	}
+	if !cmp.Equal(truth, answer) {
+		t.Errorf("Expected %v, got %v", truth, answer)
+	}
+}
+
 func TestInsertMovieDetails(t *testing.T) {
 	m := setupDatabase()
 	defer teardownDatabase(m)
@@ -725,6 +747,67 @@ func TestInsertMovieDetails(t *testing.T) {
 	}
 	if !cmp.Equal(movieRatingTruth, movieRatingAnswer) {
 		t.Errorf("Expected %v, got %v", movieRatingTruth, movieRatingAnswer)
+	}
+
+}
+
+func TestInsertMovieWatch(t *testing.T) {
+	m := setupDatabase()
+	defer teardownDatabase(m)
+	loadMovie()
+
+	movieWatchRecord := gristSampleMovieWatch()
+	movieUuid := "abc-123"
+
+	uuid, err := InsertMovieWatch(movieWatchRecord, movieUuid)
+	if err != nil {
+		t.Errorf("Encountered error inserting movie watch: %v", err)
+	}
+
+	answerRows, err := DB.Query(
+		`SELECT
+			uuid,
+			movie_uuid,
+			movie_title,
+			watched,
+			service,
+			first_time,
+			joe_bob
+		FROM movie_watch
+		WHERE movie_uuid = ?`, movieUuid,
+	)
+	if err != nil {
+		t.Errorf("Encountered error querying movie row.")
+	}
+	answer := make([]MovieWatchRow, 0)
+	for answerRows.Next() {
+		answerMovieWatchRow := MovieWatchRow{}
+		if err = answerRows.Scan(
+			&answerMovieWatchRow.Uuid,
+			&answerMovieWatchRow.MovieUuid,
+			&answerMovieWatchRow.MovieTitle,
+			&answerMovieWatchRow.Watched,
+			&answerMovieWatchRow.Service,
+			&answerMovieWatchRow.FirstTime,
+			&answerMovieWatchRow.JoeBob,
+		); err != nil {
+			t.Errorf("Encountered error scanning movie watch row: %v", err)
+		}
+		answer = append(answer, answerMovieWatchRow)
+	}
+	truth := []MovieWatchRow{
+		{
+			Uuid:       uuid,
+			MovieUuid:  "abc-123",
+			MovieTitle: "Tenebrae",
+			Watched:    1653609600,
+			Service:    "Shudder",
+			FirstTime:  false,
+			JoeBob:     true,
+		},
+	}
+	if !cmp.Equal(truth, answer) {
+		t.Errorf("Expected %v, got %v", truth, answer)
 	}
 
 }

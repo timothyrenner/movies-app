@@ -64,9 +64,7 @@ func updateMovies(cmd *cobra.Command, args []string) {
 
 	movieWatchAddChan := make(chan *GristMovieWatchRecord)
 	go func() {
-		records := make([]GristMovieWatchRecord, 0)
 		for record := range movieWatchAddChan {
-			records = append(records, *record)
 
 			movieUuid, err := FindMovie(record)
 			if err != nil {
@@ -77,17 +75,25 @@ func updateMovies(cmd *cobra.Command, args []string) {
 				if err != nil {
 					log.Panicf("Error fetching movie from OMDB: %v", err)
 				}
-				_, err = InsertMovieDetails(omdbResponse, record)
+				movieDetailUuids, err := InsertMovieDetails(
+					omdbResponse, record,
+				)
 				if err != nil {
 					log.Panicf(
 						"Error inserting movie details into database: %v", err,
 					)
 				}
-				continue
+				movieUuid = movieDetailUuids.Movie
+			}
+			_, err = InsertMovieWatch(record, movieUuid)
+			if err != nil {
+				log.Panicf(
+					"Error inserting movie watch into database: %v", err,
+				)
 			}
 		}
-		// TODO: Add the records to the database.
 		// Update the records in the database with the grist IDs.
+		//  TODO: Implement ^^^^^
 	}()
 
 	for ii := range records.Records {
@@ -98,8 +104,7 @@ func updateMovies(cmd *cobra.Command, args []string) {
 			log.Panicf("Encountered error obtaining movie watch: %v", err)
 		}
 
-		// If there's a uuid in the Grist record, we know it's in the DB
-		// already. Skip.
+		// If there's a uuid for the movie watch in the database, skip it.
 		if movieWatchUuid != "" {
 			log.Printf(
 				"Already found %v in database, skipping.", record.Fields.Name,

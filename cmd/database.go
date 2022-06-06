@@ -215,6 +215,38 @@ func CreateMovieRatingRows(
 	return rows
 }
 
+type MovieWatchRow struct {
+	Uuid       string
+	MovieUuid  string
+	MovieTitle string
+	Watched    int
+	Service    string
+	FirstTime  bool
+	JoeBob     bool
+}
+
+func CreateMovieWatchRow(
+	movieWatchRecord *GristMovieWatchRecord,
+	movieUuid string,
+) (*MovieWatchRow, error) {
+	if len(movieWatchRecord.Fields.Service) != 2 {
+		return nil, fmt.Errorf(
+			"expected Service to have length 2, got %v",
+			len(movieWatchRecord.Fields.Service),
+		)
+	}
+
+	return &MovieWatchRow{
+		Uuid:       uuid.New().String(),
+		MovieUuid:  movieUuid,
+		MovieTitle: movieWatchRecord.Fields.Name,
+		Watched:    movieWatchRecord.Fields.Watched,
+		Service:    movieWatchRecord.Fields.Service[1],
+		FirstTime:  movieWatchRecord.Fields.FirstTime,
+		JoeBob:     movieWatchRecord.Fields.JoeBob,
+	}, nil
+}
+
 type MovieDetailUuids struct {
 	Movie    string
 	Genre    []string
@@ -463,4 +495,40 @@ func InsertMovieDetails(
 	}
 
 	return &movieUuids, nil
+}
+
+func InsertMovieWatch(
+	movieWatch *GristMovieWatchRecord, movieUuid string,
+) (string, error) {
+	movieWatchRow, err := CreateMovieWatchRow(movieWatch, movieUuid)
+	if err != nil {
+		return "", fmt.Errorf(
+			"encountered error creating movie watch row: %v", err,
+		)
+	}
+	_, err = DB.Exec(
+		`INSERT INTO movie_watch (
+			uuid,
+			movie_uuid,
+			movie_title,
+			watched,
+			service,
+			first_time,
+			joe_bob
+		) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		movieWatchRow.Uuid,
+		movieWatchRow.MovieUuid,
+		movieWatchRow.MovieTitle,
+		movieWatchRow.Watched,
+		movieWatchRow.Service,
+		movieWatchRow.FirstTime,
+		movieWatchRow.JoeBob,
+	)
+	if err != nil {
+		return "", fmt.Errorf(
+			"encountered error inserting movie watch: %v", err,
+		)
+	}
+
+	return movieWatchRow.Uuid, nil
 }

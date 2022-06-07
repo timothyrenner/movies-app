@@ -26,7 +26,11 @@ jobs:
       - name: Set up movies-app
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release download && chmod a+x movies-app
+        run: |
+          gh release download \
+            --repo timothyrenner/movies-app \
+            --pattern movies-app
+          chmod a+x movies-app
 
       - name: Set up python
         uses: actions/setup-python@v2

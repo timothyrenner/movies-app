@@ -82,3 +82,9 @@ CREATE TABLE IF NOT EXISTS movie_rating (
     FOREIGN KEY(movie_uuid) REFERENCES movie(uuid)
 );
 CREATE INDEX IF NOT EXISTS idx_movie_rating_movie_uuid ON movie_rating(movie_uuid);
+-- Table mapping uuids to grist IDs.
+CREATE TABLE IF NOT EXISTS uuid_grist (
+    uuid TEXT PRIMARY KEY,
+    grist_id INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_uuid_grist_grist_id ON uuid_grist(grist_id);

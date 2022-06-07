@@ -247,6 +247,11 @@ func CreateMovieWatchRow(
 	}, nil
 }
 
+type UuidGristRow struct {
+	Uuid    string
+	GristId int
+}
+
 type MovieDetailUuids struct {
 	Movie    string
 	Genre    []string
@@ -531,4 +536,17 @@ func InsertMovieWatch(
 	}
 
 	return movieWatchRow.Uuid, nil
+}
+
+func InsertUuidGrist(movieWatchUuid string, gristId int) error {
+	_, err := DB.Exec(
+		`INSERT INTO uuid_grist (uuid, grist_id) VALUES (?, ?)`,
+		movieWatchUuid, gristId,
+	)
+	if err != nil {
+		return fmt.Errorf(
+			"encountered error inserting uuid <> grist id row: %v", err,
+		)
+	}
+	return nil
 }

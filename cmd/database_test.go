@@ -811,3 +811,38 @@ func TestInsertMovieWatch(t *testing.T) {
 	}
 
 }
+
+func TestInsertUuidGrist(t *testing.T) {
+	m := setupDatabase()
+	defer teardownDatabase(m)
+
+	movieWatchUuid := "abc-123"
+	gristId := 1
+
+	err := InsertUuidGrist(movieWatchUuid, gristId)
+	if err != nil {
+		t.Errorf("Encountered error inserting uuid <> grist row: %v", err)
+	}
+
+	answerRows, err := DB.Query(`SELECT uuid, grist_id FROM uuid_grist`)
+	if err != nil {
+		t.Errorf("Encountered error retrieving uuid <> grist row: %v", err)
+	}
+	answer := make([]UuidGristRow, 0)
+	for answerRows.Next() {
+		answerRow := UuidGristRow{}
+		if err = answerRows.Scan(&answerRow.Uuid, &answerRow.GristId); err != nil {
+			t.Errorf("Encountered error scanning row: %v", err)
+		}
+		answer = append(answer, answerRow)
+	}
+	truth := []UuidGristRow{
+		{
+			"abc-123", 1,
+		},
+	}
+	if !cmp.Equal(truth, answer) {
+		t.Errorf("Expected %v, got %v", truth, answer)
+	}
+
+}

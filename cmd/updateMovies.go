@@ -62,39 +62,7 @@ func updateMovies(cmd *cobra.Command, args []string) {
 		"Pulled %v documents from Grist, processing.", len(records.Records),
 	)
 
-	movieWatchAddChan := make(chan *GristMovieWatchRecord)
-	go func() {
-		for record := range movieWatchAddChan {
-
-			movieUuid, err := FindMovie(record)
-			if err != nil {
-				log.Panicf("Error finding movie: %v", err)
-			}
-			if movieUuid == "" {
-				omdbResponse, err := omdbClient.GetMovie(record.ImdbId())
-				if err != nil {
-					log.Panicf("Error fetching movie from OMDB: %v", err)
-				}
-				movieDetailUuids, err := InsertMovieDetails(
-					omdbResponse, record,
-				)
-				if err != nil {
-					log.Panicf(
-						"Error inserting movie details into database: %v", err,
-					)
-				}
-				movieUuid = movieDetailUuids.Movie
-			}
-			_, err = InsertMovieWatch(record, movieUuid)
-			if err != nil {
-				log.Panicf(
-					"Error inserting movie watch into database: %v", err,
-				)
-			}
-		}
-		// Update the records in the database with the grist IDs.
-		//  TODO: Implement ^^^^^
-	}()
+	newMovies := 0
 
 	for ii := range records.Records {
 		record := &records.Records[ii]
@@ -112,8 +80,45 @@ func updateMovies(cmd *cobra.Command, args []string) {
 			continue
 		}
 
-		movieWatchAddChan <- record
+		// See if the movie and details are already in the database.
+		movieUuid, err := FindMovie(record)
+		if err != nil {
+			log.Panicf("Error finding movie: %v", err)
+		}
+		// If the movie's not in the database, we need to insert it and the
+		// details.
+		if movieUuid == "" {
+			log.Printf("Fetching %v from OMDB.", record.Fields.Name)
+			omdbResponse, err := omdbClient.GetMovie(record.ImdbId())
+			if err != nil {
+				log.Panicf("Error fetching movie from OMDB: %v", err)
+			}
+			movieDetailUuids, err := InsertMovieDetails(
+				omdbResponse, record,
+			)
+			if err != nil {
+				log.Panicf(
+					"Error inserting movie details into database: %v", err,
+				)
+			}
+			movieUuid = movieDetailUuids.Movie
+		}
+		// Now that we have a movie uuid for the foreign key we can insert the
+		// movie watch itself.
+		movieWatchUuid, err = InsertMovieWatch(record, movieUuid)
+		if err != nil {
+			log.Panicf(
+				"Error inserting movie watch into database: %v", err,
+			)
+		}
+		// Now add the Grist ID <> movie watch ID mapping.
+		err = InsertUuidGrist(movieWatchUuid, record.Id)
+		if err != nil {
+			log.Panicf("Error inserting uuid <> grist ID pair into database: %v", err)
+		}
+		newMovies += 1
 	}
+	log.Printf("Completed. Inserted %v new movie watches.", newMovies)
 }
 
 func init() {

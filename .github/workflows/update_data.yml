@@ -44,7 +44,7 @@ jobs:
       - name: Pull DVC
         run: dvc pull
 
-      - name: Update Homes
+      - name: Update Movies
         run: ./movies-app update-movies -l 10 
 
       - name: DVC Add

@@ -97,10 +97,12 @@ func (c *GristClient) GetMovieWatchRecords(
 		params.Encode(),
 	)
 
+	log.Printf("Making call to grist: %v", url)
 	request, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %v", err)
 	}
+	request.Header = c.header
 
 	resp, err := c.client.Do(request)
 	if err != nil {

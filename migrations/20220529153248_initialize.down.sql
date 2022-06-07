@@ -24,3 +24,6 @@ DROP INDEX IF EXISTS idx_movie_writer_movie_uuid;
 -- Drop auxiliary table for ratings.
 DROP TABLE IF EXISTS movie_rating;
 DROP INDEX IF EXISTS idx_movie_rating_movie_uuid;
+-- Drop auxiliary table for mapping uuids to grist IDs.
+DROP TABLE IF EXISTS uuid_grist;
+DROP INDEX IF EXISTS idx_uuid_grist_grist_id;

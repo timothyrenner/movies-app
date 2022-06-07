@@ -26,7 +26,7 @@ jobs:
       - name: Set up movies-app
         run: gh release download && chmod a+x movies-app
           env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up python
         uses: actions/setup-python@v2
@@ -46,6 +46,10 @@ jobs:
 
       - name: Update Movies
         run: ./movies-app update-movies -l 10 
+          env:
+            GRIST_KEY: ${{ secrets.GRIST_KEY }}
+            GRIST_DOCUMENT_ID: ${{ secrets.GRIST_DOCUMENT_ID }}
+            OMDB_KEY: ${{ secrets.OMDB_KEY }}
 
       - name: DVC Add
         run: dvc add data/movies.db

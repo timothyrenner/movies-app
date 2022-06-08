@@ -228,6 +228,23 @@ func TestFindMovieWatch(t *testing.T) {
 	}
 }
 
+func TestFindMovie(t *testing.T) {
+	m := setupDatabase()
+	defer teardownDatabase(m)
+	loadMovie()
+	movieWatch := gristSampleMovieWatch()
+	truth := "abc-123"
+	answer, err := FindMovie(movieWatch)
+	if err != nil {
+		t.Errorf("Error getting movie: %v", err)
+	}
+
+	if !cmp.Equal(truth, answer) {
+		t.Errorf("Expected %v, got %v", truth, answer)
+	}
+
+}
+
 func TestCreateMovieRow(t *testing.T) {
 	movieRecord := omdbSampleMovie()
 	movieWatch := &GristMovieWatchRecord{

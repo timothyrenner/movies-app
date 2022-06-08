@@ -268,8 +268,8 @@ func FindMovieWatch(movieWatchRecord *GristMovieWatchRecord) (string, error) {
 	FROM
 		movie_watch
 	WHERE
-		movie_title = $1 AND
-		watched = $2
+		movie_title = ? AND
+		watched = ?
 	`
 
 	dbRow := DB.QueryRow(
@@ -295,7 +295,7 @@ func FindMovie(movieWatchRecord *GristMovieWatchRecord) (string, error) {
 	FROM
 		movie
 	WHERE
-		title = $1
+		title = ?
 	`
 	dbRow := DB.QueryRow(query, movieWatchRecord.Fields.Name)
 	var uuid string
@@ -308,6 +308,11 @@ func FindMovie(movieWatchRecord *GristMovieWatchRecord) (string, error) {
 	}
 
 	return uuid, nil
+}
+
+func FindMovies(movieWatchRecords *GristMovieWatchRecords) ([]string, error) {
+
+	return nil, nil // TODO: Implement.
 }
 
 func InsertMovieDetails(

@@ -16,11 +16,21 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-
-      - name: Set up environment
+      
+      - name: Set up git.
+        # See https://github.com/marketplace/actions/github-push#example-workflow-file
         run: |
-          echo OMDB_KEY=${{ secrets.OMDB_KEY }} >> $GITHUB_ENV
-          echo NOTION_KEY=${{ secrets.NOTION_KEY }} >> $GITHUB_ENV
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+      
+      - name: Set up movies-app
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download \
+            --repo timothyrenner/movies-app \
+            --pattern movies-app
+          chmod a+x movies-app
 
       - name: Set up python
         uses: actions/setup-python@v2
@@ -32,31 +42,27 @@ jobs:
         with:
           credentials_json: "${{ secrets.MOVIE_DVC_PUSHER_SA_CREDS }}"
 
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v0
-
-      - name: Set up git.
-        # See https://github.com/marketplace/actions/github-push#example-workflow-file
-        run: |
-          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-
       - name: Install dependencies
         run: pip install -r requirements.txt
 
       - name: Pull DVC
         run: dvc pull
 
-      - name: Pull Notion data
-        run: python scripts/pull_notion.py --output-file data/raw/notion_out.json
+      - name: Update Movies
+        env:
+          GRIST_KEY: ${{ secrets.GRIST_KEY }}
+          GRIST_DOCUMENT_ID: ${{ secrets.GRIST_DOCUMENT_ID }}
+          OMDB_KEY: ${{ secrets.OMDB_KEY }}
+        run: ./movies-app update-movies -l 10 
+        
 
-      - name: Run DVC repro
-        run: dvc repro
+      - name: DVC Add
+        run: dvc add data/movies.db
 
       - name: git add
         continue-on-error: true
         run: |
-          git add dvc.lock data/
+          git add data/
           timestamp=$(date -u)
           git commit -m "Update datasets: ${timestamp}."
 

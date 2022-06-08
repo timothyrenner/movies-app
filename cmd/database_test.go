@@ -591,6 +591,11 @@ func TestInsertMovieDetails(t *testing.T) {
 	if err != nil {
 		t.Errorf("Encountered error querying for movie genre: %v", err)
 	}
+	defer func() {
+		if err = genreRows.Close(); err != nil {
+			t.Errorf("Encountered error: %v", err)
+		}
+	}()
 	movieGenreAnswer := make([]MovieGenreRow, 0)
 	for genreRows.Next() {
 		movieGenreRowsAnswer := MovieGenreRow{}
@@ -634,6 +639,11 @@ func TestInsertMovieDetails(t *testing.T) {
 	if err != nil {
 		t.Errorf("Encountered error querying movie_actor: %v", err)
 	}
+	defer func() {
+		if err = actorRows.Close(); err != nil {
+			t.Errorf("Encountered error: %v", err)
+		}
+	}()
 	movieActorAnswer := make([]MovieActorRow, 0)
 	for actorRows.Next() {
 		movieActorRowAnswer := MovieActorRow{}
@@ -669,6 +679,11 @@ func TestInsertMovieDetails(t *testing.T) {
 	if err != nil {
 		t.Errorf("Encountered error querying for movie director: %v", err)
 	}
+	defer func() {
+		if err = directorRows.Close(); err != nil {
+			t.Errorf("Encountered error: %v", err)
+		}
+	}()
 	movieDirectorAnswer := make([]MovieDirectorRow, 0)
 	for directorRows.Next() {
 		movieDirectorRowAnswer := MovieDirectorRow{}
@@ -701,9 +716,15 @@ func TestInsertMovieDetails(t *testing.T) {
 		FROM movie_writer WHERE movie_uuid = ?`,
 		answer.Movie,
 	)
+
 	if err != nil {
 		t.Errorf("Encountered error querying for movie writer: %v", err)
 	}
+	defer func() {
+		if err = writerRows.Close(); err != nil {
+			t.Errorf("Encountered error: %v", err)
+		}
+	}()
 	movieWriterAnswer := make([]MovieWriterRow, 0)
 	for writerRows.Next() {
 		movieWriterRowAnswer := MovieWriterRow{}
@@ -749,6 +770,11 @@ func TestInsertMovieDetails(t *testing.T) {
 	if err != nil {
 		t.Errorf("Encountered error querying for movie ratings: %v", err)
 	}
+	defer func() {
+		if err = ratingRows.Close(); err != nil {
+			t.Errorf("Encountered error: %v", err)
+		}
+	}()
 	movieRatingAnswer := make([]MovieRatingRow, 0)
 	for ratingRows.Next() {
 		movieRatingRowAnswer := MovieRatingRow{}
@@ -796,6 +822,11 @@ func TestInsertMovieWatch(t *testing.T) {
 	if err != nil {
 		t.Errorf("Encountered error querying movie row.")
 	}
+	defer func() {
+		if err = answerRows.Close(); err != nil {
+			t.Errorf("Encountered error: %v", err)
+		}
+	}()
 	answer := make([]MovieWatchRow, 0)
 	for answerRows.Next() {
 		answerMovieWatchRow := MovieWatchRow{}
@@ -845,6 +876,11 @@ func TestInsertUuidGrist(t *testing.T) {
 	if err != nil {
 		t.Errorf("Encountered error retrieving uuid <> grist row: %v", err)
 	}
+	defer func() {
+		if err = answerRows.Close(); err != nil {
+			t.Errorf("Encountered error: %v", err)
+		}
+	}()
 	answer := make([]UuidGristRow, 0)
 	for answerRows.Next() {
 		answerRow := UuidGristRow{}

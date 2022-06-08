@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -310,9 +311,90 @@ func FindMovie(movieWatchRecord *GristMovieWatchRecord) (string, error) {
 	return uuid, nil
 }
 
-func FindMovies(movieWatchRecords *GristMovieWatchRecords) ([]string, error) {
+func FindMovies(movieWatchRecords *GristMovieWatchRecords) (
+	[]MovieRow, []int, error,
+) {
+	// ! NOTE THIS FUNCTION WILL FAIL. NEEDS THE IMDB ID COLUMN FOR THE SEARCH
+	// ! TO DISAMBIGUATE MOVIES WITH THE SAME TITLE.
+	params := make([]string, len(movieWatchRecords.Records))
+	titles := make([]string, len(movieWatchRecords.Records))
+	for ii := range movieWatchRecords.Records {
+		params[ii] = "?"
+		titles[ii] = movieWatchRecords.Records[ii].Fields.Name
+	}
+	paramString := strings.Join(params, ", ")
+	query := fmt.Sprintf(`
+	SELECT
+		movie.uuid,
+		uuid_grist_id.grist_id,
+		movie.title,
+		movie.imdb_link,
+		movie.year,
+		movie.rated,
+		movie.released,
+		movie.runtime_minutes,
+		movie.plot,
+		movie.country,
+		movie.language,
+		movie.box_office,
+		movie.production,
+		movie.call_felissa,
+		movie.slasher,
+		movie.zombies,
+		movie.beast,
+		movie.godzilla
+	FROM movie
+	JOIN uuid_grist_id ON
+		movie.uuid = uuid_grist_id.uuid
+	WHERE title IN (%v)
+	`, paramString,
+	)
+	movieRows := make([]MovieRow, 0)
+	gristIds := make([]int, 0)
+	rows, err := DB.Query(query, titles)
+	if err != nil {
+		return nil, nil, fmt.Errorf(
+			"encountered error retrieving movies: %v", err,
+		)
+	}
+	defer func() {
+		if err = rows.Close(); err != nil {
+			log.Printf("Error closing rows after FindMovies: %v", err)
+			return
+		}
+	}()
+	for rows.Next() {
+		movieRow := MovieRow{}
+		var gristId int
+		if err = rows.Scan(
+			&movieRow.Uuid,
+			&gristId,
+			&movieRow.Title,
+			&movieRow.ImdbLink,
+			&movieRow.Year,
+			&movieRow.Rated,
+			&movieRow.Released,
+			&movieRow.RuntimeMinutes,
+			&movieRow.Plot,
+			&movieRow.Country,
+			&movieRow.Language,
+			&movieRow.BoxOffice,
+			&movieRow.Production,
+			&movieRow.CallFelissa,
+			&movieRow.Slasher,
+			&movieRow.Zombies,
+			&movieRow.Beast,
+			&movieRow.Godzilla,
+		); err != nil {
+			return nil, nil, fmt.Errorf(
+				"encountered error scanning row: %v", err,
+			)
+		}
+		movieRows = append(movieRows, movieRow)
+		gristIds = append(gristIds, gristId)
+	}
 
-	return nil, nil // TODO: Implement.
+	return movieRows, gristIds, nil
 }
 
 func InsertMovieDetails(

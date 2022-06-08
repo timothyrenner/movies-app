@@ -37,6 +37,9 @@ func updateMovies(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Panicf("Error obtaining limit: %v", err)
 	}
+	if limit < 0 {
+		log.Panicf("Limit must be greater than zero, got %v", limit)
+	}
 
 	gristClient := NewGristClient(GRIST_KEY)
 	if limit > 0 {

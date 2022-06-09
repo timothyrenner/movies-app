@@ -238,12 +238,12 @@ func TestFindMovieWatch(t *testing.T) {
 }
 
 func TestFindMovie(t *testing.T) {
-	m := setupDatabase()
-	defer teardownDatabase(m)
-	loadMovie()
+	c, m := setupDatabase()
+	defer teardownDatabase(c, m)
+	c.loadMovie()
 	movieWatch := gristSampleMovieWatch()
 	truth := "abc-123"
-	answer, err := FindMovie(movieWatch)
+	answer, err := c.FindMovie(movieWatch)
 	if err != nil {
 		t.Errorf("Error getting movie: %v", err)
 	}

@@ -12,7 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func setupDatabase() *migrate.Migrate {
+func setupDatabase() (*DBClient, *migrate.Migrate) {
 	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		log.Panicf("Encountered error opening in-memory database: %v", err)
@@ -34,13 +34,13 @@ func setupDatabase() *migrate.Migrate {
 	}
 
 	// Point the database client var at the new database client.
-	DB = db
-	return m
+	c := DBClient{DB: db}
+	return &c, m
 }
 
-func loadMovie() {
+func (c *DBClient) loadMovie() {
 	ctx := context.Background()
-	tx, err := DB.BeginTx(ctx, nil)
+	tx, err := c.DB.BeginTx(ctx, nil)
 	if err != nil {
 		log.Panicf("Encountered error beginning transaction: %v", err)
 	}
@@ -93,9 +93,9 @@ func loadMovie() {
 	}
 }
 
-func loadMovieWatch() {
+func (c *DBClient) loadMovieWatch() {
 	ctx := context.Background()
-	tx, err := DB.BeginTx(ctx, nil)
+	tx, err := c.DB.BeginTx(ctx, nil)
 	if err != nil {
 		log.Panicf("Encountered error beginning transaction: %v", err)
 	}
@@ -130,9 +130,12 @@ func loadMovieWatch() {
 	}
 }
 
-func teardownDatabase(m *migrate.Migrate) {
+func teardownDatabase(c *DBClient, m *migrate.Migrate) {
 	if err := m.Down(); err != nil {
 		log.Panicf("Encountered error tearing down database: %v", err)
+	}
+	if err := c.Close(); err != nil {
+		log.Panicf("Encountered error closing database: %v", err)
 	}
 }
 
@@ -191,15 +194,15 @@ func gristSampleMovieWatch() *GristMovieWatchRecord {
 }
 
 func TestFindMovieWatch(t *testing.T) {
-	m := setupDatabase()
-	loadMovie()
-	loadMovieWatch()
-	defer teardownDatabase(m)
+	c, m := setupDatabase()
+	c.loadMovie()
+	c.loadMovieWatch()
+	defer teardownDatabase(c, m)
 
 	truth := "def-123"
 	record := gristSampleMovieWatch()
 
-	uuid, err := FindMovieWatch(record)
+	uuid, err := c.FindMovieWatch(record)
 	if err != nil {
 		t.Errorf("Encountered error: %v", err)
 	}
@@ -225,7 +228,7 @@ func TestFindMovieWatch(t *testing.T) {
 		},
 	}
 
-	uuid2, err := FindMovieWatch(&record2)
+	uuid2, err := c.FindMovieWatch(&record2)
 	if err != nil {
 		t.Errorf("Encountered error: %v", err)
 	}
@@ -458,18 +461,18 @@ func TestCreateMovieWatchRow(t *testing.T) {
 }
 
 func TestInsertMovieDetails(t *testing.T) {
-	m := setupDatabase()
-	defer teardownDatabase(m)
+	c, m := setupDatabase()
+	defer teardownDatabase(c, m)
 
 	movie := omdbSampleMovie()
 	movieWatch := gristSampleMovieWatch()
 
-	answer, err := InsertMovieDetails(movie, movieWatch)
+	answer, err := c.InsertMovieDetails(movie, movieWatch)
 	if err != nil {
 		t.Errorf("Encountered error: %v", err)
 	}
 
-	movieRows, err := DB.Query(
+	movieRows, err := c.DB.Query(
 		`SELECT
 			uuid,
 			title,
@@ -575,7 +578,7 @@ func TestInsertMovieDetails(t *testing.T) {
 		},
 	}
 
-	genreRows, err := DB.Query(
+	genreRows, err := c.DB.Query(
 		`SELECT 
 			uuid, movie_uuid, name 
 		FROM movie_genre 
@@ -621,7 +624,7 @@ func TestInsertMovieDetails(t *testing.T) {
 			Name:      "John Saxon",
 		},
 	}
-	actorRows, err := DB.Query(
+	actorRows, err := c.DB.Query(
 		`SELECT uuid, movie_uuid, name
 		FROM movie_actor WHERE movie_uuid = ?`,
 		answer.Movie,
@@ -656,7 +659,7 @@ func TestInsertMovieDetails(t *testing.T) {
 			Name:      "Dario Argento",
 		},
 	}
-	directorRows, err := DB.Query(
+	directorRows, err := c.DB.Query(
 		` SELECT uuid, movie_uuid, name
 		FROM movie_director WHERE movie_uuid = ?`,
 		answer.Movie,
@@ -691,7 +694,7 @@ func TestInsertMovieDetails(t *testing.T) {
 			Name:      "Dario Argento",
 		},
 	}
-	writerRows, err := DB.Query(
+	writerRows, err := c.DB.Query(
 		`SELECT uuid, movie_uuid, name
 		FROM movie_writer WHERE movie_uuid = ?`,
 		answer.Movie,
@@ -736,7 +739,7 @@ func TestInsertMovieDetails(t *testing.T) {
 			Value:     "83/100",
 		},
 	}
-	ratingRows, err := DB.Query(
+	ratingRows, err := c.DB.Query(
 		`SELECT uuid, movie_uuid, source, value
 		FROM movie_rating WHERE movie_uuid = ?`,
 		answer.Movie,
@@ -764,19 +767,19 @@ func TestInsertMovieDetails(t *testing.T) {
 }
 
 func TestInsertMovieWatch(t *testing.T) {
-	m := setupDatabase()
-	defer teardownDatabase(m)
-	loadMovie()
+	c, m := setupDatabase()
+	defer teardownDatabase(c, m)
+	c.loadMovie()
 
 	movieWatchRecord := gristSampleMovieWatch()
 	movieUuid := "abc-123"
 
-	uuid, err := InsertMovieWatch(movieWatchRecord, movieUuid)
+	uuid, err := c.InsertMovieWatch(movieWatchRecord, movieUuid)
 	if err != nil {
 		t.Errorf("Encountered error inserting movie watch: %v", err)
 	}
 
-	answerRows, err := DB.Query(
+	answerRows, err := c.DB.Query(
 		`SELECT
 			uuid,
 			movie_uuid,
@@ -827,18 +830,18 @@ func TestInsertMovieWatch(t *testing.T) {
 }
 
 func TestInsertUuidGrist(t *testing.T) {
-	m := setupDatabase()
-	defer teardownDatabase(m)
+	c, m := setupDatabase()
+	defer teardownDatabase(c, m)
 
 	movieWatchUuid := "abc-123"
 	gristId := 1
 
-	err := InsertUuidGrist(movieWatchUuid, gristId)
+	err := c.InsertUuidGrist(movieWatchUuid, gristId)
 	if err != nil {
 		t.Errorf("Encountered error inserting uuid <> grist row: %v", err)
 	}
 
-	answerRows, err := DB.Query(`SELECT uuid, grist_id FROM uuid_grist`)
+	answerRows, err := c.DB.Query(`SELECT uuid, grist_id FROM uuid_grist`)
 	if err != nil {
 		t.Errorf("Encountered error retrieving uuid <> grist row: %v", err)
 	}

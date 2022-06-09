@@ -18,6 +18,7 @@ type MovieRow struct {
 	Uuid           string
 	Title          string
 	ImdbLink       string
+	ImdbId         string
 	Year           int
 	Rated          sql.NullString
 	Released       sql.NullString
@@ -77,6 +78,7 @@ func CreateMovieRow(
 		Uuid:           uuid.New().String(),
 		Title:          movieWatch.Fields.Name,
 		ImdbLink:       movieWatch.Fields.ImdbLink,
+		ImdbId:         movieWatch.Fields.ImdbId,
 		Year:           year,
 		Rated:          textToNullString(movieRecord.Rated),
 		Released:       textToNullString(releasedDate),
@@ -219,6 +221,7 @@ type MovieWatchRow struct {
 	Uuid       string
 	MovieUuid  string
 	MovieTitle string
+	ImdbId     string
 	Watched    int
 	Service    string
 	FirstTime  bool
@@ -240,6 +243,7 @@ func CreateMovieWatchRow(
 		Uuid:       uuid.New().String(),
 		MovieUuid:  movieUuid,
 		MovieTitle: movieWatchRecord.Fields.Name,
+		ImdbId:     movieWatchRecord.Fields.ImdbId,
 		Watched:    movieWatchRecord.Fields.Watched,
 		Service:    movieWatchRecord.Fields.Service[1],
 		FirstTime:  movieWatchRecord.Fields.FirstTime,
@@ -268,12 +272,12 @@ func FindMovieWatch(movieWatchRecord *GristMovieWatchRecord) (string, error) {
 	FROM
 		movie_watch
 	WHERE
-		movie_title = $1 AND
+		imdb_id = $1 AND
 		watched = $2
 	`
 
 	dbRow := DB.QueryRow(
-		query, movieWatchRecord.Fields.Name, movieWatchRecord.Fields.Watched,
+		query, movieWatchRecord.Fields.ImdbId, movieWatchRecord.Fields.Watched,
 	)
 
 	var uuid string
@@ -333,6 +337,7 @@ func InsertMovieDetails(
 			uuid,
 			title,
 			imdb_link,
+			imdb_id,
 			year,
 			rated,
 			released,
@@ -348,12 +353,13 @@ func InsertMovieDetails(
 			beast,
 			godzilla
 		) VALUES(
-			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 		)
 	`,
 		movieRow.Uuid,
 		movieRow.Title,
 		movieRow.ImdbLink,
+		movieRow.ImdbId,
 		movieRow.Year,
 		movieRow.Rated,
 		movieRow.Released,

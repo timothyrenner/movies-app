@@ -5,7 +5,6 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"database/sql"
 	"log"
 	"os"
 
@@ -17,7 +16,7 @@ import (
 var GRIST_KEY string
 var GRIST_DOCUMENT_ID string
 var OMDB_KEY string
-var DB *sql.DB
+var DB string = "./data/movies.db"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -58,10 +57,4 @@ func init() {
 		log.Println("Could not find OMDB_KEY in environment or .env.")
 	}
 	OMDB_KEY = omdbKey
-
-	db, err := sql.Open("sqlite3", "./data/movies.db")
-	if err != nil {
-		log.Panicf("Error connecting to database: %v", err)
-	}
-	DB = db
 }

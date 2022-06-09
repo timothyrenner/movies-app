@@ -43,6 +43,7 @@ func (r *GristMovieWatchRecord) ImdbId() string {
 type GristMovieWatchFields struct {
 	Name        string   `json:"name,omitempty"`
 	ImdbLink    string   `json:"IMDB_Link,omitempty"`
+	ImdbId      string   `json:"IMDB_ID,omitempty"`
 	FirstTime   bool     `json:"First_Time,omitempty"`
 	Watched     int      `json:"Watched,omitempty"`
 	JoeBob      bool     `json:"Joe_Bob,omitempty"`

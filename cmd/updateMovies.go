@@ -5,6 +5,7 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"database/sql"
 	"log"
 
 	"github.com/spf13/cobra"
@@ -50,6 +51,13 @@ func updateMovies(cmd *cobra.Command, args []string) {
 
 	omdbClient := NewOmdbClient(OMDB_KEY)
 
+	dbc, err := sql.Open("sqlite3", DB)
+	if err != nil {
+		log.Panicf("Error opening database %v: %v", DB, err)
+	}
+	db := DBClient{DB: dbc}
+	defer db.Close()
+
 	records, err := gristClient.GetMovieWatchRecords(
 		GRIST_DOCUMENT_ID,
 		"Movie_watches",
@@ -70,7 +78,7 @@ func updateMovies(cmd *cobra.Command, args []string) {
 	for ii := range records.Records {
 		record := &records.Records[ii]
 		// Determine if it's already in the database.
-		movieWatchUuid, err := FindMovieWatch(record)
+		movieWatchUuid, err := db.FindMovieWatch(record)
 		if err != nil {
 			log.Panicf("Encountered error obtaining movie watch: %v", err)
 		}
@@ -84,7 +92,7 @@ func updateMovies(cmd *cobra.Command, args []string) {
 		}
 
 		// See if the movie and details are already in the database.
-		movieUuid, err := FindMovie(record)
+		movieUuid, err := db.FindMovie(record)
 		if err != nil {
 			log.Panicf("Error finding movie: %v", err)
 		}
@@ -96,7 +104,7 @@ func updateMovies(cmd *cobra.Command, args []string) {
 			if err != nil {
 				log.Panicf("Error fetching movie from OMDB: %v", err)
 			}
-			movieDetailUuids, err := InsertMovieDetails(
+			movieDetailUuids, err := db.InsertMovieDetails(
 				omdbResponse, record,
 			)
 			if err != nil {
@@ -108,14 +116,14 @@ func updateMovies(cmd *cobra.Command, args []string) {
 		}
 		// Now that we have a movie uuid for the foreign key we can insert the
 		// movie watch itself.
-		movieWatchUuid, err = InsertMovieWatch(record, movieUuid)
+		movieWatchUuid, err = db.InsertMovieWatch(record, movieUuid)
 		if err != nil {
 			log.Panicf(
 				"Error inserting movie watch into database: %v", err,
 			)
 		}
 		// Now add the Grist ID <> movie watch ID mapping.
-		err = InsertUuidGrist(movieWatchUuid, record.Id)
+		err = db.InsertUuidGrist(movieWatchUuid, record.Id)
 		if err != nil {
 			log.Panicf("Error inserting uuid <> grist ID pair into database: %v", err)
 		}

@@ -25,6 +25,7 @@ func TestGetRecords(t *testing.T) {
 						"fields": {
 							"Name": "Tenebrae",
 							"IMDB_Link": "https://www.imdb.com/title/tt0084777/",
+							"IMDB_ID": "tt0084777",
 							"Watched": 1653609600,
 							"Joe_Bob": true,
 							"Call_Felissa": false,
@@ -44,7 +45,8 @@ func TestGetRecords(t *testing.T) {
 						"id": 376,
 						"fields": {
 							"Name": "Slaughterhouse",
-							"IMDB_Link": "https://www.imdb.com/title/tt0093990/?ref_=ext_shr_lnk",
+							"IMDB_Link": "https://www.imdb.com/title/tt0093990/",
+							"IMDB_ID": "tt0093990",
 							"Watched": 1653609600,
 							"Joe_Bob": true,
 							"Call_Felissa": false,
@@ -65,6 +67,7 @@ func TestGetRecords(t *testing.T) {
 						"fields": {
 							"Name": "John Wick Chapter 3 - Parabellum",
 							"IMDB_Link": "https://www.imdb.com/title/tt6146586/",
+							"IMDB_ID": "tt6146586",
 							"Watched": 1653436800,
 							"Joe_Bob": false,
 							"Call_Felissa": true,
@@ -102,6 +105,7 @@ func TestGetRecords(t *testing.T) {
 				Fields: GristMovieWatchFields{
 					Name:        "Tenebrae",
 					ImdbLink:    "https://www.imdb.com/title/tt0084777/",
+					ImdbId:      "tt0084777",
 					FirstTime:   false,
 					Watched:     1653609600,
 					JoeBob:      true,
@@ -117,7 +121,8 @@ func TestGetRecords(t *testing.T) {
 				GristRecord: GristRecord{Id: 376},
 				Fields: GristMovieWatchFields{
 					Name:        "Slaughterhouse",
-					ImdbLink:    "https://www.imdb.com/title/tt0093990/?ref_=ext_shr_lnk",
+					ImdbLink:    "https://www.imdb.com/title/tt0093990/",
+					ImdbId:      "tt0093990",
 					FirstTime:   false,
 					Watched:     1653609600,
 					JoeBob:      true,
@@ -134,6 +139,7 @@ func TestGetRecords(t *testing.T) {
 				Fields: GristMovieWatchFields{
 					Name:        "John Wick Chapter 3 - Parabellum",
 					ImdbLink:    "https://www.imdb.com/title/tt6146586/",
+					ImdbId:      "tt6146586",
 					Watched:     1653436800,
 					JoeBob:      false,
 					CallFelissa: true,

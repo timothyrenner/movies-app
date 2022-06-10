@@ -78,7 +78,9 @@ func updateMovies(cmd *cobra.Command, args []string) {
 	for ii := range records.Records {
 		record := &records.Records[ii]
 		// Determine if it's already in the database.
-		movieWatchUuid, err := db.FindMovieWatch(record)
+		movieWatchUuid, err := db.FindMovieWatch(
+			record.Fields.ImdbId, record.Fields.Watched,
+		)
 		if err != nil {
 			log.Panicf("Encountered error obtaining movie watch: %v", err)
 		}
@@ -92,7 +94,7 @@ func updateMovies(cmd *cobra.Command, args []string) {
 		}
 
 		// See if the movie and details are already in the database.
-		movieUuid, err := db.FindMovie(record)
+		movieUuid, err := db.FindMovie(record.Fields.ImdbId)
 		if err != nil {
 			log.Panicf("Error finding movie: %v", err)
 		}

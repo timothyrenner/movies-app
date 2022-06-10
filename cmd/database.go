@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -277,19 +276,19 @@ type MovieDetailUuids struct {
 	Rating   []string
 }
 
-func (c *DBClient) FindMovieWatch(movieWatchRecord *GristMovieWatchRecord) (string, error) {
+func (c *DBClient) FindMovieWatch(imdbId string, watched int) (string, error) {
 	query := `
 	SELECT
 		uuid
 	FROM
 		movie_watch
 	WHERE
-		imdb_id = $1 AND
-		watched = $2
+		imdb_id = ? AND
+		watched = ?
 	`
 
 	dbRow := c.DB.QueryRow(
-		query, movieWatchRecord.Fields.ImdbId, movieWatchRecord.Fields.Watched,
+		query, imdbId, watched,
 	)
 
 	var uuid string
@@ -304,16 +303,16 @@ func (c *DBClient) FindMovieWatch(movieWatchRecord *GristMovieWatchRecord) (stri
 	return uuid, nil
 }
 
-func (c *DBClient) FindMovie(movieWatchRecord *GristMovieWatchRecord) (string, error) {
+func (c *DBClient) FindMovie(imdbId string) (string, error) {
 	query := `
 	SELECT
 		uuid
 	FROM
 		movie
 	WHERE
-		title = ?
+		imdb_id = ?
 	`
-	dbRow := c.DB.QueryRow(query, movieWatchRecord.Fields.Name)
+	dbRow := c.DB.QueryRow(query, imdbId)
 	var uuid string
 	if err := dbRow.Scan(&uuid); err != nil {
 		if err == sql.ErrNoRows {
@@ -326,17 +325,13 @@ func (c *DBClient) FindMovie(movieWatchRecord *GristMovieWatchRecord) (string, e
 	return uuid, nil
 }
 
-func (c *DBClient) FindMovies(movieWatchRecords *GristMovieWatchRecords) (
-	[]MovieRow, []int, error,
-) {
-	params := make([]string, len(movieWatchRecords.Records))
-	imdbIds := make([]string, len(movieWatchRecords.Records))
-	for ii := range movieWatchRecords.Records {
-		params[ii] = "?"
-		imdbIds[ii] = movieWatchRecords.Records[ii].Fields.ImdbId
-	}
-	paramString := strings.Join(params, ", ")
-	query := fmt.Sprintf(`
+type MovieRowWithGristId struct {
+	GristId int
+	MovieRow
+}
+
+func (c *DBClient) FindMovieWithGristId(imdbId string) (*MovieRowWithGristId, error) {
+	query := `
 	SELECT
 		movie.uuid,
 		uuid_grist_id.grist_id,
@@ -360,55 +355,37 @@ func (c *DBClient) FindMovies(movieWatchRecords *GristMovieWatchRecords) (
 	FROM movie
 	JOIN uuid_grist_id ON
 		movie.uuid = uuid_grist_id.uuid
-	WHERE title IN (%v)
-	`, paramString,
-	)
-	movieRows := make([]MovieRow, 0)
-	gristIds := make([]int, 0)
-	rows, err := c.DB.Query(query, imdbIds)
-	if err != nil {
-		return nil, nil, fmt.Errorf(
-			"encountered error retrieving movies: %v", err,
+	WHERE imdb_id = ?
+	`
+
+	movieRow := MovieRowWithGristId{}
+	row := c.DB.QueryRow(query, imdbId)
+	if err := row.Scan(
+		&movieRow.Uuid,
+		&movieRow.GristId,
+		&movieRow.Title,
+		&movieRow.ImdbLink,
+		&movieRow.Year,
+		&movieRow.Rated,
+		&movieRow.Released,
+		&movieRow.RuntimeMinutes,
+		&movieRow.Plot,
+		&movieRow.Country,
+		&movieRow.Language,
+		&movieRow.BoxOffice,
+		&movieRow.Production,
+		&movieRow.CallFelissa,
+		&movieRow.Slasher,
+		&movieRow.Zombies,
+		&movieRow.Beast,
+		&movieRow.Godzilla,
+	); err != nil {
+		return nil, fmt.Errorf(
+			"encountered error scanning row: %v", err,
 		)
 	}
-	defer func() {
-		if err = rows.Close(); err != nil {
-			log.Printf("Error closing rows after FindMovies: %v", err)
-			return
-		}
-	}()
-	for rows.Next() {
-		movieRow := MovieRow{}
-		var gristId int
-		if err = rows.Scan(
-			&movieRow.Uuid,
-			&gristId,
-			&movieRow.Title,
-			&movieRow.ImdbLink,
-			&movieRow.Year,
-			&movieRow.Rated,
-			&movieRow.Released,
-			&movieRow.RuntimeMinutes,
-			&movieRow.Plot,
-			&movieRow.Country,
-			&movieRow.Language,
-			&movieRow.BoxOffice,
-			&movieRow.Production,
-			&movieRow.CallFelissa,
-			&movieRow.Slasher,
-			&movieRow.Zombies,
-			&movieRow.Beast,
-			&movieRow.Godzilla,
-		); err != nil {
-			return nil, nil, fmt.Errorf(
-				"encountered error scanning row: %v", err,
-			)
-		}
-		movieRows = append(movieRows, movieRow)
-		gristIds = append(gristIds, gristId)
-	}
 
-	return movieRows, gristIds, nil
+	return &movieRow, nil
 }
 
 func (c *DBClient) InsertMovieDetails(

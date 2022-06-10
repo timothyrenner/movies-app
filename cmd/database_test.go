@@ -202,7 +202,7 @@ func TestFindMovieWatch(t *testing.T) {
 	truth := "def-123"
 	record := gristSampleMovieWatch()
 
-	uuid, err := c.FindMovieWatch(record)
+	uuid, err := c.FindMovieWatch(record.Fields.ImdbId, record.Fields.Watched)
 	if err != nil {
 		t.Errorf("Encountered error: %v", err)
 	}
@@ -210,25 +210,7 @@ func TestFindMovieWatch(t *testing.T) {
 		t.Errorf("Expected %v, got %v", truth, uuid)
 	}
 
-	record2 := GristMovieWatchRecord{
-		GristRecord: GristRecord{Id: 2},
-		Fields: GristMovieWatchFields{
-			Name:        "Slaughterhouse",
-			ImdbLink:    "https://www.imdb.com/title/tt0093990/",
-			ImdbId:      "tt0093990",
-			FirstTime:   false,
-			Watched:     1653609600,
-			JoeBob:      true,
-			CallFelissa: false,
-			Beast:       false,
-			Godzilla:    false,
-			Zombies:     false,
-			Slasher:     true,
-			Service:     []string{"L", "Shudder"},
-		},
-	}
-
-	uuid2, err := c.FindMovieWatch(&record2)
+	uuid2, err := c.FindMovieWatch("tt0093990", 1653609600)
 	if err != nil {
 		t.Errorf("Encountered error: %v", err)
 	}
@@ -243,7 +225,7 @@ func TestFindMovie(t *testing.T) {
 	c.loadMovie()
 	movieWatch := gristSampleMovieWatch()
 	truth := "abc-123"
-	answer, err := c.FindMovie(movieWatch)
+	answer, err := c.FindMovie(movieWatch.Fields.ImdbId)
 	if err != nil {
 		t.Errorf("Error getting movie: %v", err)
 	}

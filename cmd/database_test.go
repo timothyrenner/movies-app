@@ -58,6 +58,7 @@ func (c *DBClient) loadMovie() {
 			runtime_minutes,
 			plot,
 			country,
+			language,
 			box_office,
 			production,
 			call_felissa,
@@ -65,7 +66,8 @@ func (c *DBClient) loadMovie() {
 			zombies,
 			beast,
 			godzilla
-		) VALUES (
+		) VALUES 
+		(
 			'abc-123',
 			'Tenebrae',
 			'https://www.imdb.com/title/tt0084777/',
@@ -76,6 +78,26 @@ func (c *DBClient) loadMovie() {
 			101,
 			'An American writer in Rome is stalked and harassed by a serial killer who is murdering everyone associated with his work on his latest book.',
 			'Italy',
+			'Italian, Spanish',
+			NULL,
+			NULL,
+			FALSE,
+			TRUE,
+			FALSE,
+			FALSE,
+			FALSE
+		), (
+			'abc-456',
+			'Slaughterhouse',
+			'https://www.imdb.com/title/tt0093990/',
+			'tt0093990',
+			1987,
+			'R',
+			'1987-08-28',
+			85,
+			'The owner of a slaughterhouse facing foreclosure instructs his obese and mentally disabled son to go on a killing spree against the people who want to buy his property.',
+			'United States',
+			'English',
 			NULL,
 			NULL,
 			FALSE,
@@ -128,6 +150,24 @@ func (c *DBClient) loadMovieWatch() {
 	if err = tx.Commit(); err != nil {
 		log.Panicf("Encountered error committing transaction: %v", err)
 	}
+}
+
+func (c *DBClient) loadMovieWithGristId() {
+	tx, err := c.DB.Begin()
+	if err != nil {
+		log.Panicf("Encountered error beginning transaction: %v", err)
+	}
+	defer tx.Rollback()
+	_, err = tx.Exec(
+		`INSERT INTO uuid_grist (uuid, grist_id) VALUES ('abc-123', 1)`,
+	)
+	if err != nil {
+		log.Panicf("Encountered error loading uuid_grist: %v", err)
+	}
+	if err = tx.Commit(); err != nil {
+		log.Panicf("Encountered error committing transaction: %v", err)
+	}
+
 }
 
 func teardownDatabase(c *DBClient, m *migrate.Migrate) {
@@ -897,4 +937,73 @@ func TestInsertUuidGrist(t *testing.T) {
 		t.Errorf("Expected %v, got %v", truth, answer)
 	}
 
+}
+
+func TestFindMovieWithGristId(t *testing.T) {
+	c, m := setupDatabase()
+	defer teardownDatabase(c, m)
+	c.loadMovie()
+	c.loadMovieWithGristId()
+
+	// Find movie with grist ID available.
+	truth := MovieRowWithGristId{
+		MovieRow: MovieRow{
+			Uuid:           "abc-123",
+			Title:          "Tenebrae",
+			ImdbLink:       "https://www.imdb.com/title/tt0084777/",
+			ImdbId:         "tt0084777",
+			Year:           1982,
+			Rated:          sql.NullString{String: "R", Valid: true},
+			Released:       sql.NullString{String: "1984-02-17", Valid: true},
+			RuntimeMinutes: 101,
+			Plot:           sql.NullString{String: "An American writer in Rome is stalked and harassed by a serial killer who is murdering everyone associated with his work on his latest book.", Valid: true},
+			Country:        sql.NullString{String: "Italy", Valid: true},
+			Language:       sql.NullString{String: "Italian, Spanish", Valid: true},
+			BoxOffice:      sql.NullString{String: "", Valid: false},
+			Production:     sql.NullString{String: "", Valid: false},
+			CallFelissa:    false,
+			Slasher:        true,
+			Beast:          false,
+			Godzilla:       false,
+		},
+		GristId: sql.NullInt64{Int64: 1, Valid: true},
+	}
+	answer, err := c.FindMovieWithGristId("tt0084777")
+	if err != nil {
+		t.Errorf("Encountered error: %v", err)
+	}
+	if !cmp.Equal(truth, *answer) {
+		t.Errorf("Expected %v, got %v", truth, *answer)
+	}
+
+	// Find movie without grist ID available.
+	truth = MovieRowWithGristId{
+		MovieRow: MovieRow{
+			Uuid:           "abc-456",
+			Title:          "Slaughterhouse",
+			ImdbLink:       "https://www.imdb.com/title/tt0093990/",
+			ImdbId:         "tt0093990",
+			Year:           1987,
+			Rated:          sql.NullString{String: "R", Valid: true},
+			Released:       sql.NullString{String: "1987-08-28", Valid: true},
+			RuntimeMinutes: 85,
+			Plot:           sql.NullString{String: "The owner of a slaughterhouse facing foreclosure instructs his obese and mentally disabled son to go on a killing spree against the people who want to buy his property.", Valid: true},
+			Country:        sql.NullString{String: "United States", Valid: true},
+			Language:       sql.NullString{String: "English", Valid: true},
+			BoxOffice:      sql.NullString{String: "", Valid: false},
+			Production:     sql.NullString{String: "", Valid: false},
+			CallFelissa:    false,
+			Slasher:        true,
+			Beast:          false,
+			Godzilla:       false,
+		},
+		GristId: sql.NullInt64{Int64: 0, Valid: false},
+	}
+	answer, err = c.FindMovieWithGristId("tt0093990")
+	if err != nil {
+		t.Errorf("Encountered error: %v", err)
+	}
+	if !cmp.Equal(truth, *answer) {
+		t.Errorf("Expected %v, got %v", truth, *answer)
+	}
 }

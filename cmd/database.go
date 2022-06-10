@@ -326,7 +326,7 @@ func (c *DBClient) FindMovie(imdbId string) (string, error) {
 }
 
 type MovieRowWithGristId struct {
-	GristId int
+	GristId sql.NullInt64
 	MovieRow
 }
 
@@ -334,7 +334,7 @@ func (c *DBClient) FindMovieWithGristId(imdbId string) (*MovieRowWithGristId, er
 	query := `
 	SELECT
 		movie.uuid,
-		uuid_grist_id.grist_id,
+		uuid_grist.grist_id,
 		movie.title,
 		movie.imdb_link,
 		movie.imdb_id,
@@ -353,8 +353,8 @@ func (c *DBClient) FindMovieWithGristId(imdbId string) (*MovieRowWithGristId, er
 		movie.beast,
 		movie.godzilla
 	FROM movie
-	JOIN uuid_grist_id ON
-		movie.uuid = uuid_grist_id.uuid
+	LEFT JOIN uuid_grist ON
+		movie.uuid = uuid_grist.uuid
 	WHERE imdb_id = ?
 	`
 
@@ -365,6 +365,7 @@ func (c *DBClient) FindMovieWithGristId(imdbId string) (*MovieRowWithGristId, er
 		&movieRow.GristId,
 		&movieRow.Title,
 		&movieRow.ImdbLink,
+		&movieRow.ImdbId,
 		&movieRow.Year,
 		&movieRow.Rated,
 		&movieRow.Released,

@@ -631,3 +631,26 @@ func (c *DBClient) InsertUuidGrist(movieWatchUuid string, gristId int) error {
 	}
 	return nil
 }
+
+func (c *DBClient) GetGenresForMovie(movieUuid string) (
+	[]MovieGenreRow, error,
+) {
+	rows, err := c.DB.Query(
+		`SELECT name FROM movie_genre WHERE movie_uuid = ?`,
+		movieUuid,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("encountered error making query: %v", err)
+	}
+	defer rows.Close()
+
+	movieGenreRows := make([]MovieGenreRow, 0)
+	for rows.Next() {
+		movieGenreRow := MovieGenreRow{}
+		if err := rows.Scan(&movieGenreRow.Name); err != nil {
+			return nil, fmt.Errorf("encountered error scanning row: %v", err)
+		}
+		movieGenreRows = append(movieGenreRows, movieGenreRow)
+	}
+	return movieGenreRows, nil
+}

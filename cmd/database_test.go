@@ -110,6 +110,20 @@ func (c *DBClient) loadMovie() {
 	if err != nil {
 		log.Panicf("Encountered error loading movie table: %v", err)
 	}
+
+	_, err = tx.Exec(
+		`INSERT INTO movie_genre (uuid, movie_uuid, name)
+		VALUES
+		('genre1', 'abc-123', 'Horror'),
+		('genre2', 'abc-123', 'Mystery'),
+		('genre3', 'abc-123', 'Thriller'),
+		('genre4', 'abc-456', 'Comedy'),
+		('genre5', 'abc-456', 'Horror')
+		`,
+	)
+	if err != nil {
+		log.Panicf("Encountered error loading movie genre table: %v", err)
+	}
 	if err = tx.Commit(); err != nil {
 		log.Panicf("Encountered error committing transaction: %v", err)
 	}
@@ -1005,5 +1019,25 @@ func TestFindMovieWithGristId(t *testing.T) {
 	}
 	if !cmp.Equal(truth, *answer) {
 		t.Errorf("Expected %v, got %v", truth, *answer)
+	}
+}
+
+func TestGetGenresForMovie(t *testing.T) {
+	c, m := setupDatabase()
+	defer teardownDatabase(c, m)
+	c.loadMovie()
+
+	movieUuid := "abc-123"
+	truth := []MovieGenreRow{
+		{Name: "Horror"},
+		{Name: "Mystery"},
+		{Name: "Thriller"},
+	}
+	answer, err := c.GetGenresForMovie(movieUuid)
+	if err != nil {
+		t.Errorf("Error getting genres for movie: %v", err)
+	}
+	if !cmp.Equal(truth, answer) {
+		t.Errorf("Expected %v, got %v", truth, answer)
 	}
 }

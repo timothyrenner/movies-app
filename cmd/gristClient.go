@@ -32,6 +32,11 @@ type GristMovieWatchRecord struct {
 	Fields GristMovieWatchFields `json:"fields"`
 }
 
+type GristMovieRecord struct {
+	GristRecord
+	Fields GristMovieFields `json:"Fields"`
+}
+
 func (r *GristMovieWatchRecord) ImdbId() string {
 	urlComponents := strings.Split(r.Fields.ImdbLink, "/")
 	if urlComponents[len(urlComponents)-1] != "" {
@@ -54,6 +59,30 @@ type GristMovieWatchFields struct {
 	Slasher     bool     `json:"Slasher,omitempty"`
 	Service     []string `json:"Service,omitempty"`
 	Movie       int64    `json:"Movie,omitempty"`
+}
+
+type GristMovieFields struct {
+	Title       string   `json:"Title,omitempty"`
+	ImdbLink    string   `json:"IMDB_Link,omitempty"`
+	Year        int      `json:"Year,omitempty"`
+	Rated       string   `json:"Rated,omitempty"`
+	Released    string   `json:"Released,omitempty"`
+	Runtime     int      `json:"Runtime,omitempty"`
+	Plot        string   `json:"Plot,omitempty"`
+	Country     string   `json:"Country,omitempty"`
+	Language    string   `json:"Language,omitempty"`
+	BoxOffice   string   `json:"BoxOffice,omitempty"`
+	Production  string   `json:"Production,omitempty"`
+	CallFelissa bool     `json:"Call_Felissa,omitempty"`
+	Slasher     bool     `json:"Slasher,omitempty"`
+	Zombies     bool     `json:"Zombies,omitempty"`
+	Beast       bool     `json:"Beast,omitempty"`
+	Godzilla    bool     `json:"Godzilla,omitempty"`
+	Genre       []string `json:"Genre,omitempty"`
+	Actor       []string `json:"Actor,omitempty"`
+	Director    []string `json:"Director,omitempty"`
+	Writer      []string `json:"Writer,omitempty"`
+	Rating      []int    `json:"Rating,omitempty"`
 }
 
 func NewGristClient(key string) *GristClient {

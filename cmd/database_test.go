@@ -124,6 +124,44 @@ func (c *DBClient) loadMovie() {
 	if err != nil {
 		log.Panicf("Encountered error loading movie genre table: %v", err)
 	}
+
+	_, err = tx.Exec(
+		`INSERT INTO movie_actor (uuid, movie_uuid, name)
+		VALUES
+		('actor1', 'abc-123', 'Anthony Franciosa'),
+		('actor2', 'abc-123', 'Giuliano Gemma'),
+		('actor3', 'abc-123', 'John Saxon'),
+		('actor4', 'abc-456', 'Joe B. Barton'),
+		('actor5', 'abc-456', 'Don Barrett'),
+		('actor6', 'abc-456', 'Sherry Leigh')
+		`,
+	)
+	if err != nil {
+		log.Panicf("Encountered error loading movie actor table: %v", err)
+	}
+
+	_, err = tx.Exec(
+		`INSERT INTO movie_director (uuid, movie_uuid, name)
+		VALUES
+		('director1', 'abc-123', 'Dario Argento'),
+		('director2', 'abc-456', 'Rick Roesller')
+		`,
+	)
+	if err != nil {
+		log.Panicf("Encountered error loading movie director table: %v", err)
+	}
+
+	_, err = tx.Exec(
+		`INSERT INTO movie_writer (uuid, movie_uuid, name)
+		VALUES
+		('writer1', 'abc-123', 'Dario Argento'),
+		('writer2', 'abc-456', 'Rick Roessler')
+		`,
+	)
+	if err != nil {
+		log.Panicf("Encountered error loading movie writer table: %v", err)
+	}
+
 	if err = tx.Commit(); err != nil {
 		log.Panicf("Encountered error committing transaction: %v", err)
 	}
@@ -1022,20 +1060,64 @@ func TestFindMovieWithGristId(t *testing.T) {
 	}
 }
 
-func TestGetGenresForMovie(t *testing.T) {
+func TestGetGenreNamesForMovie(t *testing.T) {
 	c, m := setupDatabase()
 	defer teardownDatabase(c, m)
 	c.loadMovie()
 
 	movieUuid := "abc-123"
-	truth := []MovieGenreRow{
-		{Name: "Horror"},
-		{Name: "Mystery"},
-		{Name: "Thriller"},
-	}
-	answer, err := c.GetGenresForMovie(movieUuid)
+	truth := []string{"Horror", "Mystery", "Thriller"}
+	answer, err := c.GetGenreNamesForMovie(movieUuid)
 	if err != nil {
 		t.Errorf("Error getting genres for movie: %v", err)
+	}
+	if !cmp.Equal(truth, answer) {
+		t.Errorf("Expected %v, got %v", truth, answer)
+	}
+}
+
+func TestGetActorNamesForMovie(t *testing.T) {
+	c, m := setupDatabase()
+	defer teardownDatabase(c, m)
+	c.loadMovie()
+
+	movieUuid := "abc-456"
+	truth := []string{"Joe B. Barton", "Don Barrett", "Sherry Leigh"}
+	answer, err := c.GetActorNamesForMovie(movieUuid)
+	if err != nil {
+		t.Errorf("Error getting actors for movie: %v", err)
+	}
+	if !cmp.Equal(truth, answer) {
+		t.Errorf("Expected %v, got %v", truth, answer)
+	}
+}
+
+func TestGetDirectorNamesForMovie(t *testing.T) {
+	c, m := setupDatabase()
+	defer teardownDatabase(c, m)
+	c.loadMovie()
+
+	movieUuid := "abc-123"
+	truth := []string{"Dario Argento"}
+	answer, err := c.GetDirectorNamesForMovie(movieUuid)
+	if err != nil {
+		t.Errorf("Error getting directors for movie: %v", err)
+	}
+	if !cmp.Equal(truth, answer) {
+		t.Errorf("Expected %v, got %v", truth, answer)
+	}
+}
+
+func TestGetWriterNamesForMovie(t *testing.T) {
+	c, m := setupDatabase()
+	defer teardownDatabase(c, m)
+	c.loadMovie()
+
+	movieUuid := "abc-123"
+	truth := []string{"Dario Argento"}
+	answer, err := c.GetWriterNamesForMovie(movieUuid)
+	if err != nil {
+		t.Errorf("Error getting writers for movie: %v", err)
 	}
 	if !cmp.Equal(truth, answer) {
 		t.Errorf("Expected %v, got %v", truth, answer)

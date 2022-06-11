@@ -632,8 +632,8 @@ func (c *DBClient) InsertUuidGrist(movieWatchUuid string, gristId int) error {
 	return nil
 }
 
-func (c *DBClient) GetGenresForMovie(movieUuid string) (
-	[]MovieGenreRow, error,
+func (c *DBClient) GetGenreNamesForMovie(movieUuid string) (
+	[]string, error,
 ) {
 	rows, err := c.DB.Query(
 		`SELECT name FROM movie_genre WHERE movie_uuid = ?`,
@@ -644,13 +644,83 @@ func (c *DBClient) GetGenresForMovie(movieUuid string) (
 	}
 	defer rows.Close()
 
-	movieGenreRows := make([]MovieGenreRow, 0)
+	movieGenreNames := make([]string, 0)
 	for rows.Next() {
-		movieGenreRow := MovieGenreRow{}
-		if err := rows.Scan(&movieGenreRow.Name); err != nil {
+		var movieGenreName string
+		if err := rows.Scan(&movieGenreName); err != nil {
 			return nil, fmt.Errorf("encountered error scanning row: %v", err)
 		}
-		movieGenreRows = append(movieGenreRows, movieGenreRow)
+		movieGenreNames = append(movieGenreNames, movieGenreName)
 	}
-	return movieGenreRows, nil
+	return movieGenreNames, nil
+}
+
+func (c *DBClient) GetActorNamesForMovie(movieUuid string) (
+	[]string, error,
+) {
+	rows, err := c.DB.Query(
+		`SELECT name FROM movie_actor WHERE movie_uuid = ?`,
+		movieUuid,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("encountered error making query: %v", err)
+	}
+	defer rows.Close()
+
+	movieActorNames := make([]string, 0)
+	for rows.Next() {
+		var movieActorName string
+		if err := rows.Scan(&movieActorName); err != nil {
+			return nil, fmt.Errorf("encountered error scanning row: %v", err)
+		}
+		movieActorNames = append(movieActorNames, movieActorName)
+	}
+
+	return movieActorNames, nil
+}
+
+func (c *DBClient) GetDirectorNamesForMovie(movieUuid string) (
+	[]string, error,
+) {
+	rows, err := c.DB.Query(
+		`SELECT name FROM movie_director WHERE movie_uuid = ?`,
+		movieUuid,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("encountered error making query: %v", err)
+	}
+	defer rows.Close()
+
+	movieDirectorNames := make([]string, 0)
+	for rows.Next() {
+		var movieDirectorName string
+		if err := rows.Scan(&movieDirectorName); err != nil {
+			return nil, fmt.Errorf("encountered error scanning row: %v", err)
+		}
+		movieDirectorNames = append(movieDirectorNames, movieDirectorName)
+	}
+
+	return movieDirectorNames, nil
+}
+
+func (c *DBClient) GetWriterNamesForMovie(movieUuid string) ([]string, error) {
+	rows, err := c.DB.Query(
+		`SELECT name FROM movie_writer WHERE movie_uuid = ?`,
+		movieUuid,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("encountered error making query: %v", err)
+	}
+	defer rows.Close()
+
+	movieWriterNames := make([]string, 0)
+	for rows.Next() {
+		var movieWriterName string
+		if err := rows.Scan(&movieWriterName); err != nil {
+			return nil, fmt.Errorf("encountered error scanning row: %v", err)
+		}
+		movieWriterNames = append(movieWriterNames, movieWriterName)
+	}
+
+	return movieWriterNames, nil
 }

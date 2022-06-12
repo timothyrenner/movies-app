@@ -19,12 +19,15 @@ type GristClient struct {
 	rootUrl string
 }
 
-type GristMovieWatchRecords struct {
-	Records []GristMovieWatchRecord `json:"records"`
+type GristRecords struct {
+	Records []GristRecord `json:"records"`
 }
 
 type GristRecord struct {
-	Id int `json:"id"`
+	Id int `json:"id,omitempty"`
+}
+type GristMovieWatchRecords struct {
+	Records []GristMovieWatchRecord `json:"records"`
 }
 
 type GristMovieWatchRecord struct {
@@ -53,6 +56,54 @@ type GristMovieWatchFields struct {
 	Zombies     bool     `json:"Zombies,omitempty"`
 	Slasher     bool     `json:"Slasher,omitempty"`
 	Service     []string `json:"Service,omitempty"`
+	Movie       int64    `json:"Movie,omitempty"`
+}
+
+type GristMovieRecords struct {
+	Records []GristMovieRecord `json:"records"`
+}
+
+type GristMovieRecord struct {
+	GristRecord
+	Fields GristMovieFields `json:"fields"`
+}
+
+type GristMovieFields struct {
+	Title       string   `json:"Title,omitempty"`
+	ImdbLink    string   `json:"IMDB_Link,omitempty"`
+	Year        int      `json:"Year,omitempty"`
+	Rated       string   `json:"Rated,omitempty"`
+	Released    string   `json:"Released,omitempty"`
+	Runtime     int      `json:"Runtime,omitempty"`
+	Plot        string   `json:"Plot,omitempty"`
+	Country     string   `json:"Country,omitempty"`
+	Language    string   `json:"Language,omitempty"`
+	BoxOffice   string   `json:"BoxOffice,omitempty"`
+	Production  string   `json:"Production,omitempty"`
+	CallFelissa bool     `json:"Call_Felissa,omitempty"`
+	Slasher     bool     `json:"Slasher,omitempty"`
+	Zombies     bool     `json:"Zombies,omitempty"`
+	Beast       bool     `json:"Beast,omitempty"`
+	Godzilla    bool     `json:"Godzilla,omitempty"`
+	Genre       []string `json:"Genre,omitempty"`
+	Actor       []string `json:"Actor,omitempty"`
+	Director    []string `json:"Director,omitempty"`
+	Writer      []string `json:"Writer,omitempty"`
+	Rating      []any    `json:"Rating,omitempty"`
+}
+
+type GristMovieRatingRecords struct {
+	Records []GristMovieRatingRecord `json:"records"`
+}
+
+type GristMovieRatingRecord struct {
+	GristRecord
+	Fields GristMovieRatingFields `json:"fields"`
+}
+
+type GristMovieRatingFields struct {
+	Source string `json:"Source"`
+	Value  string `json:"Value"`
 }
 
 func NewGristClient(key string) *GristClient {
@@ -145,6 +196,7 @@ func (c *GristClient) UpdateMovieWatchRecords(
 	if err != nil {
 		return fmt.Errorf("encountered error creating request: %v", err)
 	}
+	request.Header = c.header
 	request.Header.Set("Content-Type", "application/json")
 	_, err = c.client.Do(request)
 	if err != nil {
@@ -152,4 +204,91 @@ func (c *GristClient) UpdateMovieWatchRecords(
 	}
 
 	return nil
+}
+
+func (c *GristClient) CreateMovieRatingRecords(
+	documentId string,
+	tableId string,
+	records *GristMovieRatingRecords,
+) (*GristRecords, error) {
+	url := fmt.Sprintf(
+		"%v/docs/%v/tables/%v/records",
+		c.rootUrl,
+		documentId,
+		tableId,
+	)
+	payload, err := json.Marshal(records)
+	if err != nil {
+		return nil, fmt.Errorf("encountered error marshalling records: %v", err)
+	}
+	request, err := http.NewRequest(
+		http.MethodPost, url, bytes.NewBuffer(payload),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("encountered error creating request: %v", err)
+	}
+	request.Header = c.header
+	request.Header.Set("Content-Type", "application/json")
+	response, err := c.client.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("encountered error making request: %v", err)
+	}
+	defer response.Body.Close()
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response body: %v", err)
+	}
+
+	var movieRatingResponse GristRecords
+	if err = json.Unmarshal(body, &movieRatingResponse); err != nil {
+		return nil, fmt.Errorf("error unmarshalling response: %v", err)
+	}
+
+	return &movieRatingResponse, nil
+}
+
+func (c *GristClient) CreateMovieRecords(
+	documentId string,
+	tableId string,
+	records *GristMovieRecords,
+) (*GristRecords, error) {
+	url := fmt.Sprintf(
+		"%v/docs/%v/tables/%v/records",
+		c.rootUrl,
+		documentId,
+		tableId,
+	)
+	payload, err := json.Marshal(records)
+	if err != nil {
+		return nil, fmt.Errorf("encountered error marshalling records: %v", err)
+	}
+	request, err := http.NewRequest(
+		http.MethodPost, url, bytes.NewBuffer(payload),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %v", err)
+	}
+	request.Header = c.header
+	request.Header.Set("Content-Type", "application/json")
+	response, err := c.client.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("encountered error making request: %v", err)
+	}
+	defer response.Body.Close()
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response body: %v", err)
+	}
+	if response.StatusCode != 200 {
+		return nil, fmt.Errorf(
+			"got status code %v: %v", response.StatusCode, string(body),
+		)
+	}
+	var movieResponse GristRecords
+	if err = json.Unmarshal(body, &movieResponse); err != nil {
+		return nil, fmt.Errorf("error unmarshalling response: %v", err)
+	}
+
+	return &movieResponse, nil
+
 }

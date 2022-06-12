@@ -276,19 +276,19 @@ type MovieDetailUuids struct {
 	Rating   []string
 }
 
-func (c *DBClient) FindMovieWatch(movieWatchRecord *GristMovieWatchRecord) (string, error) {
+func (c *DBClient) FindMovieWatch(imdbId string, watched int) (string, error) {
 	query := `
 	SELECT
 		uuid
 	FROM
 		movie_watch
 	WHERE
-		imdb_id = $1 AND
-		watched = $2
+		imdb_id = ? AND
+		watched = ?
 	`
 
 	dbRow := c.DB.QueryRow(
-		query, movieWatchRecord.Fields.ImdbId, movieWatchRecord.Fields.Watched,
+		query, imdbId, watched,
 	)
 
 	var uuid string
@@ -303,16 +303,16 @@ func (c *DBClient) FindMovieWatch(movieWatchRecord *GristMovieWatchRecord) (stri
 	return uuid, nil
 }
 
-func (c *DBClient) FindMovie(movieWatchRecord *GristMovieWatchRecord) (string, error) {
+func (c *DBClient) FindMovie(imdbId string) (string, error) {
 	query := `
 	SELECT
 		uuid
 	FROM
 		movie
 	WHERE
-		title = $1
+		imdb_id = ?
 	`
-	dbRow := c.DB.QueryRow(query, movieWatchRecord.Fields.Name)
+	dbRow := c.DB.QueryRow(query, imdbId)
 	var uuid string
 	if err := dbRow.Scan(&uuid); err != nil {
 		if err == sql.ErrNoRows {
@@ -323,6 +323,70 @@ func (c *DBClient) FindMovie(movieWatchRecord *GristMovieWatchRecord) (string, e
 	}
 
 	return uuid, nil
+}
+
+type MovieRowWithGristId struct {
+	GristId sql.NullInt64
+	MovieRow
+}
+
+func (c *DBClient) FindMovieWithGristId(imdbId string) (*MovieRowWithGristId, error) {
+	query := `
+	SELECT
+		movie.uuid,
+		uuid_grist.grist_id,
+		movie.title,
+		movie.imdb_link,
+		movie.imdb_id,
+		movie.year,
+		movie.rated,
+		movie.released,
+		movie.runtime_minutes,
+		movie.plot,
+		movie.country,
+		movie.language,
+		movie.box_office,
+		movie.production,
+		movie.call_felissa,
+		movie.slasher,
+		movie.zombies,
+		movie.beast,
+		movie.godzilla
+	FROM movie
+	LEFT JOIN uuid_grist ON
+		movie.uuid = uuid_grist.uuid
+	WHERE imdb_id = ?
+	`
+
+	movieRow := MovieRowWithGristId{}
+	row := c.DB.QueryRow(query, imdbId)
+	if err := row.Scan(
+		&movieRow.Uuid,
+		&movieRow.GristId,
+		&movieRow.Title,
+		&movieRow.ImdbLink,
+		&movieRow.ImdbId,
+		&movieRow.Year,
+		&movieRow.Rated,
+		&movieRow.Released,
+		&movieRow.RuntimeMinutes,
+		&movieRow.Plot,
+		&movieRow.Country,
+		&movieRow.Language,
+		&movieRow.BoxOffice,
+		&movieRow.Production,
+		&movieRow.CallFelissa,
+		&movieRow.Slasher,
+		&movieRow.Zombies,
+		&movieRow.Beast,
+		&movieRow.Godzilla,
+	); err != nil {
+		return nil, fmt.Errorf(
+			"encountered error scanning row: %v", err,
+		)
+	}
+
+	return &movieRow, nil
 }
 
 func (c *DBClient) InsertMovieDetails(
@@ -564,6 +628,149 @@ func (c *DBClient) InsertUuidGrist(movieWatchUuid string, gristId int) error {
 		return fmt.Errorf(
 			"encountered error inserting uuid <> grist id row: %v", err,
 		)
+	}
+	return nil
+}
+
+func (c *DBClient) GetGenreNamesForMovie(movieUuid string) (
+	[]string, error,
+) {
+	rows, err := c.DB.Query(
+		`SELECT name FROM movie_genre WHERE movie_uuid = ?`,
+		movieUuid,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("encountered error making query: %v", err)
+	}
+	defer rows.Close()
+
+	movieGenreNames := make([]string, 0)
+	for rows.Next() {
+		var movieGenreName string
+		if err := rows.Scan(&movieGenreName); err != nil {
+			return nil, fmt.Errorf("encountered error scanning row: %v", err)
+		}
+		movieGenreNames = append(movieGenreNames, movieGenreName)
+	}
+	return movieGenreNames, nil
+}
+
+func (c *DBClient) GetActorNamesForMovie(movieUuid string) (
+	[]string, error,
+) {
+	rows, err := c.DB.Query(
+		`SELECT name FROM movie_actor WHERE movie_uuid = ?`,
+		movieUuid,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("encountered error making query: %v", err)
+	}
+	defer rows.Close()
+
+	movieActorNames := make([]string, 0)
+	for rows.Next() {
+		var movieActorName string
+		if err := rows.Scan(&movieActorName); err != nil {
+			return nil, fmt.Errorf("encountered error scanning row: %v", err)
+		}
+		movieActorNames = append(movieActorNames, movieActorName)
+	}
+
+	return movieActorNames, nil
+}
+
+func (c *DBClient) GetDirectorNamesForMovie(movieUuid string) (
+	[]string, error,
+) {
+	rows, err := c.DB.Query(
+		`SELECT name FROM movie_director WHERE movie_uuid = ?`,
+		movieUuid,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("encountered error making query: %v", err)
+	}
+	defer rows.Close()
+
+	movieDirectorNames := make([]string, 0)
+	for rows.Next() {
+		var movieDirectorName string
+		if err := rows.Scan(&movieDirectorName); err != nil {
+			return nil, fmt.Errorf("encountered error scanning row: %v", err)
+		}
+		movieDirectorNames = append(movieDirectorNames, movieDirectorName)
+	}
+
+	return movieDirectorNames, nil
+}
+
+func (c *DBClient) GetWriterNamesForMovie(movieUuid string) ([]string, error) {
+	rows, err := c.DB.Query(
+		`SELECT name FROM movie_writer WHERE movie_uuid = ?`,
+		movieUuid,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("encountered error making query: %v", err)
+	}
+	defer rows.Close()
+
+	movieWriterNames := make([]string, 0)
+	for rows.Next() {
+		var movieWriterName string
+		if err := rows.Scan(&movieWriterName); err != nil {
+			return nil, fmt.Errorf("encountered error scanning row: %v", err)
+		}
+		movieWriterNames = append(movieWriterNames, movieWriterName)
+	}
+
+	return movieWriterNames, nil
+}
+
+func (c *DBClient) GetRatingsForMovie(movieUuid string) (
+	[]MovieRatingRow, error,
+) {
+	rows, err := c.DB.Query(
+		`SELECT uuid, movie_uuid, source, value 
+		FROM movie_rating WHERE movie_uuid = ?`,
+		movieUuid,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("encountered error making query: %v", err)
+	}
+	defer rows.Close()
+
+	movieRatings := make([]MovieRatingRow, 0)
+	for rows.Next() {
+		movieRating := MovieRatingRow{}
+		if err := rows.Scan(
+			&movieRating.Uuid,
+			&movieRating.MovieUuid,
+			&movieRating.Source,
+			&movieRating.Value,
+		); err != nil {
+			return nil, fmt.Errorf("encountered error scanning row: %v", err)
+		}
+		movieRatings = append(movieRatings, movieRating)
+	}
+	return movieRatings, nil
+}
+
+func (c *DBClient) InsertUuidGristIds(ids []UuidGristRow) error {
+	paramStrings := make([]string, len(ids))
+	paramValues := make([]any, len(ids)*2)
+	for ii := range ids {
+		paramStrings[ii] = "(?,?)"
+		paramValues[2*ii] = ids[ii].Uuid
+		paramValues[2*ii+1] = ids[ii].GristId
+	}
+	_, err := c.DB.Exec(
+		fmt.Sprintf(
+			`INSERT INTO uuid_grist (uuid, grist_id) VALUES %v`,
+			strings.Join(paramStrings, ","),
+		),
+		paramValues...,
+	)
+	if err != nil {
+		return fmt.Errorf("error inserting rows: %v", err)
 	}
 	return nil
 }

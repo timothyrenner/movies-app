@@ -58,6 +58,7 @@ func (c *DBClient) loadMovie() {
 			runtime_minutes,
 			plot,
 			country,
+			language,
 			box_office,
 			production,
 			call_felissa,
@@ -65,7 +66,8 @@ func (c *DBClient) loadMovie() {
 			zombies,
 			beast,
 			godzilla
-		) VALUES (
+		) VALUES 
+		(
 			'abc-123',
 			'Tenebrae',
 			'https://www.imdb.com/title/tt0084777/',
@@ -76,6 +78,26 @@ func (c *DBClient) loadMovie() {
 			101,
 			'An American writer in Rome is stalked and harassed by a serial killer who is murdering everyone associated with his work on his latest book.',
 			'Italy',
+			'Italian, Spanish',
+			NULL,
+			NULL,
+			FALSE,
+			TRUE,
+			FALSE,
+			FALSE,
+			FALSE
+		), (
+			'abc-456',
+			'Slaughterhouse',
+			'https://www.imdb.com/title/tt0093990/',
+			'tt0093990',
+			1987,
+			'R',
+			'1987-08-28',
+			85,
+			'The owner of a slaughterhouse facing foreclosure instructs his obese and mentally disabled son to go on a killing spree against the people who want to buy his property.',
+			'United States',
+			'English',
 			NULL,
 			NULL,
 			FALSE,
@@ -88,6 +110,70 @@ func (c *DBClient) loadMovie() {
 	if err != nil {
 		log.Panicf("Encountered error loading movie table: %v", err)
 	}
+
+	_, err = tx.Exec(
+		`INSERT INTO movie_genre (uuid, movie_uuid, name)
+		VALUES
+		('genre1', 'abc-123', 'Horror'),
+		('genre2', 'abc-123', 'Mystery'),
+		('genre3', 'abc-123', 'Thriller'),
+		('genre4', 'abc-456', 'Comedy'),
+		('genre5', 'abc-456', 'Horror')
+		`,
+	)
+	if err != nil {
+		log.Panicf("Encountered error loading movie genre table: %v", err)
+	}
+
+	_, err = tx.Exec(
+		`INSERT INTO movie_actor (uuid, movie_uuid, name)
+		VALUES
+		('actor1', 'abc-123', 'Anthony Franciosa'),
+		('actor2', 'abc-123', 'Giuliano Gemma'),
+		('actor3', 'abc-123', 'John Saxon'),
+		('actor4', 'abc-456', 'Joe B. Barton'),
+		('actor5', 'abc-456', 'Don Barrett'),
+		('actor6', 'abc-456', 'Sherry Leigh')
+		`,
+	)
+	if err != nil {
+		log.Panicf("Encountered error loading movie actor table: %v", err)
+	}
+
+	_, err = tx.Exec(
+		`INSERT INTO movie_director (uuid, movie_uuid, name)
+		VALUES
+		('director1', 'abc-123', 'Dario Argento'),
+		('director2', 'abc-456', 'Rick Roesller')
+		`,
+	)
+	if err != nil {
+		log.Panicf("Encountered error loading movie director table: %v", err)
+	}
+
+	_, err = tx.Exec(
+		`INSERT INTO movie_writer (uuid, movie_uuid, name)
+		VALUES
+		('writer1', 'abc-123', 'Dario Argento'),
+		('writer2', 'abc-456', 'Rick Roessler')
+		`,
+	)
+	if err != nil {
+		log.Panicf("Encountered error loading movie writer table: %v", err)
+	}
+
+	_, err = tx.Exec(
+		`INSERT INTO movie_rating (uuid, movie_uuid, source, value)
+		VALUES
+		('rating1', 'abc-123', 'Internet Movie Database', '7.0/10'),
+		('rating2', 'abc-123', 'Rotten Tomatoes', '77%'),
+		('rating3', 'abc-123', 'Metacritic', '83/100'),
+		('rating4', 'abc-456', 'Internet Movie Database', '5.3/10')`,
+	)
+	if err != nil {
+		log.Panicf("Encountered error loading movie rating table: %v", err)
+	}
+
 	if err = tx.Commit(); err != nil {
 		log.Panicf("Encountered error committing transaction: %v", err)
 	}
@@ -128,6 +214,24 @@ func (c *DBClient) loadMovieWatch() {
 	if err = tx.Commit(); err != nil {
 		log.Panicf("Encountered error committing transaction: %v", err)
 	}
+}
+
+func (c *DBClient) loadMovieWithGristId() {
+	tx, err := c.DB.Begin()
+	if err != nil {
+		log.Panicf("Encountered error beginning transaction: %v", err)
+	}
+	defer tx.Rollback()
+	_, err = tx.Exec(
+		`INSERT INTO uuid_grist (uuid, grist_id) VALUES ('abc-123', 1)`,
+	)
+	if err != nil {
+		log.Panicf("Encountered error loading uuid_grist: %v", err)
+	}
+	if err = tx.Commit(); err != nil {
+		log.Panicf("Encountered error committing transaction: %v", err)
+	}
+
 }
 
 func teardownDatabase(c *DBClient, m *migrate.Migrate) {
@@ -202,7 +306,7 @@ func TestFindMovieWatch(t *testing.T) {
 	truth := "def-123"
 	record := gristSampleMovieWatch()
 
-	uuid, err := c.FindMovieWatch(record)
+	uuid, err := c.FindMovieWatch(record.Fields.ImdbId, record.Fields.Watched)
 	if err != nil {
 		t.Errorf("Encountered error: %v", err)
 	}
@@ -210,31 +314,30 @@ func TestFindMovieWatch(t *testing.T) {
 		t.Errorf("Expected %v, got %v", truth, uuid)
 	}
 
-	record2 := GristMovieWatchRecord{
-		GristRecord: GristRecord{Id: 2},
-		Fields: GristMovieWatchFields{
-			Name:        "Slaughterhouse",
-			ImdbLink:    "https://www.imdb.com/title/tt0093990/",
-			ImdbId:      "tt0093990",
-			FirstTime:   false,
-			Watched:     1653609600,
-			JoeBob:      true,
-			CallFelissa: false,
-			Beast:       false,
-			Godzilla:    false,
-			Zombies:     false,
-			Slasher:     true,
-			Service:     []string{"L", "Shudder"},
-		},
-	}
-
-	uuid2, err := c.FindMovieWatch(&record2)
+	uuid2, err := c.FindMovieWatch("tt0093990", 1653609600)
 	if err != nil {
 		t.Errorf("Encountered error: %v", err)
 	}
 	if uuid2 != "" {
 		t.Errorf("Expected empty string, got %v", uuid2)
 	}
+}
+
+func TestFindMovie(t *testing.T) {
+	c, m := setupDatabase()
+	defer teardownDatabase(c, m)
+	c.loadMovie()
+	movieWatch := gristSampleMovieWatch()
+	truth := "abc-123"
+	answer, err := c.FindMovie(movieWatch.Fields.ImdbId)
+	if err != nil {
+		t.Errorf("Error getting movie: %v", err)
+	}
+
+	if !cmp.Equal(truth, answer) {
+		t.Errorf("Expected %v, got %v", truth, answer)
+	}
+
 }
 
 func TestCreateMovieRow(t *testing.T) {
@@ -589,6 +692,11 @@ func TestInsertMovieDetails(t *testing.T) {
 	if err != nil {
 		t.Errorf("Encountered error querying for movie genre: %v", err)
 	}
+	defer func() {
+		if err = genreRows.Close(); err != nil {
+			t.Errorf("Encountered error: %v", err)
+		}
+	}()
 	movieGenreAnswer := make([]MovieGenreRow, 0)
 	for genreRows.Next() {
 		movieGenreRowsAnswer := MovieGenreRow{}
@@ -632,6 +740,11 @@ func TestInsertMovieDetails(t *testing.T) {
 	if err != nil {
 		t.Errorf("Encountered error querying movie_actor: %v", err)
 	}
+	defer func() {
+		if err = actorRows.Close(); err != nil {
+			t.Errorf("Encountered error: %v", err)
+		}
+	}()
 	movieActorAnswer := make([]MovieActorRow, 0)
 	for actorRows.Next() {
 		movieActorRowAnswer := MovieActorRow{}
@@ -667,6 +780,11 @@ func TestInsertMovieDetails(t *testing.T) {
 	if err != nil {
 		t.Errorf("Encountered error querying for movie director: %v", err)
 	}
+	defer func() {
+		if err = directorRows.Close(); err != nil {
+			t.Errorf("Encountered error: %v", err)
+		}
+	}()
 	movieDirectorAnswer := make([]MovieDirectorRow, 0)
 	for directorRows.Next() {
 		movieDirectorRowAnswer := MovieDirectorRow{}
@@ -699,9 +817,15 @@ func TestInsertMovieDetails(t *testing.T) {
 		FROM movie_writer WHERE movie_uuid = ?`,
 		answer.Movie,
 	)
+
 	if err != nil {
 		t.Errorf("Encountered error querying for movie writer: %v", err)
 	}
+	defer func() {
+		if err = writerRows.Close(); err != nil {
+			t.Errorf("Encountered error: %v", err)
+		}
+	}()
 	movieWriterAnswer := make([]MovieWriterRow, 0)
 	for writerRows.Next() {
 		movieWriterRowAnswer := MovieWriterRow{}
@@ -747,6 +871,11 @@ func TestInsertMovieDetails(t *testing.T) {
 	if err != nil {
 		t.Errorf("Encountered error querying for movie ratings: %v", err)
 	}
+	defer func() {
+		if err = ratingRows.Close(); err != nil {
+			t.Errorf("Encountered error: %v", err)
+		}
+	}()
 	movieRatingAnswer := make([]MovieRatingRow, 0)
 	for ratingRows.Next() {
 		movieRatingRowAnswer := MovieRatingRow{}
@@ -795,6 +924,11 @@ func TestInsertMovieWatch(t *testing.T) {
 	if err != nil {
 		t.Errorf("Encountered error querying movie row.")
 	}
+	defer func() {
+		if err = answerRows.Close(); err != nil {
+			t.Errorf("Encountered error: %v", err)
+		}
+	}()
 	answer := make([]MovieWatchRow, 0)
 	for answerRows.Next() {
 		answerMovieWatchRow := MovieWatchRow{}
@@ -845,6 +979,11 @@ func TestInsertUuidGrist(t *testing.T) {
 	if err != nil {
 		t.Errorf("Encountered error retrieving uuid <> grist row: %v", err)
 	}
+	defer func() {
+		if err = answerRows.Close(); err != nil {
+			t.Errorf("Encountered error: %v", err)
+		}
+	}()
 	answer := make([]UuidGristRow, 0)
 	for answerRows.Next() {
 		answerRow := UuidGristRow{}
@@ -862,4 +1001,206 @@ func TestInsertUuidGrist(t *testing.T) {
 		t.Errorf("Expected %v, got %v", truth, answer)
 	}
 
+}
+
+func TestFindMovieWithGristId(t *testing.T) {
+	c, m := setupDatabase()
+	defer teardownDatabase(c, m)
+	c.loadMovie()
+	c.loadMovieWithGristId()
+
+	// Find movie with grist ID available.
+	truth := MovieRowWithGristId{
+		MovieRow: MovieRow{
+			Uuid:           "abc-123",
+			Title:          "Tenebrae",
+			ImdbLink:       "https://www.imdb.com/title/tt0084777/",
+			ImdbId:         "tt0084777",
+			Year:           1982,
+			Rated:          sql.NullString{String: "R", Valid: true},
+			Released:       sql.NullString{String: "1984-02-17", Valid: true},
+			RuntimeMinutes: 101,
+			Plot:           sql.NullString{String: "An American writer in Rome is stalked and harassed by a serial killer who is murdering everyone associated with his work on his latest book.", Valid: true},
+			Country:        sql.NullString{String: "Italy", Valid: true},
+			Language:       sql.NullString{String: "Italian, Spanish", Valid: true},
+			BoxOffice:      sql.NullString{String: "", Valid: false},
+			Production:     sql.NullString{String: "", Valid: false},
+			CallFelissa:    false,
+			Slasher:        true,
+			Beast:          false,
+			Godzilla:       false,
+		},
+		GristId: sql.NullInt64{Int64: 1, Valid: true},
+	}
+	answer, err := c.FindMovieWithGristId("tt0084777")
+	if err != nil {
+		t.Errorf("Encountered error: %v", err)
+	}
+	if !cmp.Equal(truth, *answer) {
+		t.Errorf("Expected %v, got %v", truth, *answer)
+	}
+
+	// Find movie without grist ID available.
+	truth = MovieRowWithGristId{
+		MovieRow: MovieRow{
+			Uuid:           "abc-456",
+			Title:          "Slaughterhouse",
+			ImdbLink:       "https://www.imdb.com/title/tt0093990/",
+			ImdbId:         "tt0093990",
+			Year:           1987,
+			Rated:          sql.NullString{String: "R", Valid: true},
+			Released:       sql.NullString{String: "1987-08-28", Valid: true},
+			RuntimeMinutes: 85,
+			Plot:           sql.NullString{String: "The owner of a slaughterhouse facing foreclosure instructs his obese and mentally disabled son to go on a killing spree against the people who want to buy his property.", Valid: true},
+			Country:        sql.NullString{String: "United States", Valid: true},
+			Language:       sql.NullString{String: "English", Valid: true},
+			BoxOffice:      sql.NullString{String: "", Valid: false},
+			Production:     sql.NullString{String: "", Valid: false},
+			CallFelissa:    false,
+			Slasher:        true,
+			Beast:          false,
+			Godzilla:       false,
+		},
+		GristId: sql.NullInt64{Int64: 0, Valid: false},
+	}
+	answer, err = c.FindMovieWithGristId("tt0093990")
+	if err != nil {
+		t.Errorf("Encountered error: %v", err)
+	}
+	if !cmp.Equal(truth, *answer) {
+		t.Errorf("Expected %v, got %v", truth, *answer)
+	}
+}
+
+func TestGetGenreNamesForMovie(t *testing.T) {
+	c, m := setupDatabase()
+	defer teardownDatabase(c, m)
+	c.loadMovie()
+
+	movieUuid := "abc-123"
+	truth := []string{"Horror", "Mystery", "Thriller"}
+	answer, err := c.GetGenreNamesForMovie(movieUuid)
+	if err != nil {
+		t.Errorf("Error getting genres for movie: %v", err)
+	}
+	if !cmp.Equal(truth, answer) {
+		t.Errorf("Expected %v, got %v", truth, answer)
+	}
+}
+
+func TestGetActorNamesForMovie(t *testing.T) {
+	c, m := setupDatabase()
+	defer teardownDatabase(c, m)
+	c.loadMovie()
+
+	movieUuid := "abc-456"
+	truth := []string{"Joe B. Barton", "Don Barrett", "Sherry Leigh"}
+	answer, err := c.GetActorNamesForMovie(movieUuid)
+	if err != nil {
+		t.Errorf("Error getting actors for movie: %v", err)
+	}
+	if !cmp.Equal(truth, answer) {
+		t.Errorf("Expected %v, got %v", truth, answer)
+	}
+}
+
+func TestGetDirectorNamesForMovie(t *testing.T) {
+	c, m := setupDatabase()
+	defer teardownDatabase(c, m)
+	c.loadMovie()
+
+	movieUuid := "abc-123"
+	truth := []string{"Dario Argento"}
+	answer, err := c.GetDirectorNamesForMovie(movieUuid)
+	if err != nil {
+		t.Errorf("Error getting directors for movie: %v", err)
+	}
+	if !cmp.Equal(truth, answer) {
+		t.Errorf("Expected %v, got %v", truth, answer)
+	}
+}
+
+func TestGetWriterNamesForMovie(t *testing.T) {
+	c, m := setupDatabase()
+	defer teardownDatabase(c, m)
+	c.loadMovie()
+
+	movieUuid := "abc-123"
+	truth := []string{"Dario Argento"}
+	answer, err := c.GetWriterNamesForMovie(movieUuid)
+	if err != nil {
+		t.Errorf("Error getting writers for movie: %v", err)
+	}
+	if !cmp.Equal(truth, answer) {
+		t.Errorf("Expected %v, got %v", truth, answer)
+	}
+}
+
+func TestGetRatingsForMovie(t *testing.T) {
+	c, m := setupDatabase()
+	defer teardownDatabase(c, m)
+	c.loadMovie()
+
+	movieUuid := "abc-123"
+	truth := []MovieRatingRow{
+		{
+			Uuid:      "rating1",
+			MovieUuid: "abc-123",
+			Source:    "Internet Movie Database",
+			Value:     "7.0/10",
+		}, {
+			Uuid:      "rating2",
+			MovieUuid: "abc-123",
+			Source:    "Rotten Tomatoes",
+			Value:     "77%",
+		}, {
+			Uuid:      "rating3",
+			MovieUuid: "abc-123",
+			Source:    "Metacritic",
+			Value:     "83/100",
+		},
+	}
+	answer, err := c.GetRatingsForMovie(movieUuid)
+	if err != nil {
+		t.Errorf("Error getting ratings for movie: %v", err)
+	}
+	if !cmp.Equal(truth, answer) {
+		t.Errorf("Expected %v, got %v", truth, answer)
+	}
+}
+
+func TestInsertUuidGristIds(t *testing.T) {
+	c, m := setupDatabase()
+	defer teardownDatabase(c, m)
+
+	ids := []UuidGristRow{
+		{
+			Uuid:    "abc-123",
+			GristId: 1,
+		}, {
+			Uuid:    "def-456",
+			GristId: 2,
+		},
+	}
+
+	if err := c.InsertUuidGristIds(ids); err != nil {
+		t.Errorf("Error inserting uuid <> grist ids: %v", err)
+	}
+
+	answer := make([]UuidGristRow, 0)
+	rows, err := c.DB.Query(`SELECT * FROM uuid_grist`)
+	if err != nil {
+		t.Errorf("Encountered error selecting uuid <> grist ids: %v", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		row := UuidGristRow{}
+		if err := rows.Scan(&row.Uuid, &row.GristId); err != nil {
+			t.Errorf("Error scanning row: %v", err)
+		}
+		answer = append(answer, row)
+	}
+	if !cmp.Equal(ids, answer) {
+		t.Errorf("Expected %v, got %v", ids, answer)
+	}
 }

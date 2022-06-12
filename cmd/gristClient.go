@@ -19,6 +19,10 @@ type GristClient struct {
 	rootUrl string
 }
 
+type GristRecords struct {
+	Records []GristRecord `json:"records"`
+}
+
 type GristRecord struct {
 	Id int `json:"id,omitempty"`
 }
@@ -29,25 +33,6 @@ type GristMovieWatchRecords struct {
 type GristMovieWatchRecord struct {
 	GristRecord
 	Fields GristMovieWatchFields `json:"fields"`
-}
-
-type GristMovieRecord struct {
-	GristRecord
-	Fields GristMovieFields `json:"Fields"`
-}
-
-type GristMovieRatingRecords struct {
-	Records []GristMovieRatingRecord `json:"records"`
-}
-
-type GristMovieRatingRecord struct {
-	GristRecord
-	Fields GristMovieRatingFields `json:"Fields"`
-}
-
-type GristMovieRatingFields struct {
-	Source string `json:"Source"`
-	Value  string `json:"Value"`
 }
 
 func (r *GristMovieWatchRecord) ImdbId() string {
@@ -74,6 +59,15 @@ type GristMovieWatchFields struct {
 	Movie       int64    `json:"Movie,omitempty"`
 }
 
+type GristMovieRecords struct {
+	Records []GristMovieRecord `json:"records"`
+}
+
+type GristMovieRecord struct {
+	GristRecord
+	Fields GristMovieFields `json:"Fields"`
+}
+
 type GristMovieFields struct {
 	Title       string   `json:"Title,omitempty"`
 	ImdbLink    string   `json:"IMDB_Link,omitempty"`
@@ -96,6 +90,20 @@ type GristMovieFields struct {
 	Director    []string `json:"Director,omitempty"`
 	Writer      []string `json:"Writer,omitempty"`
 	Rating      []any    `json:"Rating,omitempty"`
+}
+
+type GristMovieRatingRecords struct {
+	Records []GristMovieRatingRecord `json:"records"`
+}
+
+type GristMovieRatingRecord struct {
+	GristRecord
+	Fields GristMovieRatingFields `json:"Fields"`
+}
+
+type GristMovieRatingFields struct {
+	Source string `json:"Source"`
+	Value  string `json:"Value"`
 }
 
 func NewGristClient(key string) *GristClient {
@@ -202,7 +210,7 @@ func (c *GristClient) CreateMovieRatingRecords(
 	documentId string,
 	tableId string,
 	records *GristMovieRatingRecords,
-) (*GristMovieRatingRecords, error) {
+) (*GristRecords, error) {
 	url := fmt.Sprintf(
 		"%v/docs/%v/tables/%v/records",
 		c.rootUrl,
@@ -231,10 +239,51 @@ func (c *GristClient) CreateMovieRatingRecords(
 		return nil, fmt.Errorf("error reading response body: %v", err)
 	}
 
-	var movieRatingResponse GristMovieRatingRecords
+	var movieRatingResponse GristRecords
 	if err = json.Unmarshal(body, &movieRatingResponse); err != nil {
 		return nil, fmt.Errorf("error unmarshalling response: %v", err)
 	}
 
 	return &movieRatingResponse, nil
+}
+
+func (c *GristClient) CreateMovieRecords(
+	documentId string,
+	tableId string,
+	records *GristMovieRecords,
+) (*GristRecords, error) {
+	url := fmt.Sprintf(
+		"%v/docs/%v/tables/%v/records",
+		c.rootUrl,
+		documentId,
+		tableId,
+	)
+	payload, err := json.Marshal(records)
+	if err != nil {
+		return nil, fmt.Errorf("encountered error marshalling records: %v", err)
+	}
+	request, err := http.NewRequest(
+		http.MethodPost, url, bytes.NewBuffer(payload),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %v", err)
+	}
+	request.Header = c.header
+	request.Header.Set("Content-Type", "application/json")
+	response, err := c.client.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("encountered error making request: %v", err)
+	}
+	defer response.Body.Close()
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response body: %v", err)
+	}
+	var movieResponse GristRecords
+	if err = json.Unmarshal(body, &movieResponse); err != nil {
+		return nil, fmt.Errorf("error unmarshalling response: %v", err)
+	}
+
+	return &movieResponse, nil
+
 }

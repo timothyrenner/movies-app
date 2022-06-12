@@ -266,11 +266,11 @@ func TestCreateMovieRatingRecords(t *testing.T) {
 			},
 		},
 	}
-	truth := &GristMovieRatingRecords{
-		Records: []GristMovieRatingRecord{
-			{GristRecord: GristRecord{Id: 1}},
-			{GristRecord: GristRecord{Id: 2}},
-			{GristRecord: GristRecord{Id: 3}},
+	truth := &GristRecords{
+		Records: []GristRecord{
+			{Id: 1},
+			{Id: 2},
+			{Id: 3},
 		},
 	}
 	gristClient := NewGristClient("def-456")
@@ -282,6 +282,61 @@ func TestCreateMovieRatingRecords(t *testing.T) {
 		t.Errorf("Error creating movie rating records: %v", err)
 	}
 
+	if !cmp.Equal(truth, answer) {
+		t.Errorf("Expected %v, got %v", truth, answer)
+	}
+}
+
+func TestCreateMovieRecords(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder(
+		"POST",
+		"https://docs.getgrist.com/api/docs/abc123/tables/movies/records",
+		httpmock.NewStringResponder(
+			200,
+			`{"records": [{ "id": 1 }]}`,
+		),
+	)
+
+	documentId := "abc123"
+	tableId := "movies"
+	records := &GristMovieRecords{
+		Records: []GristMovieRecord{
+			{
+				Fields: GristMovieFields{
+					Title:       "Tenebrae",
+					ImdbLink:    "https://www.imdb.com/title/tt0084777/",
+					Year:        1982,
+					Rated:       "R",
+					Released:    "1984-02-17",
+					Runtime:     101,
+					Plot:        "An American writer in Rome is stalked and harassed by a serial killer who is murdering everyone associated with his work on his latest book.",
+					Country:     "Italy",
+					Language:    "Italian, Spanish",
+					BoxOffice:   "",
+					Production:  "",
+					CallFelissa: false,
+					Slasher:     true,
+					Zombies:     false,
+					Beast:       false,
+					Godzilla:    false,
+					Genre:       []string{"Horror", "Mystery", "Thriller"},
+					Actor:       []string{"Anthony Franciosa", "Giuliano Gemma", "John Saxon"},
+					Director:    []string{"Dario Argento"},
+					Writer:      []string{"Dario Argento"},
+					Rating:      []any{"r", 1, 2, 3},
+				},
+			},
+		},
+	}
+	truth := &GristRecords{Records: []GristRecord{{Id: 1}}}
+	client := NewGristClient("abc-123")
+	answer, err := client.CreateMovieRecords(documentId, tableId, records)
+	if err != nil {
+		t.Errorf("Encountered error creating movie record: %v", err)
+	}
 	if !cmp.Equal(truth, answer) {
 		t.Errorf("Expected %v, got %v", truth, answer)
 	}

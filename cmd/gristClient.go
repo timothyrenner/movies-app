@@ -65,7 +65,7 @@ type GristMovieRecords struct {
 
 type GristMovieRecord struct {
 	GristRecord
-	Fields GristMovieFields `json:"Fields"`
+	Fields GristMovieFields `json:"fields"`
 }
 
 type GristMovieFields struct {
@@ -98,7 +98,7 @@ type GristMovieRatingRecords struct {
 
 type GristMovieRatingRecord struct {
 	GristRecord
-	Fields GristMovieRatingFields `json:"Fields"`
+	Fields GristMovieRatingFields `json:"fields"`
 }
 
 type GristMovieRatingFields struct {

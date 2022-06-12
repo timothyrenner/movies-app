@@ -753,3 +753,24 @@ func (c *DBClient) GetRatingsForMovie(movieUuid string) (
 	}
 	return movieRatings, nil
 }
+
+func (c *DBClient) InsertUuidGristIds(ids []UuidGristRow) error {
+	paramStrings := make([]string, len(ids))
+	paramValues := make([]any, len(ids)*2)
+	for ii := range ids {
+		paramStrings[ii] = "(?,?)"
+		paramValues[2*ii] = ids[ii].Uuid
+		paramValues[2*ii+1] = ids[ii].GristId
+	}
+	_, err := c.DB.Exec(
+		fmt.Sprintf(
+			`INSERT INTO uuid_grist (uuid, grist_id) VALUES %v`,
+			strings.Join(paramStrings, ","),
+		),
+		paramValues...,
+	)
+	if err != nil {
+		return fmt.Errorf("error inserting rows: %v", err)
+	}
+	return nil
+}

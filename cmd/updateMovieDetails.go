@@ -65,6 +65,9 @@ func updateMovieDetails(cmd *cobra.Command, args []string) {
 		movieWithGristId, err := dbClient.FindMovieWithGristId(
 			movieWatchRecords.Records[ii].Fields.ImdbId,
 		)
+		if err == sql.ErrNoRows {
+			log.Panicf("No rows returned, update movie watches first.")
+		}
 		if err != nil {
 			log.Panicf("Encountered error finding movie with grist id: %v", err)
 		}
@@ -107,6 +110,7 @@ func updateMovieDetails(cmd *cobra.Command, args []string) {
 				},
 			}
 			// Get movie genres.
+			log.Println("Getting genres for movie.")
 			movieGenres, err := dbClient.GetGenreNamesForMovie(
 				movieWithGristId.Uuid,
 			)
@@ -115,6 +119,7 @@ func updateMovieDetails(cmd *cobra.Command, args []string) {
 			}
 			gristMovieRecords.Records[0].Fields.Genre = movieGenres
 			// Get movie actors.
+			log.Println("Getting actors for movie.")
 			movieActors, err := dbClient.GetActorNamesForMovie(
 				movieWithGristId.Uuid,
 			)
@@ -123,6 +128,7 @@ func updateMovieDetails(cmd *cobra.Command, args []string) {
 			}
 			gristMovieRecords.Records[0].Fields.Actor = movieActors
 			// Get movie directors.
+			log.Println("Getting directores for movie.")
 			movieDirectors, err := dbClient.GetDirectorNamesForMovie(
 				movieWithGristId.Uuid,
 			)
@@ -131,6 +137,7 @@ func updateMovieDetails(cmd *cobra.Command, args []string) {
 			}
 			gristMovieRecords.Records[0].Fields.Director = movieDirectors
 			// Get movie writers.
+			log.Println("Getting writers for movie.")
 			movieWriters, err := dbClient.GetWriterNamesForMovie(
 				movieWithGristId.Uuid,
 			)
@@ -139,6 +146,7 @@ func updateMovieDetails(cmd *cobra.Command, args []string) {
 			}
 			gristMovieRecords.Records[0].Fields.Writer = movieWriters
 			// Get movie ratings.
+			log.Println("Getting ratings for movie.")
 			movieRatingRows, err := dbClient.GetRatingsForMovie(
 				movieWithGristId.Uuid,
 			)
@@ -160,6 +168,7 @@ func updateMovieDetails(cmd *cobra.Command, args []string) {
 				}
 			}
 
+			log.Println("Creating movie rating records on Grist.")
 			movieRatingGristIds, err := gristClient.CreateMovieRatingRecords(
 				GRIST_DOCUMENT_ID,
 				"Movie_Rating",
@@ -178,6 +187,7 @@ func updateMovieDetails(cmd *cobra.Command, args []string) {
 			}
 
 			// Push movie details to Grist.
+			log.Println("Creating movie details for Grist.")
 			movieGristId, err := gristClient.CreateMovieRecords(
 				GRIST_DOCUMENT_ID,
 				"Movies",
@@ -206,12 +216,14 @@ func updateMovieDetails(cmd *cobra.Command, args []string) {
 				GristId: movieGristId.Records[0].Id,
 			}
 
+			log.Println("Saving uuid <> grist id mapping.")
 			if err = dbClient.InsertUuidGristIds(uuidGristIds); err != nil {
 				log.Panicf("Error inserting uuid <> Grist IDs: %v", err)
 			}
 		}
 	}
 	// Send movie watch updates to Grist.
+	log.Println("Updating movie watch records in Grist.")
 	if err = gristClient.UpdateMovieWatchRecords(
 		GRIST_DOCUMENT_ID,
 		"Movie_watches",

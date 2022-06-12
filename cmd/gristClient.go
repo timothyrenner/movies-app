@@ -19,12 +19,11 @@ type GristClient struct {
 	rootUrl string
 }
 
+type GristRecord struct {
+	Id int `json:"id,omitempty"`
+}
 type GristMovieWatchRecords struct {
 	Records []GristMovieWatchRecord `json:"records"`
-}
-
-type GristRecord struct {
-	Id int `json:"id"`
 }
 
 type GristMovieWatchRecord struct {
@@ -35,6 +34,20 @@ type GristMovieWatchRecord struct {
 type GristMovieRecord struct {
 	GristRecord
 	Fields GristMovieFields `json:"Fields"`
+}
+
+type GristMovieRatingRecords struct {
+	Records []GristMovieRatingRecord `json:"records"`
+}
+
+type GristMovieRatingRecord struct {
+	GristRecord
+	Fields GristMovieRatingFields `json:"Fields"`
+}
+
+type GristMovieRatingFields struct {
+	Source string `json:"Source"`
+	Value  string `json:"Value"`
 }
 
 func (r *GristMovieWatchRecord) ImdbId() string {
@@ -175,6 +188,7 @@ func (c *GristClient) UpdateMovieWatchRecords(
 	if err != nil {
 		return fmt.Errorf("encountered error creating request: %v", err)
 	}
+	request.Header = c.header
 	request.Header.Set("Content-Type", "application/json")
 	_, err = c.client.Do(request)
 	if err != nil {
@@ -182,4 +196,45 @@ func (c *GristClient) UpdateMovieWatchRecords(
 	}
 
 	return nil
+}
+
+func (c *GristClient) CreateMovieRatingRecords(
+	documentId string,
+	tableId string,
+	records *GristMovieRatingRecords,
+) (*GristMovieRatingRecords, error) {
+	url := fmt.Sprintf(
+		"%v/docs/%v/tables/%v/records",
+		c.rootUrl,
+		documentId,
+		tableId,
+	)
+	payload, err := json.Marshal(records)
+	if err != nil {
+		return nil, fmt.Errorf("encountered error marshalling records: %v", err)
+	}
+	request, err := http.NewRequest(
+		http.MethodPost, url, bytes.NewBuffer(payload),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("encountered error creating request: %v", err)
+	}
+	request.Header = c.header
+	request.Header.Set("Content-Type", "application/json")
+	response, err := c.client.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("encountered error making request: %v", err)
+	}
+	defer response.Body.Close()
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response body: %v", err)
+	}
+
+	var movieRatingResponse GristMovieRatingRecords
+	if err = json.Unmarshal(body, &movieRatingResponse); err != nil {
+		return nil, fmt.Errorf("error unmarshalling response: %v", err)
+	}
+
+	return &movieRatingResponse, nil
 }

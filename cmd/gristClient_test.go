@@ -224,3 +224,65 @@ func TestImdbId(t *testing.T) {
 		t.Errorf("Expected %v, got %v", truth, answer)
 	}
 }
+
+func TestCreateMovieRatingRecords(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder(
+		"POST",
+		"https://docs.getgrist.com/api/docs/abc123/tables/Movie_Rating/records",
+		httpmock.NewStringResponder(
+			200,
+			`{
+				"records": [
+					{"id": 1},
+					{"id": 2},
+					{"id": 3}
+				]
+			}`,
+		),
+	)
+
+	documentId := "abc123"
+	tableId := "Movie_Rating"
+	records := &GristMovieRatingRecords{
+		Records: []GristMovieRatingRecord{
+			{
+				Fields: GristMovieRatingFields{
+					Source: "Internet Movie Database",
+					Value:  "7.0/10",
+				},
+			}, {
+				Fields: GristMovieRatingFields{
+					Source: "Rotten Tomatoes",
+					Value:  "77%",
+				},
+			}, {
+				Fields: GristMovieRatingFields{
+					Source: "Metacritic",
+					Value:  "83/100",
+				},
+			},
+		},
+	}
+	truth := &GristMovieRatingRecords{
+		Records: []GristMovieRatingRecord{
+			{GristRecord: GristRecord{Id: 1}},
+			{GristRecord: GristRecord{Id: 2}},
+			{GristRecord: GristRecord{Id: 3}},
+		},
+	}
+	gristClient := NewGristClient("def-456")
+
+	answer, err := gristClient.CreateMovieRatingRecords(
+		documentId, tableId, records,
+	)
+	if err != nil {
+		t.Errorf("Error creating movie rating records: %v", err)
+	}
+
+	if !cmp.Equal(truth, answer) {
+		t.Errorf("Expected %v, got %v", truth, answer)
+	}
+}

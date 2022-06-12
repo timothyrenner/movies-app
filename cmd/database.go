@@ -724,3 +724,32 @@ func (c *DBClient) GetWriterNamesForMovie(movieUuid string) ([]string, error) {
 
 	return movieWriterNames, nil
 }
+
+func (c *DBClient) GetRatingsForMovie(movieUuid string) (
+	[]MovieRatingRow, error,
+) {
+	rows, err := c.DB.Query(
+		`SELECT uuid, movie_uuid, source, value 
+		FROM movie_rating WHERE movie_uuid = ?`,
+		movieUuid,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("encountered error making query: %v", err)
+	}
+	defer rows.Close()
+
+	movieRatings := make([]MovieRatingRow, 0)
+	for rows.Next() {
+		movieRating := MovieRatingRow{}
+		if err := rows.Scan(
+			&movieRating.Uuid,
+			&movieRating.MovieUuid,
+			&movieRating.Source,
+			&movieRating.Value,
+		); err != nil {
+			return nil, fmt.Errorf("encountered error scanning row: %v", err)
+		}
+		movieRatings = append(movieRatings, movieRating)
+	}
+	return movieRatings, nil
+}

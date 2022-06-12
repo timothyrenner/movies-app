@@ -162,6 +162,18 @@ func (c *DBClient) loadMovie() {
 		log.Panicf("Encountered error loading movie writer table: %v", err)
 	}
 
+	_, err = tx.Exec(
+		`INSERT INTO movie_rating (uuid, movie_uuid, source, value)
+		VALUES
+		('rating1', 'abc-123', 'Internet Movie Database', '7.0/10'),
+		('rating2', 'abc-123', 'Rotten Tomatoes', '77%'),
+		('rating3', 'abc-123', 'Metacritic', '83/100'),
+		('rating4', 'abc-456', 'Internet Movie Database', '5.3/10')`,
+	)
+	if err != nil {
+		log.Panicf("Encountered error loading movie rating table: %v", err)
+	}
+
 	if err = tx.Commit(); err != nil {
 		log.Panicf("Encountered error committing transaction: %v", err)
 	}
@@ -1118,6 +1130,39 @@ func TestGetWriterNamesForMovie(t *testing.T) {
 	answer, err := c.GetWriterNamesForMovie(movieUuid)
 	if err != nil {
 		t.Errorf("Error getting writers for movie: %v", err)
+	}
+	if !cmp.Equal(truth, answer) {
+		t.Errorf("Expected %v, got %v", truth, answer)
+	}
+}
+
+func TestGetRatingsForMovie(t *testing.T) {
+	c, m := setupDatabase()
+	defer teardownDatabase(c, m)
+	c.loadMovie()
+
+	movieUuid := "abc-123"
+	truth := []MovieRatingRow{
+		{
+			Uuid:      "rating1",
+			MovieUuid: "abc-123",
+			Source:    "Internet Movie Database",
+			Value:     "7.0/10",
+		}, {
+			Uuid:      "rating2",
+			MovieUuid: "abc-123",
+			Source:    "Rotten Tomatoes",
+			Value:     "77%",
+		}, {
+			Uuid:      "rating3",
+			MovieUuid: "abc-123",
+			Source:    "Metacritic",
+			Value:     "83/100",
+		},
+	}
+	answer, err := c.GetRatingsForMovie(movieUuid)
+	if err != nil {
+		t.Errorf("Error getting ratings for movie: %v", err)
 	}
 	if !cmp.Equal(truth, answer) {
 		t.Errorf("Expected %v, got %v", truth, answer)

@@ -18,6 +18,10 @@ var updateMovieDetailsCmd = &cobra.Command{
 	Run:   updateMovieDetails,
 }
 
+// ! NEED IDENTIFIER TO MAKE MOVIE PUSH COLUMN TYPES.
+// ! GETTING UNKNOWN REFERENCE ERRORS WHICH IS IRRITATING.
+// ! CONSIDER ABANDONING GRIST AS A FRONT END AND JUST USE IT FOR THE
+// ! MOVIE WATCHES.
 func updateMovieDetails(cmd *cobra.Command, args []string) {
 	if GRIST_KEY == "" {
 		log.Panic("GRIST_KEY must be present for this script to run.")

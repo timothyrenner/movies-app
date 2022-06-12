@@ -279,6 +279,11 @@ func (c *GristClient) CreateMovieRecords(
 	if err != nil {
 		return nil, fmt.Errorf("error reading response body: %v", err)
 	}
+	if response.StatusCode != 200 {
+		return nil, fmt.Errorf(
+			"got status code %v: %v", response.StatusCode, string(body),
+		)
+	}
 	var movieResponse GristRecords
 	if err = json.Unmarshal(body, &movieResponse); err != nil {
 		return nil, fmt.Errorf("error unmarshalling response: %v", err)

@@ -95,7 +95,7 @@ type GristMovieFields struct {
 	Actor       []string `json:"Actor,omitempty"`
 	Director    []string `json:"Director,omitempty"`
 	Writer      []string `json:"Writer,omitempty"`
-	Rating      []int    `json:"Rating,omitempty"`
+	Rating      []any    `json:"Rating,omitempty"`
 }
 
 func NewGristClient(key string) *GristClient {

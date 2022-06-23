@@ -323,6 +323,33 @@ func TestFindMovieWatch(t *testing.T) {
 	}
 }
 
+func TestGetAllMovieWatches(t *testing.T) {
+	c, m := setupDatabase()
+	c.loadMovie()
+	c.loadMovieWatch()
+	defer teardownDatabase(c, m)
+
+	truth := []MovieWatchRow{{
+		Uuid:       "def-123",
+		MovieUuid:  "abc-123",
+		MovieTitle: "Tenebrae",
+		ImdbId:     "tt0084777",
+		Watched:    1653609600,
+		Service:    "Shudder",
+		FirstTime:  false,
+		JoeBob:     true,
+	}}
+
+	answer, err := c.GetAllMovieWatches()
+	if err != nil {
+		t.Errorf("Encountered error: %v", err)
+	}
+
+	if !cmp.Equal(truth, answer) {
+		t.Errorf("Expected %v, got %v", truth, answer)
+	}
+}
+
 func TestFindMovie(t *testing.T) {
 	c, m := setupDatabase()
 	defer teardownDatabase(c, m)

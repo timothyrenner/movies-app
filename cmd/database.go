@@ -303,6 +303,42 @@ func (c *DBClient) FindMovieWatch(imdbId string, watched int) (string, error) {
 	return uuid, nil
 }
 
+func (c *DBClient) GetAllMovieWatches() ([]MovieWatchRow, error) {
+	dbRows, err := c.DB.Query(
+		`SELECT
+			uuid,
+			movie_uuid,
+			movie_title,
+			imdb_id,
+			watched,
+			service,
+			first_time,
+			joe_bob
+		FROM movie_watch`)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving movie watches: %v", err)
+	}
+	defer dbRows.Close()
+	movieWatchRows := make([]MovieWatchRow, 0)
+	for dbRows.Next() {
+		movieWatchRow := MovieWatchRow{}
+		if err := dbRows.Scan(
+			&movieWatchRow.Uuid,
+			&movieWatchRow.MovieUuid,
+			&movieWatchRow.MovieTitle,
+			&movieWatchRow.ImdbId,
+			&movieWatchRow.Watched,
+			&movieWatchRow.Service,
+			&movieWatchRow.FirstTime,
+			&movieWatchRow.JoeBob,
+		); err != nil {
+			return nil, fmt.Errorf("error scanning movie watch row: %v", err)
+		}
+		movieWatchRows = append(movieWatchRows, movieWatchRow)
+	}
+	return movieWatchRows, nil
+}
+
 func (c *DBClient) FindMovie(imdbId string) (string, error) {
 	query := `
 	SELECT

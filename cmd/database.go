@@ -361,6 +361,61 @@ func (c *DBClient) FindMovie(imdbId string) (string, error) {
 	return uuid, nil
 }
 
+func (c *DBClient) GetMovie(movieUuid string) (*MovieRow, error) {
+	query := `
+	SELECT
+		uuid,
+		title,
+		imdb_link,
+		imdb_id,
+		year,
+		rated,
+		released,
+		runtime_minutes,
+		plot,
+		country,
+		language,
+		box_office,
+		production,
+		call_felissa,
+		slasher,
+		zombies,
+		beast,
+		godzilla
+	FROM
+		movie
+	WHERE
+		uuid = ?
+	`
+	dbRow := c.DB.QueryRow(query, movieUuid)
+	var movieRow MovieRow
+	if err := dbRow.Scan(
+		&movieRow.Uuid,
+		&movieRow.Title,
+		&movieRow.ImdbLink,
+		&movieRow.ImdbId,
+		&movieRow.Year,
+		&movieRow.Rated,
+		&movieRow.Released,
+		&movieRow.RuntimeMinutes,
+		&movieRow.Plot,
+		&movieRow.Country,
+		&movieRow.Language,
+		&movieRow.BoxOffice,
+		&movieRow.Production,
+		&movieRow.CallFelissa,
+		&movieRow.Slasher,
+		&movieRow.Zombies,
+		&movieRow.Beast,
+		&movieRow.Godzilla,
+	); err != nil {
+		return nil, fmt.Errorf("error getting movie: %v", err)
+	}
+
+	return &movieRow, nil
+
+}
+
 type MovieRowWithGristId struct {
 	GristId sql.NullInt64
 	MovieRow

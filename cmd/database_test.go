@@ -350,6 +350,41 @@ func TestGetAllMovieWatches(t *testing.T) {
 	}
 }
 
+func TestGetMovieDB(t *testing.T) {
+	c, m := setupDatabase()
+	defer teardownDatabase(c, m)
+	c.loadMovie()
+
+	movieUuid := "abc-123"
+	truth := MovieRow{
+		Uuid:           "abc-123",
+		Title:          "Tenebrae",
+		ImdbLink:       "https://www.imdb.com/title/tt0084777/",
+		ImdbId:         "tt0084777",
+		Year:           1982,
+		Rated:          sql.NullString{String: "R", Valid: true},
+		Released:       sql.NullString{String: "1984-02-17", Valid: true},
+		RuntimeMinutes: 101,
+		Plot:           sql.NullString{String: "An American writer in Rome is stalked and harassed by a serial killer who is murdering everyone associated with his work on his latest book.", Valid: true},
+		Country:        sql.NullString{String: "Italy", Valid: true},
+		Language:       sql.NullString{String: "Italian, Spanish", Valid: true},
+		BoxOffice:      sql.NullString{String: "", Valid: false},
+		Production:     sql.NullString{String: "", Valid: false},
+		CallFelissa:    false,
+		Slasher:        true,
+		Zombies:        false,
+		Beast:          false,
+		Godzilla:       false,
+	}
+	answer, err := c.GetMovie(movieUuid)
+	if err != nil {
+		t.Errorf("Encountered error: %v", err)
+	}
+	if !cmp.Equal(truth, *answer) {
+		t.Errorf("Expected \n%v, got \n%v", truth, *answer)
+	}
+}
+
 func TestFindMovie(t *testing.T) {
 	c, m := setupDatabase()
 	defer teardownDatabase(c, m)

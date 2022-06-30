@@ -350,6 +350,22 @@ func TestGetAllMovieWatches(t *testing.T) {
 	}
 }
 
+func TestGetLatestMovieWatchDate(t *testing.T) {
+	c, m := setupDatabase()
+	defer teardownDatabase(c, m)
+	c.loadMovie()
+	c.loadMovieWatch()
+
+	truth := "2022-05-27"
+	answer, err := c.GetLatestMovieWatchDate()
+	if err != nil {
+		t.Errorf("Encountered error: %v", err)
+	}
+	if !cmp.Equal(truth, answer) {
+		t.Errorf("Expected %v, got %v", truth, answer)
+	}
+}
+
 func TestGetMovieDB(t *testing.T) {
 	c, m := setupDatabase()
 	defer teardownDatabase(c, m)

@@ -339,6 +339,15 @@ func (c *DBClient) GetAllMovieWatches() ([]MovieWatchRow, error) {
 	return movieWatchRows, nil
 }
 
+func (c *DBClient) GetLatestMovieWatchDate() (string, error) {
+	dbRow := c.DB.QueryRow(`SELECT MAX(watched) FROM movie_watch`)
+	var watchedEpoch int
+	if err := dbRow.Scan(&watchedEpoch); err != nil {
+		return "", fmt.Errorf("error getting latest watched date: %v", err)
+	}
+	return time.Unix(int64(watchedEpoch), 0).Format("2006-01-02"), nil
+}
+
 func (c *DBClient) FindMovie(imdbId string) (string, error) {
 	query := `
 	SELECT

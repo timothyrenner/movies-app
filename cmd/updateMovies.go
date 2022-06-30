@@ -6,7 +6,12 @@ package cmd
 
 import (
 	"database/sql"
+	"errors"
 	"log"
+	"os"
+	"path"
+	"regexp"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -15,38 +20,41 @@ import (
 var updateMoviesCmd = &cobra.Command{
 	Use:   "update-movies",
 	Short: "Runs the data pipeline for pulling movies.",
-	Long: `Pulls the movie watches from Grist and updates the local database.
+	Long: `Pulls new movie watches from the vault and updates the local database.
 	Hydrates the movies with additional info from OMDB if required.
 	`,
-	Run: updateMovies,
+	Run:  updateMovies,
+	Args: cobra.RangeArgs(1, 1),
+}
+
+var WATCHED_DATE_EXTRACTOR *regexp.Regexp = regexp.MustCompile(
+	`watched::\s*\[\[(\d{4}-\d{2}-\d{2})\]\]`,
+)
+var IMDB_ID_EXTRACTOR *regexp.Regexp = regexp.MustCompile(
+	`imdb_id::\s+(tt\d{7})`,
+)
+
+func GetMovieTitleFromWatchFile(fileContents []byte) (string, error) {
+	matches := WATCHED_DATE_EXTRACTOR.FindSubmatch(fileContents)
+	if len(matches) != 2 {
+		return "", errors.New("unable to match watched date")
+	}
+	return string(matches[1]), nil
+}
+
+func GetMovieImdbIdFromWatchFile(fileContents []byte) (string, error) {
+	matches := IMDB_ID_EXTRACTOR.FindSubmatch(fileContents)
+	if len(matches) != 2 {
+		return "", errors.New("unable to match watched date")
+	}
+	return string(matches[1]), nil
 }
 
 func updateMovies(cmd *cobra.Command, args []string) {
-	if GRIST_KEY == "" {
-		log.Panic("GRIST_KEY must be present for this script to run.")
-	}
-
-	if GRIST_DOCUMENT_ID == "" {
-		log.Panic("GRIST_DOCUMENT_ID must be present for this script to run.")
-	}
+	vaultDir := args[0]
 
 	if OMDB_KEY == "" {
 		log.Panic("OMDB_KEY must be present for this script to run.")
-	}
-
-	limit, err := cmd.Flags().GetInt("limit")
-	if err != nil {
-		log.Panicf("Error obtaining limit: %v", err)
-	}
-	if limit < 0 {
-		log.Panicf("Limit must be greater than zero, got %v", limit)
-	}
-
-	gristClient := NewGristClient(GRIST_KEY)
-	if limit > 0 {
-		log.Printf("Pulling %v records from Grist.", limit)
-	} else {
-		log.Println("Pulling all records from Grist.")
 	}
 
 	omdbClient := NewOmdbClient(OMDB_KEY)
@@ -58,22 +66,31 @@ func updateMovies(cmd *cobra.Command, args []string) {
 	db := DBClient{DB: dbc}
 	defer db.Close()
 
-	records, err := gristClient.GetMovieWatchRecords(
-		GRIST_DOCUMENT_ID,
-		"Movie_watches",
-		nil,
-		"-Watched",
-		limit,
-	)
+	latestMovieWatch, err := db.GetLatestMovieWatchDate()
 	if err != nil {
-		log.Panicf("Encountered error pulling records from Grist: %v", err)
+		log.Panicf("Error getting latest movie watch date: %v", err)
 	}
 
-	log.Printf(
-		"Pulled %v documents from Grist, processing.", len(records.Records),
-	)
-
-	newMovies := 0
+	newMovieWatchFiles := make([]string, 0)
+	allWatches, err := os.ReadDir(path.Join(vaultDir, "Watches"))
+	for ii := range allWatches {
+		watchDate := strings.Split(allWatches[ii].Name(), " ")[0]
+		if watchDate < latestMovieWatch {
+			continue
+		} else {
+			newMovieWatchFiles = append(
+				newMovieWatchFiles,
+				path.Join(vaultDir, "Movies", allWatches[ii].Name()),
+			)
+		}
+	}
+	log.Printf("Found %v possibly new watches: %v", len(newMovieWatchFiles))
+	for ii := range newMovieWatchFiles {
+		watchFileContents, err := os.ReadFile(newMovieWatchFiles[ii])
+		if err != nil {
+			log.Panicf("Error reading %v: %v", watchFileContents, err)
+		}
+	}
 
 	for ii := range records.Records {
 		record := &records.Records[ii]

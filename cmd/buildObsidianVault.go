@@ -14,7 +14,6 @@ import (
 	"strings"
 	"sync"
 	"text/template"
-	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -63,124 +62,6 @@ func createOrOpenFile(force bool, path string) (*os.File, bool, error) {
 	}
 
 	return file, created, nil
-}
-
-var MOVIE_WATCH_TEMPLATE = `
-# {{.Title}}: {{.Watched}}
-
-## Data
-name:: [[{{.Title}}]]
-watched:: [[{{.Watched}}]]
-imdb_id:: {{.ImdbId}}
-first_time:: {{.FirstTime}}
-joe_bob:: {{.JoeBob}}
-service:: {{.Service}}
-
-## Tags
-#movie-watch
-`
-
-type MovieWatchPage struct {
-	Title     string
-	FileTitle string
-	Watched   string
-	ImdbId    string
-	FirstTime bool
-	JoeBob    bool
-	Service   string
-}
-
-func (r *MovieWatchRow) CreatePage() *MovieWatchPage {
-	watched := time.Unix(int64(r.Watched), 0).Format("2006-01-02")
-	return &MovieWatchPage{
-		Title:     r.MovieTitle,
-		FileTitle: cleanTitle(r.MovieTitle),
-		Watched:   watched,
-		ImdbId:    r.ImdbId,
-		FirstTime: r.FirstTime,
-		JoeBob:    r.JoeBob,
-		Service:   r.Service,
-	}
-}
-
-var MOVIE_TEMPLATE = `
-# {{.Title}}
-## Data
-title:: {{.Title}}
-imdb_link:: {{.ImdbLink}}
-{{$sep := ""}}
-genre:: {{range $elem := .Genres}}{{$sep}}[[{{$elem}}]]{{$sep = ", "}}{{end}}
-director:: {{$sep = ""}}{{range $elem := .Directors}}{{$sep}}[[{{$elem}}]]{{$sep = ", "}}{{end}}
-actor:: {{$sep = ""}}{{range $elem := .Actors}}{{$sep}}[[{{$elem}}]]{{$sep = ", "}}{{end}}
-writer:: {{$sep = ""}}{{range $elem := .Writers}}{{$sep}}[[{{$elem}}]]{{$sep = ", "}}{{end}}
-year:: {{.Year}}
-rated:: {{.Rating}}
-released:: {{.Released}}
-runtime_minutes:: {{.RuntimeMinutes}}
-plot:: {{.Plot}}
-country:: {{.Country}}
-language:: {{.Language}}
-box_office:: {{.BoxOffice}}
-production:: {{.Production}}
-call_felissa:: {{.CallFelissa}}
-slasher:: {{.Slasher}}
-zombies:: {{.Zombies}}
-beast:: {{.Beast}}
-godzilla:: {{.Godzilla}}
-
-## Tags
-#movie
-{{$sep = ""}}{{range $elem := .Genres}}{{$sep}}#{{$elem}}{{$sep = "\n"}}{{end}}
-`
-
-type MoviePage struct {
-	Title          string
-	ImdbLink       string
-	Genres         []string
-	Directors      []string
-	Actors         []string
-	Writers        []string
-	Year           int
-	RuntimeMinutes int
-	Rating         string
-	Released       string
-	Plot           string
-	Country        string
-	Language       string
-	BoxOffice      string
-	Production     string
-	CallFelissa    bool
-	Slasher        bool
-	Zombies        bool
-	Beast          bool
-	Godzilla       bool
-}
-
-func (r *MovieRow) createPage(
-	genres []string, directors []string, writers []string, actors []string,
-) *MoviePage {
-	return &MoviePage{
-		Title:          r.Title,
-		ImdbLink:       r.ImdbLink,
-		Genres:         genres,
-		Directors:      directors,
-		Actors:         actors,
-		Writers:        writers,
-		Year:           r.Year,
-		Rating:         r.Rated.String,
-		Released:       r.Released.String,
-		RuntimeMinutes: r.RuntimeMinutes,
-		Plot:           r.Plot.String,
-		Country:        r.Country.String,
-		Language:       r.Language.String,
-		BoxOffice:      r.BoxOffice.String,
-		Production:     r.Production.String,
-		CallFelissa:    r.CallFelissa,
-		Slasher:        r.Slasher,
-		Zombies:        r.Zombies,
-		Beast:          r.Beast,
-		Godzilla:       r.Godzilla,
-	}
 }
 
 func buildObsidianVault(cmd *cobra.Command, args []string) {
@@ -284,7 +165,7 @@ func buildObsidianVault(cmd *cobra.Command, args []string) {
 		go func(ii int) {
 			defer wg.Done()
 			moviePageFileName := fmt.Sprintf(
-				"%v.md", movieWatchPage.FileTitle,
+				"%v (%v).md", movieWatchPage.FileTitle, movieWatchPage.ImdbId,
 			)
 			moviePageFilePath := path.Join(moviesDir, moviePageFileName)
 			moviePageFile, skipMovie, err := createOrOpenFile(

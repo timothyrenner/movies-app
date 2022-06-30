@@ -8,14 +8,14 @@ import (
 
 func TestCleanTitle(t *testing.T) {
 	title := " Grizzly 2: Revenge "
-	truth := "grizzly_2_revenge"
+	truth := "Grizzly 2 Revenge"
 	answer := cleanTitle(title)
 	if !cmp.Equal(truth, answer) {
 		t.Errorf("Expected %v, got %v", truth, answer)
 	}
 
 	title = "V/H/S 94"
-	truth = "vhs_94"
+	truth = "VHS 94"
 	answer = cleanTitle(title)
 	if !cmp.Equal(truth, answer) {
 		t.Errorf("Expected %v, got %v", truth, answer)

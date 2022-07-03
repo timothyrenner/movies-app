@@ -1,0 +1,1 @@
+ALTER TABLE movie_watch DROP COLUMN notes;

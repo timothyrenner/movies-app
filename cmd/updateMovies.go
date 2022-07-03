@@ -12,6 +12,7 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -95,8 +96,11 @@ func updateMovies(cmd *cobra.Command, args []string) {
 	for ii := range records.Records {
 		record := &records.Records[ii]
 		// Determine if it's already in the database.
+		watchedString := time.Unix(
+			int64(record.Fields.Watched+5*60*60), 0,
+		).Format("2006-01-02")
 		movieWatchUuid, err := db.FindMovieWatch(
-			record.Fields.ImdbId, record.Fields.Watched,
+			record.Fields.ImdbId, watchedString,
 		)
 		if err != nil {
 			log.Panicf("Encountered error obtaining movie watch: %v", err)

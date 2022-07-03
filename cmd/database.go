@@ -44,6 +44,7 @@ type MovieRow struct {
 	Zombies        bool
 	Beast          bool
 	Godzilla       bool
+	WallpaperFu    bool
 }
 
 func CreateMovieRow(
@@ -233,10 +234,11 @@ type MovieWatchRow struct {
 	MovieUuid  string
 	MovieTitle string
 	ImdbId     string
-	Watched    int
+	Watched    string
 	Service    string
 	FirstTime  bool
 	JoeBob     bool
+	Notes      string
 }
 
 func CreateMovieWatchRow(
@@ -255,10 +257,12 @@ func CreateMovieWatchRow(
 		MovieUuid:  movieUuid,
 		MovieTitle: movieWatchRecord.Fields.Name,
 		ImdbId:     movieWatchRecord.Fields.ImdbId,
-		Watched:    movieWatchRecord.Fields.Watched,
-		Service:    movieWatchRecord.Fields.Service[1],
-		FirstTime:  movieWatchRecord.Fields.FirstTime,
-		JoeBob:     movieWatchRecord.Fields.JoeBob,
+		Watched: time.Unix(
+			int64(movieWatchRecord.Fields.Watched+5*60*60), 0,
+		).Format("2006-01-02"),
+		Service:   movieWatchRecord.Fields.Service[1],
+		FirstTime: movieWatchRecord.Fields.FirstTime,
+		JoeBob:    movieWatchRecord.Fields.JoeBob,
 	}, nil
 }
 
@@ -276,7 +280,7 @@ type MovieDetailUuids struct {
 	Rating   []string
 }
 
-func (c *DBClient) FindMovieWatch(imdbId string, watched int) (string, error) {
+func (c *DBClient) FindMovieWatch(imdbId string, watched string) (string, error) {
 	query := `
 	SELECT
 		uuid
@@ -526,9 +530,10 @@ func (c *DBClient) InsertMovieDetails(
 			slasher,
 			zombies,
 			beast,
-			godzilla
+			godzilla,
+			wallpaper_fu
 		) VALUES(
-			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 		)
 	`,
 		movieRow.Uuid,
@@ -549,6 +554,7 @@ func (c *DBClient) InsertMovieDetails(
 		movieRow.Zombies,
 		movieRow.Beast,
 		movieRow.Godzilla,
+		movieRow.WallpaperFu,
 	)
 
 	if err != nil {

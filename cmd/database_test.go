@@ -66,7 +66,8 @@ func (c *DBClient) loadMovie() {
 			slasher,
 			zombies,
 			beast,
-			godzilla
+			godzilla,
+			wallpaper_fu
 		) VALUES 
 		(
 			'abc-123',
@@ -86,7 +87,8 @@ func (c *DBClient) loadMovie() {
 			TRUE,
 			FALSE,
 			FALSE,
-			FALSE
+			FALSE,
+			TRUE
 		), (
 			'abc-456',
 			'Slaughterhouse',
@@ -103,6 +105,7 @@ func (c *DBClient) loadMovie() {
 			NULL,
 			FALSE,
 			TRUE,
+			FALSE,
 			FALSE,
 			FALSE,
 			FALSE
@@ -598,7 +601,8 @@ func TestInsertMovieDetails(t *testing.T) {
 			slasher,
 			zombies,
 			beast,
-			godzilla
+			godzilla,
+			wallpaper_fu
 		FROM movie
 		WHERE uuid=?`,
 		answer.Movie,
@@ -631,6 +635,7 @@ func TestInsertMovieDetails(t *testing.T) {
 			Zombies:        false,
 			Beast:          false,
 			Godzilla:       false,
+			WallpaperFu:    false,
 		},
 	}
 	movieRowsAnswer := make([]MovieRow, 0)
@@ -655,6 +660,7 @@ func TestInsertMovieDetails(t *testing.T) {
 			&movieRowAnswer.Zombies,
 			&movieRowAnswer.Beast,
 			&movieRowAnswer.Godzilla,
+			&movieRowAnswer.WallpaperFu,
 		); err != nil {
 			t.Errorf("Encountered error scanning movie row: %v", err)
 		}

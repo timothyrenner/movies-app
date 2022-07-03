@@ -238,6 +238,7 @@ type MovieWatchRow struct {
 	Service    string
 	FirstTime  bool
 	JoeBob     bool
+	Notes      string
 }
 
 func CreateMovieWatchRow(

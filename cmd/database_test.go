@@ -199,7 +199,8 @@ func (c *DBClient) loadMovieWatch() {
 			watched,
 			service,
 			first_time,
-			joe_bob
+			joe_bob,
+			notes
 		) VALUES (
 			'def-123',
 			'abc-123',
@@ -208,7 +209,8 @@ func (c *DBClient) loadMovieWatch() {
 			'2022-05-27',
 			'Shudder',
 			FALSE,
-			TRUE
+			TRUE,
+			'Some notes'
 		)`,
 	)
 	if err != nil {

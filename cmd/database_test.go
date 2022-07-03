@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"log"
 	"testing"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
@@ -201,7 +202,7 @@ func (c *DBClient) loadMovieWatch() {
 			'abc-123',
 			'Tenebrae',
 			'tt0084777',
-			1653609600,
+			'2022-05-27',
 			'Shudder',
 			FALSE,
 			TRUE
@@ -305,8 +306,11 @@ func TestFindMovieWatch(t *testing.T) {
 
 	truth := "def-123"
 	record := gristSampleMovieWatch()
+	watchedString := time.Unix(
+		int64(record.Fields.Watched+5*60*60), 0,
+	).Format("2006-01-02")
 
-	uuid, err := c.FindMovieWatch(record.Fields.ImdbId, record.Fields.Watched)
+	uuid, err := c.FindMovieWatch(record.Fields.ImdbId, watchedString)
 	if err != nil {
 		t.Errorf("Encountered error: %v", err)
 	}
@@ -314,7 +318,7 @@ func TestFindMovieWatch(t *testing.T) {
 		t.Errorf("Expected %v, got %v", truth, uuid)
 	}
 
-	uuid2, err := c.FindMovieWatch("tt0093990", 1653609600)
+	uuid2, err := c.FindMovieWatch("tt0093990", "2022-05-27")
 	if err != nil {
 		t.Errorf("Encountered error: %v", err)
 	}
@@ -553,7 +557,7 @@ func TestCreateMovieWatchRow(t *testing.T) {
 		MovieUuid:  "abc-123",
 		MovieTitle: "Tenebrae",
 		ImdbId:     "tt0084777",
-		Watched:    1653609600,
+		Watched:    "2022-05-27",
 		Service:    "Shudder",
 		FirstTime:  false,
 		JoeBob:     true,
@@ -951,7 +955,7 @@ func TestInsertMovieWatch(t *testing.T) {
 			Uuid:       uuid,
 			MovieUuid:  "abc-123",
 			MovieTitle: "Tenebrae",
-			Watched:    1653609600,
+			Watched:    "2022-05-27",
 			Service:    "Shudder",
 			FirstTime:  false,
 			JoeBob:     true,

@@ -44,6 +44,7 @@ type MovieRow struct {
 	Zombies        bool
 	Beast          bool
 	Godzilla       bool
+	WallpaperFu    bool
 }
 
 func CreateMovieRow(
@@ -428,9 +429,10 @@ func (c *DBClient) InsertMovieDetails(
 			slasher,
 			zombies,
 			beast,
-			godzilla
+			godzilla,
+			wallpaper_fu
 		) VALUES(
-			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 		)
 	`,
 		movieRow.Uuid,
@@ -451,6 +453,7 @@ func (c *DBClient) InsertMovieDetails(
 		movieRow.Zombies,
 		movieRow.Beast,
 		movieRow.Godzilla,
+		movieRow.WallpaperFu,
 	)
 
 	if err != nil {

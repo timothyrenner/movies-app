@@ -234,7 +234,7 @@ func buildObsidianVault(cmd *cobra.Command, args []string) {
 						movieWatches[ii].MovieTitle, err,
 					)
 				}
-				moviePage := movieRow.createPage(
+				moviePage := movieRow.CreatePage(
 					genres, directors, writers, actors,
 				)
 				if err := movieTemplate.Execute(

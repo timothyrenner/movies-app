@@ -51,7 +51,7 @@ service:: Shudder
 		`,
 	)
 	truth := "tt0084777"
-	answer, err := GetMovieTitleFromWatchFile(fileContents)
+	answer, err := GetMovieImdbIdFromWatchFile(fileContents)
 	if err != nil {
 		t.Errorf("Encountered error: %v", err)
 	}

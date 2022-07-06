@@ -12,7 +12,6 @@ import (
 	"path"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -54,6 +53,11 @@ func GetMovieImdbIdFromWatchFile(fileContents []byte) (string, error) {
 func updateMovies(cmd *cobra.Command, args []string) {
 	vaultDir := args[0]
 
+	checkAll, err := cmd.Flags().GetBool("check-all")
+	if err != nil {
+		log.Panicf("Error getting value of check-all: %v", err)
+	}
+
 	if OMDB_KEY == "" {
 		log.Panic("OMDB_KEY must be present for this script to run.")
 	}
@@ -74,9 +78,12 @@ func updateMovies(cmd *cobra.Command, args []string) {
 
 	newMovieWatchFiles := make([]string, 0)
 	allWatches, err := os.ReadDir(path.Join(vaultDir, "Watches"))
+	if err != nil {
+		log.Panicf("Error reading dir %v", path.Join(vaultDir, "Watches"))
+	}
 	for ii := range allWatches {
 		watchDate := strings.Split(allWatches[ii].Name(), " ")[0]
-		if watchDate < latestMovieWatch {
+		if !checkAll && (watchDate < latestMovieWatch) {
 			continue
 		} else {
 			newMovieWatchFiles = append(
@@ -85,7 +92,7 @@ func updateMovies(cmd *cobra.Command, args []string) {
 			)
 		}
 	}
-	log.Printf("Found %v possibly new watches: %v", len(newMovieWatchFiles))
+	log.Printf("Found %v possibly new watches", len(newMovieWatchFiles))
 	for ii := range newMovieWatchFiles {
 		watchFileContents, err := os.ReadFile(newMovieWatchFiles[ii])
 		if err != nil {
@@ -93,14 +100,24 @@ func updateMovies(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	for ii := range records.Records {
-		record := &records.Records[ii]
+	// Initialize the parser.
+	movieWatchParser, err := CreateMovieWatchParser()
+	if err != nil {
+		log.Panicf("Error creating movie watch parser: %v", err)
+	}
+
+	newMovies := 0
+	for ii := range newMovieWatchFiles {
+		watchFile := newMovieWatchFiles[ii]
+		// Parse the watch file.
+		movieWatchPage, err := movieWatchParser.ParsePage(watchFile)
+		if err != nil {
+			log.Panicf("Error parsing page %v: %v", watchFile, err)
+		}
 		// Determine if it's already in the database.
-		watchedString := time.Unix(
-			int64(record.Fields.Watched+5*60*60), 0,
-		).Format("2006-01-02")
+
 		movieWatchUuid, err := db.FindMovieWatch(
-			record.Fields.ImdbId, watchedString,
+			movieWatchPage.ImdbId, movieWatchPage.Watched,
 		)
 		if err != nil {
 			log.Panicf("Encountered error obtaining movie watch: %v", err)
@@ -109,26 +126,28 @@ func updateMovies(cmd *cobra.Command, args []string) {
 		// If there's a uuid for the movie watch in the database, skip it.
 		if movieWatchUuid != "" {
 			log.Printf(
-				"Already found %v in database, skipping.", record.Fields.Name,
+				"Already found %v - %v in database, skipping.",
+				movieWatchPage.Title, movieWatchPage.Watched,
 			)
 			continue
 		}
 
 		// See if the movie and details are already in the database.
-		movieUuid, err := db.FindMovie(record.Fields.ImdbId)
+		movieUuid, err := db.FindMovie(movieWatchPage.ImdbId)
 		if err != nil {
 			log.Panicf("Error finding movie: %v", err)
 		}
 		// If the movie's not in the database, we need to insert it and the
 		// details.
+		movieWatchRow := movieWatchPage.CreateRow()
 		if movieUuid == "" {
-			log.Printf("Fetching %v from OMDB.", record.Fields.Name)
-			omdbResponse, err := omdbClient.GetMovie(record.ImdbId())
+			log.Printf("Fetching %v from OMDB.", movieWatchPage.Title)
+			omdbResponse, err := omdbClient.GetMovie(movieWatchPage.ImdbId)
 			if err != nil {
 				log.Panicf("Error fetching movie from OMDB: %v", err)
 			}
 			movieDetailUuids, err := db.InsertMovieDetails(
-				omdbResponse, record,
+				omdbResponse, movieWatchRow,
 			)
 			if err != nil {
 				log.Panicf(
@@ -139,16 +158,12 @@ func updateMovies(cmd *cobra.Command, args []string) {
 		}
 		// Now that we have a movie uuid for the foreign key we can insert the
 		// movie watch itself.
-		movieWatchUuid, err = db.InsertMovieWatch(record, movieUuid)
+		movieWatchRow.MovieUuid = movieUuid
+		_, err = db.InsertMovieWatch(movieWatchRow)
 		if err != nil {
 			log.Panicf(
 				"Error inserting movie watch into database: %v", err,
 			)
-		}
-		// Now add the Grist ID <> movie watch ID mapping.
-		err = db.InsertUuidGrist(movieWatchUuid, record.Id)
-		if err != nil {
-			log.Panicf("Error inserting uuid <> grist ID pair into database: %v", err)
 		}
 		newMovies += 1
 	}
@@ -157,7 +172,7 @@ func updateMovies(cmd *cobra.Command, args []string) {
 
 func init() {
 	rootCmd.AddCommand(updateMoviesCmd)
-	updateMoviesCmd.Flags().IntP(
-		"limit", "l", 25, "The number of movies to pull from Grist.",
+	updateMoviesCmd.Flags().BoolP(
+		"check-all", "c", false, "Whether to check all the movie watches or not.",
 	)
 }

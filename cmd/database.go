@@ -48,7 +48,7 @@ type MovieRow struct {
 }
 
 func CreateMovieRow(
-	movieRecord *OmdbMovieResponse, movieWatch *GristMovieWatchRecord,
+	movieRecord *OmdbMovieResponse, movieWatch *MovieWatchRow,
 ) (*MovieRow, error) {
 
 	year, err := strconv.Atoi(movieRecord.Year)
@@ -88,9 +88,9 @@ func CreateMovieRow(
 
 	return &MovieRow{
 		Uuid:           uuid.New().String(),
-		Title:          movieWatch.Fields.Name,
-		ImdbLink:       movieWatch.Fields.ImdbLink,
-		ImdbId:         movieWatch.Fields.ImdbId,
+		Title:          movieWatch.MovieTitle,
+		ImdbLink:       fmt.Sprintf("https://www.imdb.com/title/%v/", movieWatch.ImdbId),
+		ImdbId:         movieWatch.ImdbId,
 		Year:           year,
 		Rated:          textToNullString(movieRecord.Rated),
 		Released:       textToNullString(releasedDate),
@@ -100,10 +100,10 @@ func CreateMovieRow(
 		Language:       textToNullString(movieRecord.Language),
 		BoxOffice:      textToNullString(movieRecord.BoxOffice),
 		Production:     textToNullString(movieRecord.Production),
-		CallFelissa:    movieWatch.Fields.CallFelissa,
-		Slasher:        movieWatch.Fields.Slasher,
-		Beast:          movieWatch.Fields.Beast,
-		Godzilla:       movieWatch.Fields.Godzilla,
+		CallFelissa:    movieWatch.CallFelissa,
+		Slasher:        movieWatch.Slasher,
+		Beast:          movieWatch.Beast,
+		Godzilla:       movieWatch.Godzilla,
 	}, nil
 }
 
@@ -230,45 +230,21 @@ func CreateMovieRatingRows(
 }
 
 type MovieWatchRow struct {
-	Uuid       string
-	MovieUuid  string
-	MovieTitle string
-	ImdbId     string
-	Watched    string
-	Service    string
-	FirstTime  bool
-	JoeBob     bool
-	Notes      string
-}
-
-func CreateMovieWatchRow(
-	movieWatchRecord *GristMovieWatchRecord,
-	movieUuid string,
-) (*MovieWatchRow, error) {
-	if len(movieWatchRecord.Fields.Service) != 2 {
-		return nil, fmt.Errorf(
-			"expected Service to have length 2, got %v",
-			len(movieWatchRecord.Fields.Service),
-		)
-	}
-
-	return &MovieWatchRow{
-		Uuid:       uuid.New().String(),
-		MovieUuid:  movieUuid,
-		MovieTitle: movieWatchRecord.Fields.Name,
-		ImdbId:     movieWatchRecord.Fields.ImdbId,
-		Watched: time.Unix(
-			int64(movieWatchRecord.Fields.Watched+5*60*60), 0,
-		).Format("2006-01-02"),
-		Service:   movieWatchRecord.Fields.Service[1],
-		FirstTime: movieWatchRecord.Fields.FirstTime,
-		JoeBob:    movieWatchRecord.Fields.JoeBob,
-	}, nil
-}
-
-type UuidGristRow struct {
-	Uuid    string
-	GristId int
+	Uuid        string
+	MovieUuid   string
+	MovieTitle  string
+	ImdbId      string
+	Watched     string
+	Service     string
+	FirstTime   bool
+	JoeBob      bool
+	Slasher     bool
+	CallFelissa bool
+	WallpaperFu bool
+	Beast       bool
+	Godzilla    bool
+	Zombies     bool
+	Notes       string
 }
 
 type MovieDetailUuids struct {
@@ -345,11 +321,11 @@ func (c *DBClient) GetAllMovieWatches() ([]MovieWatchRow, error) {
 
 func (c *DBClient) GetLatestMovieWatchDate() (string, error) {
 	dbRow := c.DB.QueryRow(`SELECT MAX(watched) FROM movie_watch`)
-	var watchedEpoch int
-	if err := dbRow.Scan(&watchedEpoch); err != nil {
+	var watched string
+	if err := dbRow.Scan(&watched); err != nil {
 		return "", fmt.Errorf("error getting latest watched date: %v", err)
 	}
-	return time.Unix(int64(watchedEpoch), 0).Format("2006-01-02"), nil
+	return watched, nil
 }
 
 func (c *DBClient) FindMovie(imdbId string) (string, error) {
@@ -429,73 +405,9 @@ func (c *DBClient) GetMovie(movieUuid string) (*MovieRow, error) {
 
 }
 
-type MovieRowWithGristId struct {
-	GristId sql.NullInt64
-	MovieRow
-}
-
-func (c *DBClient) FindMovieWithGristId(imdbId string) (*MovieRowWithGristId, error) {
-	query := `
-	SELECT
-		movie.uuid,
-		uuid_grist.grist_id,
-		movie.title,
-		movie.imdb_link,
-		movie.imdb_id,
-		movie.year,
-		movie.rated,
-		movie.released,
-		movie.runtime_minutes,
-		movie.plot,
-		movie.country,
-		movie.language,
-		movie.box_office,
-		movie.production,
-		movie.call_felissa,
-		movie.slasher,
-		movie.zombies,
-		movie.beast,
-		movie.godzilla
-	FROM movie
-	LEFT JOIN uuid_grist ON
-		movie.uuid = uuid_grist.uuid
-	WHERE imdb_id = ?
-	`
-
-	movieRow := MovieRowWithGristId{}
-	row := c.DB.QueryRow(query, imdbId)
-	if err := row.Scan(
-		&movieRow.Uuid,
-		&movieRow.GristId,
-		&movieRow.Title,
-		&movieRow.ImdbLink,
-		&movieRow.ImdbId,
-		&movieRow.Year,
-		&movieRow.Rated,
-		&movieRow.Released,
-		&movieRow.RuntimeMinutes,
-		&movieRow.Plot,
-		&movieRow.Country,
-		&movieRow.Language,
-		&movieRow.BoxOffice,
-		&movieRow.Production,
-		&movieRow.CallFelissa,
-		&movieRow.Slasher,
-		&movieRow.Zombies,
-		&movieRow.Beast,
-		&movieRow.Godzilla,
-	); err != nil {
-		return nil, fmt.Errorf(
-			"encountered error scanning row: %v", err,
-		)
-	}
-
-	return &movieRow, nil
-}
-
 func (c *DBClient) InsertMovieDetails(
 	movie *OmdbMovieResponse,
-	movieWatch *GristMovieWatchRecord,
+	movieWatch *MovieWatchRow,
 ) (*MovieDetailUuids, error) {
 
 	movieUuids := MovieDetailUuids{}
@@ -689,16 +601,11 @@ func (c *DBClient) InsertMovieDetails(
 	return &movieUuids, nil
 }
 
-func (c *DBClient) InsertMovieWatch(
-	movieWatch *GristMovieWatchRecord, movieUuid string,
-) (string, error) {
-	movieWatchRow, err := CreateMovieWatchRow(movieWatch, movieUuid)
-	if err != nil {
-		return "", fmt.Errorf(
-			"encountered error creating movie watch row: %v", err,
-		)
+func (c *DBClient) InsertMovieWatch(movieWatch *MovieWatchRow) (string, error) {
+	if movieWatch.Uuid == "" {
+		movieWatch.Uuid = uuid.NewString()
 	}
-	_, err = c.DB.Exec(
+	_, err := c.DB.Exec(
 		`INSERT INTO movie_watch (
 			uuid,
 			movie_uuid,
@@ -708,13 +615,13 @@ func (c *DBClient) InsertMovieWatch(
 			first_time,
 			joe_bob
 		) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		movieWatchRow.Uuid,
-		movieWatchRow.MovieUuid,
-		movieWatchRow.MovieTitle,
-		movieWatchRow.Watched,
-		movieWatchRow.Service,
-		movieWatchRow.FirstTime,
-		movieWatchRow.JoeBob,
+		movieWatch.Uuid,
+		movieWatch.MovieUuid,
+		movieWatch.MovieTitle,
+		movieWatch.Watched,
+		movieWatch.Service,
+		movieWatch.FirstTime,
+		movieWatch.JoeBob,
 	)
 	if err != nil {
 		return "", fmt.Errorf(
@@ -722,20 +629,7 @@ func (c *DBClient) InsertMovieWatch(
 		)
 	}
 
-	return movieWatchRow.Uuid, nil
-}
-
-func (c *DBClient) InsertUuidGrist(movieWatchUuid string, gristId int) error {
-	_, err := c.DB.Exec(
-		`INSERT INTO uuid_grist (uuid, grist_id) VALUES (?, ?)`,
-		movieWatchUuid, gristId,
-	)
-	if err != nil {
-		return fmt.Errorf(
-			"encountered error inserting uuid <> grist id row: %v", err,
-		)
-	}
-	return nil
+	return movieWatch.Uuid, nil
 }
 
 func (c *DBClient) GetGenreNamesForMovie(movieUuid string) (
@@ -858,25 +752,4 @@ func (c *DBClient) GetRatingsForMovie(movieUuid string) (
 		movieRatings = append(movieRatings, movieRating)
 	}
 	return movieRatings, nil
-}
-
-func (c *DBClient) InsertUuidGristIds(ids []UuidGristRow) error {
-	paramStrings := make([]string, len(ids))
-	paramValues := make([]any, len(ids)*2)
-	for ii := range ids {
-		paramStrings[ii] = "(?,?)"
-		paramValues[2*ii] = ids[ii].Uuid
-		paramValues[2*ii+1] = ids[ii].GristId
-	}
-	_, err := c.DB.Exec(
-		fmt.Sprintf(
-			`INSERT INTO uuid_grist (uuid, grist_id) VALUES %v`,
-			strings.Join(paramStrings, ","),
-		),
-		paramValues...,
-	)
-	if err != nil {
-		return fmt.Errorf("error inserting rows: %v", err)
-	}
-	return nil
 }

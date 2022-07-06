@@ -40,18 +40,6 @@ func init() {
 		log.Println("Error loading .env file.")
 	}
 
-	gristKey, exists := os.LookupEnv("GRIST_KEY")
-	if !exists {
-		log.Println("Could not find GRIST_KEY in environment or .env.")
-	}
-	GRIST_KEY = gristKey
-
-	gristDocumentId, exists := os.LookupEnv("GRIST_DOCUMENT_ID")
-	if !exists {
-		log.Println("Could not find GRIST_DOCUMENT_ID in environment or .env.")
-	}
-	GRIST_DOCUMENT_ID = gristDocumentId
-
 	omdbKey, exists := os.LookupEnv("OMDB_KEY")
 	if !exists {
 		log.Println("Could not find OMDB_KEY in environment or .env.")

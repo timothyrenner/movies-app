@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"log"
 	"testing"
-	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
@@ -222,24 +221,6 @@ func (c *DBClient) loadMovieWatch() {
 	}
 }
 
-func (c *DBClient) loadMovieWithGristId() {
-	tx, err := c.DB.Begin()
-	if err != nil {
-		log.Panicf("Encountered error beginning transaction: %v", err)
-	}
-	defer tx.Rollback()
-	_, err = tx.Exec(
-		`INSERT INTO uuid_grist (uuid, grist_id) VALUES ('abc-123', 1)`,
-	)
-	if err != nil {
-		log.Panicf("Encountered error loading uuid_grist: %v", err)
-	}
-	if err = tx.Commit(); err != nil {
-		log.Panicf("Encountered error committing transaction: %v", err)
-	}
-
-}
-
 func teardownDatabase(c *DBClient, m *migrate.Migrate) {
 	if err := m.Down(); err != nil {
 		log.Panicf("Encountered error tearing down database: %v", err)
@@ -283,23 +264,21 @@ func omdbSampleMovie() *OmdbMovieResponse {
 	}
 }
 
-func gristSampleMovieWatch() *GristMovieWatchRecord {
-	return &GristMovieWatchRecord{
-		GristRecord: GristRecord{Id: 1},
-		Fields: GristMovieWatchFields{
-			Name:        "Tenebrae",
-			ImdbLink:    "https://www.imdb.com/title/tt0084777/",
-			ImdbId:      "tt0084777",
-			FirstTime:   false,
-			Watched:     1653609600,
-			JoeBob:      true,
-			CallFelissa: false,
-			Beast:       false,
-			Godzilla:    false,
-			Zombies:     false,
-			Slasher:     true,
-			Service:     []string{"L", "Shudder"},
-		},
+func sampleMovieWatchRow() *MovieWatchRow {
+	return &MovieWatchRow{
+		MovieTitle:  "Tenebrae",
+		ImdbId:      "tt0084777",
+		FirstTime:   false,
+		Watched:     "2022-05-27",
+		JoeBob:      true,
+		CallFelissa: false,
+		Beast:       false,
+		Godzilla:    false,
+		Zombies:     false,
+		Slasher:     true,
+		WallpaperFu: false,
+		Service:     "Shudder",
+		Notes:       "",
 	}
 }
 
@@ -310,12 +289,9 @@ func TestFindMovieWatch(t *testing.T) {
 	defer teardownDatabase(c, m)
 
 	truth := "def-123"
-	record := gristSampleMovieWatch()
-	watchedString := time.Unix(
-		int64(record.Fields.Watched+5*60*60), 0,
-	).Format("2006-01-02")
+	record := sampleMovieWatchRow()
 
-	uuid, err := c.FindMovieWatch(record.Fields.ImdbId, watchedString)
+	uuid, err := c.FindMovieWatch(record.ImdbId, record.Watched)
 	if err != nil {
 		t.Errorf("Encountered error: %v", err)
 	}
@@ -343,7 +319,7 @@ func TestGetAllMovieWatches(t *testing.T) {
 		MovieUuid:  "abc-123",
 		MovieTitle: "Tenebrae",
 		ImdbId:     "tt0084777",
-		Watched:    1653609600,
+		Watched:    "2022-05-27",
 		Service:    "Shudder",
 		FirstTime:  false,
 		JoeBob:     true,
@@ -414,9 +390,9 @@ func TestFindMovie(t *testing.T) {
 	c, m := setupDatabase()
 	defer teardownDatabase(c, m)
 	c.loadMovie()
-	movieWatch := gristSampleMovieWatch()
+	movieWatch := sampleMovieWatchRow()
 	truth := "abc-123"
-	answer, err := c.FindMovie(movieWatch.Fields.ImdbId)
+	answer, err := c.FindMovie(movieWatch.ImdbId)
 	if err != nil {
 		t.Errorf("Error getting movie: %v", err)
 	}
@@ -429,25 +405,22 @@ func TestFindMovie(t *testing.T) {
 
 func TestCreateMovieRow(t *testing.T) {
 	movieRecord := omdbSampleMovie()
-	movieWatch := &GristMovieWatchRecord{
-		GristRecord: GristRecord{Id: 1},
-		Fields: GristMovieWatchFields{
-			Name:        "Tenebrae",
-			ImdbLink:    "https://www.imdb.com/title/tt0084777/",
-			ImdbId:      "tt0084777",
-			FirstTime:   false,
-			Watched:     1653609600,
-			JoeBob:      true,
-			CallFelissa: false,
-			Beast:       false,
-			Godzilla:    false,
-			Zombies:     false,
-			Slasher:     true,
-			Service:     []string{"L", "Shudder"},
-		},
+	movieWatch := MovieWatchRow{
+		MovieTitle:  "Tenebrae",
+		ImdbId:      "tt0084777",
+		Watched:     "2022-05-27",
+		Service:     "Shudder",
+		FirstTime:   false,
+		JoeBob:      true,
+		CallFelissa: false,
+		Beast:       false,
+		Godzilla:    false,
+		Zombies:     false,
+		Slasher:     true,
+		WallpaperFu: false,
 	}
 
-	movieRow, err := CreateMovieRow(movieRecord, movieWatch)
+	movieRow, err := CreateMovieRow(movieRecord, &movieWatch)
 	if err != nil {
 		t.Errorf("Encountered error: %v", err)
 	}
@@ -627,35 +600,12 @@ func TestCreateMovieRatingRows(t *testing.T) {
 	}
 }
 
-func TestCreateMovieWatchRow(t *testing.T) {
-	movieWatchRecord := gristSampleMovieWatch()
-	movieUuid := "abc-123"
-
-	answer, err := CreateMovieWatchRow(movieWatchRecord, movieUuid)
-	if err != nil {
-		t.Errorf("Encountered error creating movie watch row: %v", err)
-	}
-	truth := &MovieWatchRow{
-		Uuid:       answer.Uuid,
-		MovieUuid:  "abc-123",
-		MovieTitle: "Tenebrae",
-		ImdbId:     "tt0084777",
-		Watched:    "2022-05-27",
-		Service:    "Shudder",
-		FirstTime:  false,
-		JoeBob:     true,
-	}
-	if !cmp.Equal(truth, answer) {
-		t.Errorf("Expected %v, got %v", truth, answer)
-	}
-}
-
 func TestInsertMovieDetails(t *testing.T) {
 	c, m := setupDatabase()
 	defer teardownDatabase(c, m)
 
 	movie := omdbSampleMovie()
-	movieWatch := gristSampleMovieWatch()
+	movieWatch := sampleMovieWatchRow()
 
 	answer, err := c.InsertMovieDetails(movie, movieWatch)
 	if err != nil {
@@ -990,10 +940,11 @@ func TestInsertMovieWatch(t *testing.T) {
 	defer teardownDatabase(c, m)
 	c.loadMovie()
 
-	movieWatchRecord := gristSampleMovieWatch()
+	movieWatchRecord := sampleMovieWatchRow()
 	movieUuid := "abc-123"
+	movieWatchRecord.MovieUuid = movieUuid
 
-	uuid, err := c.InsertMovieWatch(movieWatchRecord, movieUuid)
+	uuid, err := c.InsertMovieWatch(movieWatchRecord)
 	if err != nil {
 		t.Errorf("Encountered error inserting movie watch: %v", err)
 	}
@@ -1051,115 +1002,6 @@ func TestInsertMovieWatch(t *testing.T) {
 		t.Errorf("Expected %v, got %v", truth, answer)
 	}
 
-}
-
-func TestInsertUuidGrist(t *testing.T) {
-	c, m := setupDatabase()
-	defer teardownDatabase(c, m)
-
-	movieWatchUuid := "abc-123"
-	gristId := 1
-
-	err := c.InsertUuidGrist(movieWatchUuid, gristId)
-	if err != nil {
-		t.Errorf("Encountered error inserting uuid <> grist row: %v", err)
-	}
-
-	answerRows, err := c.DB.Query(`SELECT uuid, grist_id FROM uuid_grist`)
-	if err != nil {
-		t.Errorf("Encountered error retrieving uuid <> grist row: %v", err)
-	}
-	defer func() {
-		if err = answerRows.Close(); err != nil {
-			t.Errorf("Encountered error: %v", err)
-		}
-	}()
-	answer := make([]UuidGristRow, 0)
-	for answerRows.Next() {
-		answerRow := UuidGristRow{}
-		if err = answerRows.Scan(&answerRow.Uuid, &answerRow.GristId); err != nil {
-			t.Errorf("Encountered error scanning row: %v", err)
-		}
-		answer = append(answer, answerRow)
-	}
-	truth := []UuidGristRow{
-		{
-			"abc-123", 1,
-		},
-	}
-	if !cmp.Equal(truth, answer) {
-		t.Errorf("Expected %v, got %v", truth, answer)
-	}
-
-}
-
-func TestFindMovieWithGristId(t *testing.T) {
-	c, m := setupDatabase()
-	defer teardownDatabase(c, m)
-	c.loadMovie()
-	c.loadMovieWithGristId()
-
-	// Find movie with grist ID available.
-	truth := MovieRowWithGristId{
-		MovieRow: MovieRow{
-			Uuid:           "abc-123",
-			Title:          "Tenebrae",
-			ImdbLink:       "https://www.imdb.com/title/tt0084777/",
-			ImdbId:         "tt0084777",
-			Year:           1982,
-			Rated:          sql.NullString{String: "R", Valid: true},
-			Released:       sql.NullString{String: "1984-02-17", Valid: true},
-			RuntimeMinutes: 101,
-			Plot:           sql.NullString{String: "An American writer in Rome is stalked and harassed by a serial killer who is murdering everyone associated with his work on his latest book.", Valid: true},
-			Country:        sql.NullString{String: "Italy", Valid: true},
-			Language:       sql.NullString{String: "Italian, Spanish", Valid: true},
-			BoxOffice:      sql.NullString{String: "", Valid: false},
-			Production:     sql.NullString{String: "", Valid: false},
-			CallFelissa:    false,
-			Slasher:        true,
-			Beast:          false,
-			Godzilla:       false,
-		},
-		GristId: sql.NullInt64{Int64: 1, Valid: true},
-	}
-	answer, err := c.FindMovieWithGristId("tt0084777")
-	if err != nil {
-		t.Errorf("Encountered error: %v", err)
-	}
-	if !cmp.Equal(truth, *answer) {
-		t.Errorf("Expected %v, got %v", truth, *answer)
-	}
-
-	// Find movie without grist ID available.
-	truth = MovieRowWithGristId{
-		MovieRow: MovieRow{
-			Uuid:           "abc-456",
-			Title:          "Slaughterhouse",
-			ImdbLink:       "https://www.imdb.com/title/tt0093990/",
-			ImdbId:         "tt0093990",
-			Year:           1987,
-			Rated:          sql.NullString{String: "R", Valid: true},
-			Released:       sql.NullString{String: "1987-08-28", Valid: true},
-			RuntimeMinutes: 85,
-			Plot:           sql.NullString{String: "The owner of a slaughterhouse facing foreclosure instructs his obese and mentally disabled son to go on a killing spree against the people who want to buy his property.", Valid: true},
-			Country:        sql.NullString{String: "United States", Valid: true},
-			Language:       sql.NullString{String: "English", Valid: true},
-			BoxOffice:      sql.NullString{String: "", Valid: false},
-			Production:     sql.NullString{String: "", Valid: false},
-			CallFelissa:    false,
-			Slasher:        true,
-			Beast:          false,
-			Godzilla:       false,
-		},
-		GristId: sql.NullInt64{Int64: 0, Valid: false},
-	}
-	answer, err = c.FindMovieWithGristId("tt0093990")
-	if err != nil {
-		t.Errorf("Encountered error: %v", err)
-	}
-	if !cmp.Equal(truth, *answer) {
-		t.Errorf("Expected %v, got %v", truth, *answer)
-	}
 }
 
 func TestGetGenreNamesForMovie(t *testing.T) {
@@ -1256,41 +1098,5 @@ func TestGetRatingsForMovie(t *testing.T) {
 	}
 	if !cmp.Equal(truth, answer) {
 		t.Errorf("Expected %v, got %v", truth, answer)
-	}
-}
-
-func TestInsertUuidGristIds(t *testing.T) {
-	c, m := setupDatabase()
-	defer teardownDatabase(c, m)
-
-	ids := []UuidGristRow{
-		{
-			Uuid:    "abc-123",
-			GristId: 1,
-		}, {
-			Uuid:    "def-456",
-			GristId: 2,
-		},
-	}
-
-	if err := c.InsertUuidGristIds(ids); err != nil {
-		t.Errorf("Error inserting uuid <> grist ids: %v", err)
-	}
-
-	answer := make([]UuidGristRow, 0)
-	rows, err := c.DB.Query(`SELECT * FROM uuid_grist`)
-	if err != nil {
-		t.Errorf("Encountered error selecting uuid <> grist ids: %v", err)
-	}
-	defer rows.Close()
-	for rows.Next() {
-		row := UuidGristRow{}
-		if err := rows.Scan(&row.Uuid, &row.GristId); err != nil {
-			t.Errorf("Error scanning row: %v", err)
-		}
-		answer = append(answer, row)
-	}
-	if !cmp.Equal(ids, answer) {
-		t.Errorf("Expected %v, got %v", ids, answer)
 	}
 }

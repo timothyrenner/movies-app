@@ -7,11 +7,13 @@ package cmd
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"path"
 	"regexp"
 	"strings"
+	"text/template"
 
 	"github.com/spf13/cobra"
 )
@@ -106,6 +108,12 @@ func updateMovies(cmd *cobra.Command, args []string) {
 		log.Panicf("Error creating movie watch parser: %v", err)
 	}
 
+	// Initialize the template for movie pages.
+	movieTemplate, err := template.New("movie").Parse(MOVIE_TEMPLATE)
+	if err != nil {
+		log.Panicf("Unable to parse movie template: %v", err)
+	}
+
 	newMovies := 0
 	for ii := range newMovieWatchFiles {
 		watchFile := newMovieWatchFiles[ii]
@@ -155,6 +163,35 @@ func updateMovies(cmd *cobra.Command, args []string) {
 				)
 			}
 			movieUuid = movieDetailUuids.Movie
+			// ! There's some repeated code here with buildObsidianVault.
+			// ! Opportunity to put this into its own function. An item for
+			// ! later I think, after I've let the design marinate a bit.
+			moviePage, err := CreateMoviePage(omdbResponse, movieWatchRow)
+			if err != nil {
+				log.Panicf("Error creating movie page: %v", err)
+			}
+			moviePageFileName := fmt.Sprintf(
+				"%v (%v).md", movieWatchPage.FileTitle, movieWatchPage.ImdbId,
+			)
+			moviePageFilePath := path.Join(vaultDir, "Movies", moviePageFileName)
+			moviePageFile, skipMovie, err := createOrOpenFile(
+				false, moviePageFilePath,
+			)
+			if err != nil {
+				log.Panicf("Error opening file %v: %v", moviePageFilePath, err)
+			}
+			defer moviePageFile.Close()
+			if !skipMovie {
+				if err := movieTemplate.Execute(
+					moviePageFile, moviePage,
+				); err != nil {
+					log.Panicf(
+						"Error writing movie page %v: %v",
+						moviePageFilePath, err,
+					)
+				}
+			}
+			moviePageFile.Close()
 		}
 		// Now that we have a movie uuid for the foreign key we can insert the
 		// movie watch itself.

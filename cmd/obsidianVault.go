@@ -5,6 +5,8 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
+	"time"
 )
 
 type MovieWatchParser struct {
@@ -389,7 +391,24 @@ func (r *MovieWatchRow) CreatePage() *MovieWatchPage {
 }
 
 func (p *MovieWatchPage) CreateRow() *MovieWatchRow {
-	return nil // TODO: Implement.
+	return &MovieWatchRow{
+		// The uuids live only in the database.
+		// The will not be parsed from the page cause why do I care what
+		// the uuid is in obsidian?
+		MovieTitle:  p.Title,
+		ImdbId:      p.ImdbId,
+		Watched:     p.Watched,
+		Service:     p.Service,
+		FirstTime:   p.FirstTime,
+		JoeBob:      p.JoeBob,
+		Slasher:     p.Slasher,
+		CallFelissa: p.CallFelissa,
+		WallpaperFu: p.WallpaperFu,
+		Beast:       p.Beast,
+		Godzilla:    p.Godzilla,
+		Zombies:     p.Zombies,
+		Notes:       p.Notes,
+	}
 }
 
 var MOVIE_TEMPLATE = `
@@ -416,6 +435,7 @@ slasher:: {{.Slasher}}
 zombies:: {{.Zombies}}
 beast:: {{.Beast}}
 godzilla:: {{.Godzilla}}
+wallpaper_fu:: {{.WallpaperFu}}
 
 ## Tags
 #movie
@@ -443,6 +463,7 @@ type MoviePage struct {
 	Zombies        bool
 	Beast          bool
 	Godzilla       bool
+	WallpaperFu    bool
 }
 
 func (r *MovieRow) CreatePage(
@@ -469,5 +490,92 @@ func (r *MovieRow) CreatePage(
 		Zombies:        r.Zombies,
 		Beast:          r.Beast,
 		Godzilla:       r.Godzilla,
+		WallpaperFu:    r.WallpaperFu,
 	}
+}
+
+func CreateMoviePage(
+	omdbResponse *OmdbMovieResponse, movieWatch *MovieWatchRow,
+) (*MoviePage, error) {
+	year, err := strconv.Atoi(omdbResponse.Year)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"error converting %v to int for year: %v", omdbResponse.Year, err,
+		)
+	}
+
+	var releasedDate string
+	if omdbResponse.Released == "N/A" {
+		releasedDate = omdbResponse.Released
+	} else {
+		released, err := time.Parse("2 Jan 2006", omdbResponse.Released)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"error parsing date %v: %v", omdbResponse.Released, err,
+			)
+		}
+		releasedDate = released.Format("2006-01-02")
+	}
+	runtimeMatch := runtimeRegex.FindStringSubmatch(omdbResponse.Runtime)
+	if runtimeMatch == nil {
+		return nil, fmt.Errorf("couldn't parse runtime %v", omdbResponse.Runtime)
+	}
+	if len(runtimeMatch) != 2 {
+		return nil, fmt.Errorf("error parsing runtime %v", omdbResponse.Runtime)
+	}
+	runtimeStr := runtimeMatch[1]
+	runtime, err := strconv.Atoi(runtimeStr)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"error converting runtime %v to string: %v", runtimeStr, err,
+		)
+	}
+
+	genreStrings := strings.Split(omdbResponse.Genre, ",")
+	genres := make([]string, len(genreStrings))
+	for ii := range genreStrings {
+		genres[ii] = strings.TrimSpace(genreStrings[ii])
+	}
+
+	directorStrings := strings.Split(omdbResponse.Director, ",")
+	directors := make([]string, len(directorStrings))
+	for ii := range directorStrings {
+		directors[ii] = strings.TrimSpace(directorStrings[ii])
+	}
+
+	writerStrings := strings.Split(omdbResponse.Writer, ",")
+	writers := make([]string, len(writerStrings))
+	for ii := range writerStrings {
+		writers[ii] = strings.TrimSpace(writerStrings[ii])
+	}
+
+	actorStrings := strings.Split(omdbResponse.Actors, ",")
+	actors := make([]string, len(actorStrings))
+	for ii := range actorStrings {
+		actors[ii] = strings.TrimSpace(actorStrings[ii])
+	}
+
+	return &MoviePage{
+		Title:          omdbResponse.Title,
+		ImdbLink:       fmt.Sprintf("https://www.imdb.com/title/%v/", omdbResponse.ImdbID),
+		Genres:         genres,
+		Directors:      directors,
+		Writers:        writers,
+		Actors:         actors,
+		Year:           year,
+		Rating:         omdbResponse.Rated,
+		Released:       releasedDate,
+		RuntimeMinutes: runtime,
+		Plot:           omdbResponse.Plot,
+		Country:        omdbResponse.Country,
+		Language:       omdbResponse.Language,
+		BoxOffice:      omdbResponse.BoxOffice,
+		Production:     omdbResponse.Production,
+		CallFelissa:    movieWatch.CallFelissa,
+		Slasher:        movieWatch.Slasher,
+		Zombies:        movieWatch.Zombies,
+		Beast:          movieWatch.Beast,
+		Godzilla:       movieWatch.Godzilla,
+		WallpaperFu:    movieWatch.WallpaperFu,
+	}, nil
 }

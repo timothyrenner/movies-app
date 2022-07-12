@@ -112,6 +112,7 @@ func updateMovies(cmd *cobra.Command, args []string) {
 	for ii := range newMovieWatchFiles {
 		watchFile := newMovieWatchFiles[ii]
 		// Parse the watch file.
+		log.Printf("Parsing %v", watchFile)
 		movieWatchPage, err := movieWatchParser.ParsePage(watchFile)
 		if err != nil {
 			log.Panicf("Error parsing page %v: %v", watchFile, err)
@@ -176,6 +177,7 @@ func updateMovies(cmd *cobra.Command, args []string) {
 			}
 			defer moviePageFile.Close()
 			if !skipMovie {
+				log.Printf("Creating page %v", moviePageFileName)
 				if err := movieTemplate.Execute(
 					moviePageFile, moviePage,
 				); err != nil {
@@ -184,6 +186,8 @@ func updateMovies(cmd *cobra.Command, args []string) {
 						moviePageFilePath, err,
 					)
 				}
+			} else {
+				log.Printf("Page %v already exists, skipping.", moviePageFileName)
 			}
 			moviePageFile.Close()
 		}

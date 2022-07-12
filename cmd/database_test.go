@@ -278,7 +278,7 @@ func sampleMovieWatchRow() *MovieWatchRow {
 		Slasher:     true,
 		WallpaperFu: false,
 		Service:     "Shudder",
-		Notes:       "",
+		Notes:       "Hi there",
 	}
 }
 
@@ -958,7 +958,8 @@ func TestInsertMovieWatch(t *testing.T) {
 			watched,
 			service,
 			first_time,
-			joe_bob
+			joe_bob,
+			notes
 		FROM movie_watch
 		WHERE movie_uuid = ?`, movieUuid,
 	)
@@ -982,6 +983,7 @@ func TestInsertMovieWatch(t *testing.T) {
 			&answerMovieWatchRow.Service,
 			&answerMovieWatchRow.FirstTime,
 			&answerMovieWatchRow.JoeBob,
+			&answerMovieWatchRow.Notes,
 		); err != nil {
 			t.Errorf("Encountered error scanning movie watch row: %v", err)
 		}
@@ -992,10 +994,12 @@ func TestInsertMovieWatch(t *testing.T) {
 			Uuid:       uuid,
 			MovieUuid:  "abc-123",
 			MovieTitle: "Tenebrae",
+			ImdbId:     "tt0084777",
 			Watched:    "2022-05-27",
 			Service:    "Shudder",
 			FirstTime:  false,
 			JoeBob:     true,
+			Notes:      "Hi there",
 		},
 	}
 	if !cmp.Equal(truth, answer) {

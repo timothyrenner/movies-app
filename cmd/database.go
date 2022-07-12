@@ -610,18 +610,22 @@ func (c *DBClient) InsertMovieWatch(movieWatch *MovieWatchRow) (string, error) {
 			uuid,
 			movie_uuid,
 			movie_title,
+			imdb_id,
 			watched,
 			service,
 			first_time,
-			joe_bob
-		) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			joe_bob,
+			notes
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		movieWatch.Uuid,
 		movieWatch.MovieUuid,
 		movieWatch.MovieTitle,
+		movieWatch.ImdbId,
 		movieWatch.Watched,
 		movieWatch.Service,
 		movieWatch.FirstTime,
 		movieWatch.JoeBob,
+		movieWatch.Notes,
 	)
 	if err != nil {
 		return "", fmt.Errorf(

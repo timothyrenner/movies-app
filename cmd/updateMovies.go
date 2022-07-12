@@ -90,17 +90,11 @@ func updateMovies(cmd *cobra.Command, args []string) {
 		} else {
 			newMovieWatchFiles = append(
 				newMovieWatchFiles,
-				path.Join(vaultDir, "Movies", allWatches[ii].Name()),
+				path.Join(vaultDir, "Watches", allWatches[ii].Name()),
 			)
 		}
 	}
 	log.Printf("Found %v possibly new watches", len(newMovieWatchFiles))
-	for ii := range newMovieWatchFiles {
-		watchFileContents, err := os.ReadFile(newMovieWatchFiles[ii])
-		if err != nil {
-			log.Panicf("Error reading %v: %v", watchFileContents, err)
-		}
-	}
 
 	// Initialize the parser.
 	movieWatchParser, err := CreateMovieWatchParser()

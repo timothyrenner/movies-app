@@ -69,7 +69,7 @@ func TestParsePage(t *testing.T) {
 	}
 
 	truth := MovieWatchPage{
-		Title:       "Uncle Sam (tt0118025)",
+		Title:       "Uncle Sam",
 		FileTitle:   "Uncle Sam",
 		Watched:     "2022-07-01",
 		ImdbLink:    "https://www.imdb.com/title/tt0118025/",
@@ -98,7 +98,7 @@ A fuckin sack race half marathon obstacle course
 
 func TestCreateRow(t *testing.T) {
 	page := MovieWatchPage{
-		Title:       "Uncle Sam (tt0118025)",
+		Title:       "Uncle Sam",
 		FileTitle:   "Uncle Sam",
 		Watched:     "2022-07-01",
 		ImdbLink:    "https://www.imdb.com/title/tt0118025/",
@@ -122,7 +122,7 @@ A fuckin sack race half marathon obstacle course
 	}
 
 	truth := MovieWatchRow{
-		MovieTitle:  "Uncle Sam (tt0118025)",
+		MovieTitle:  "Uncle Sam",
 		Watched:     "2022-07-01",
 		ImdbId:      "tt0118025",
 		Service:     "Shudder",

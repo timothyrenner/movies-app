@@ -11,7 +11,6 @@ import (
 
 type MovieWatchParser struct {
 	TitleExtractor       *regexp.Regexp
-	MovieNameExtractor   *regexp.Regexp
 	WatchedDateExtractor *regexp.Regexp
 	ImdbLinkExtractor    *regexp.Regexp
 	ImdbIdExtractor      *regexp.Regexp
@@ -32,20 +31,12 @@ func CreateMovieWatchParser() (*MovieWatchParser, error) {
 	// Time for some regex fu.
 
 	titleExtractor, err := regexp.Compile(
-		`name::\s*\[\[([a-zA-z0-9:\-/ ]+) \(tt\d{7}\)\]\]\s*\n`,
+		`name::\s*\[\[([a-zA-z0-9:\-/ ]+) \(tt\d{7,8}\)\]\]\s*\n`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error compiling regex for title: %v", err)
 	}
 	parser.TitleExtractor = titleExtractor
-
-	movieNameExtractor, err := regexp.Compile(
-		`name::\s*\[\[([a-zA-z0-9:\-/ ]+ \(tt\d{7}\))\]\]\s*\n`,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error compiling regex for movie names: %v", err)
-	}
-	parser.MovieNameExtractor = movieNameExtractor
 
 	watchedDateExtractor, err := regexp.Compile(
 		`watched::\s*\[\[(\d{4}-\d{2}-\d{2})\]\]`,
@@ -56,7 +47,7 @@ func CreateMovieWatchParser() (*MovieWatchParser, error) {
 	parser.WatchedDateExtractor = watchedDateExtractor
 
 	imdbLinkExtractor, err := regexp.Compile(
-		`imdb_link::\s*(https://www\.imdb\.com/title/tt\d{7}/)`,
+		`imdb_link::\s*(https://www\.imdb\.com/title/tt\d{7,8}/)`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error compiling regex for imdb link: %v", err)
@@ -64,7 +55,7 @@ func CreateMovieWatchParser() (*MovieWatchParser, error) {
 	parser.ImdbLinkExtractor = imdbLinkExtractor
 
 	imdbIdExtractor, err := regexp.Compile(
-		`imdb_id::\s*(tt\d{7})`,
+		`imdb_id::\s*(tt\d{7,8})`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error compiling regex for imdb id: %v", err)
@@ -161,21 +152,14 @@ func (p *MovieWatchParser) ParsePage(fileName string) (*MovieWatchPage, error) {
 
 	page := MovieWatchPage{}
 
-	movieNameMatch := p.MovieNameExtractor.FindSubmatch(pageText)
+	movieNameMatch := p.TitleExtractor.FindSubmatch(pageText)
 	if len(movieNameMatch) != 2 {
 		return nil, fmt.Errorf(
 			"expected 2 matches for movie name: got %v", len(movieNameMatch),
 		)
 	}
 	page.Title = string(movieNameMatch[1])
-
-	fileTitleMatch := p.TitleExtractor.FindSubmatch(pageText)
-	if len(fileTitleMatch) != 2 {
-		return nil, fmt.Errorf(
-			"expected 2 matches for movie title: got %v", len(fileTitleMatch),
-		)
-	}
-	page.FileTitle = string(fileTitleMatch[1])
+	page.FileTitle = cleanTitle(page.Title)
 
 	watchMatch := p.WatchedDateExtractor.FindSubmatch(pageText)
 	if len(watchMatch) != 2 {

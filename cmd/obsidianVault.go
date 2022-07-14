@@ -331,10 +331,17 @@ var MOVIE_WATCH_TEMPLATE = `
 ## Data
 name:: [[{{.FileTitle}} ({{.ImdbId}})]]
 watched:: [[{{.Watched}}]]
+imdb_link:: {{.ImdbLink}}
 imdb_id:: {{.ImdbId}}
+service:: {{.Service}}
 first_time:: {{.FirstTime}}
 joe_bob:: {{.JoeBob}}
-service:: {{.Service}}
+slasher:: {{.Slasher}}
+call_felissa:: {{.CallFelissa}}
+beast:: {{.Beast}}
+zombies:: {{.Zombies}}
+godzilla:: {{.Godzilla}}
+wallpaper_fu:: {{.WallpaperFu}}
 
 ## Tags
 #movie-watch

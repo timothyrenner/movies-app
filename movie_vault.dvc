@@ -1,0 +1,5 @@
+outs:
+- md5: 3fd09f7047d361e26990f2b1c0c2bf63.dir
+  size: 9128
+  nfiles: 17
+  path: movie_vault

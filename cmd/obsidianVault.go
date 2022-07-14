@@ -329,7 +329,7 @@ var MOVIE_WATCH_TEMPLATE = `
 # {{.Title}}: {{.Watched}}
 
 ## Data
-name:: [[{{.Title}} ({{.ImdbId}})]]
+name:: [[{{.FileTitle}} ({{.ImdbId}})]]
 watched:: [[{{.Watched}}]]
 imdb_id:: {{.ImdbId}}
 first_time:: {{.FirstTime}}

@@ -130,4 +130,6 @@ dmypy.json
 .vscode
 
 movie_test_vault
-/movie_vault
+movie_vault
+# Definitely don't want those open sourced.
+scripts/addNotes_20220716

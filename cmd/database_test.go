@@ -266,19 +266,25 @@ func omdbSampleMovie() *OmdbMovieResponse {
 
 func sampleMovieWatchRow() *MovieWatchRow {
 	return &MovieWatchRow{
-		MovieTitle:  "Tenebrae",
-		ImdbId:      "tt0084777",
-		FirstTime:   false,
-		Watched:     "2022-05-27",
-		JoeBob:      true,
-		CallFelissa: false,
-		Beast:       false,
-		Godzilla:    false,
-		Zombies:     false,
-		Slasher:     true,
-		WallpaperFu: false,
-		Service:     "Shudder",
-		Notes:       "Hi there",
+		MovieTitle: "Tenebrae",
+		ImdbId:     "tt0084777",
+		FirstTime:  false,
+		Watched:    "2022-05-27",
+		JoeBob:     true,
+		Service:    "Shudder",
+		Notes:      "Hi there",
+	}
+}
+
+func sampleEnrichedMovieWatchRow() *EnrichedMovieWatchRow {
+	return &EnrichedMovieWatchRow{
+		MovieWatchRow: *sampleMovieWatchRow(),
+		CallFelissa:   false,
+		Beast:         false,
+		Godzilla:      false,
+		Zombies:       false,
+		Slasher:       true,
+		WallpaperFu:   false,
 	}
 }
 
@@ -325,7 +331,7 @@ func TestGetAllMovieWatches(t *testing.T) {
 		JoeBob:     true,
 	}}
 
-	answer, err := c.GetAllMovieWatches()
+	answer, err := c.GetAllEnrichedMovieWatches()
 	if err != nil {
 		t.Errorf("Encountered error: %v", err)
 	}
@@ -405,13 +411,15 @@ func TestFindMovie(t *testing.T) {
 
 func TestCreateMovieRow(t *testing.T) {
 	movieRecord := omdbSampleMovie()
-	movieWatch := MovieWatchRow{
-		MovieTitle:  "Tenebrae",
-		ImdbId:      "tt0084777",
-		Watched:     "2022-05-27",
-		Service:     "Shudder",
-		FirstTime:   false,
-		JoeBob:      true,
+	movieWatch := EnrichedMovieWatchRow{
+		MovieWatchRow: MovieWatchRow{
+			MovieTitle: "Tenebrae",
+			ImdbId:     "tt0084777",
+			Watched:    "2022-05-27",
+			Service:    "Shudder",
+			FirstTime:  false,
+			JoeBob:     true,
+		},
 		CallFelissa: false,
 		Beast:       false,
 		Godzilla:    false,
@@ -605,7 +613,7 @@ func TestInsertMovieDetails(t *testing.T) {
 	defer teardownDatabase(c, m)
 
 	movie := omdbSampleMovie()
-	movieWatch := sampleMovieWatchRow()
+	movieWatch := sampleEnrichedMovieWatchRow()
 
 	answer, err := c.InsertMovieDetails(movie, movieWatch)
 	if err != nil {

@@ -48,7 +48,7 @@ type MovieRow struct {
 }
 
 func CreateMovieRow(
-	movieRecord *OmdbMovieResponse, movieWatch *MovieWatchRow,
+	movieRecord *OmdbMovieResponse, movieWatch *EnrichedMovieWatchRow,
 ) (*MovieRow, error) {
 
 	year, err := strconv.Atoi(movieRecord.Year)
@@ -230,21 +230,29 @@ func CreateMovieRatingRows(
 }
 
 type MovieWatchRow struct {
-	Uuid        string
-	MovieUuid   string
-	MovieTitle  string
-	ImdbId      string
-	Watched     string
-	Service     string
-	FirstTime   bool
-	JoeBob      bool
+	Uuid       string
+	MovieUuid  string
+	MovieTitle string
+	ImdbId     string
+	Watched    string
+	Service    string
+	FirstTime  bool
+	JoeBob     bool
+	Notes      string
+}
+
+type EnrichedMovieWatchRow struct {
+	MovieWatchRow
+	// The extra info that gets recorded when the movie watch happens.
+	// It's not how we'd store it in the DB because the info is redundant,
+	// however these are all the fields that get recorded.
+	ImdbLink    string
 	Slasher     bool
 	CallFelissa bool
 	WallpaperFu bool
 	Beast       bool
 	Godzilla    bool
 	Zombies     bool
-	Notes       string
 }
 
 type MovieDetailUuids struct {
@@ -283,25 +291,36 @@ func (c *DBClient) FindMovieWatch(imdbId string, watched string) (string, error)
 	return uuid, nil
 }
 
-func (c *DBClient) GetAllMovieWatches() ([]MovieWatchRow, error) {
+func (c *DBClient) GetAllEnrichedMovieWatches() (
+	[]EnrichedMovieWatchRow, error,
+) {
 	dbRows, err := c.DB.Query(
 		`SELECT
-			uuid,
-			movie_uuid,
-			movie_title,
-			imdb_id,
-			watched,
-			service,
-			first_time,
-			joe_bob
-		FROM movie_watch`)
+			w.uuid,
+			w.movie_uuid,
+			w.movie_title,
+			w.imdb_id,
+			w.watched,
+			w.service,
+			w.first_time,
+			w.joe_bob,
+			w.notes,
+			m.imdb_link,
+			m.slasher,
+			m.call_felissa,
+			m.beast,
+			m.godzilla,
+			m.zombies
+		FROM movie_watch AS w
+		JOIN movie AS m
+			ON m.uuid = w.movie_uuid`)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving movie watches: %v", err)
 	}
 	defer dbRows.Close()
-	movieWatchRows := make([]MovieWatchRow, 0)
+	movieWatchRows := make([]EnrichedMovieWatchRow, 0)
 	for dbRows.Next() {
-		movieWatchRow := MovieWatchRow{}
+		movieWatchRow := EnrichedMovieWatchRow{}
 		if err := dbRows.Scan(
 			&movieWatchRow.Uuid,
 			&movieWatchRow.MovieUuid,
@@ -311,6 +330,13 @@ func (c *DBClient) GetAllMovieWatches() ([]MovieWatchRow, error) {
 			&movieWatchRow.Service,
 			&movieWatchRow.FirstTime,
 			&movieWatchRow.JoeBob,
+			&movieWatchRow.Notes,
+			&movieWatchRow.ImdbLink,
+			&movieWatchRow.Slasher,
+			&movieWatchRow.CallFelissa,
+			&movieWatchRow.Beast,
+			&movieWatchRow.Godzilla,
+			&movieWatchRow.Zombies,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning movie watch row: %v", err)
 		}
@@ -407,7 +433,7 @@ func (c *DBClient) GetMovie(movieUuid string) (*MovieRow, error) {
 
 func (c *DBClient) InsertMovieDetails(
 	movie *OmdbMovieResponse,
-	movieWatch *MovieWatchRow,
+	movieWatch *EnrichedMovieWatchRow,
 ) (*MovieDetailUuids, error) {
 
 	movieUuids := MovieDetailUuids{}

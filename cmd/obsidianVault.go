@@ -368,37 +368,46 @@ type MovieWatchPage struct {
 	Notes       string
 }
 
-func (r *MovieWatchRow) CreatePage() *MovieWatchPage {
+func (r *EnrichedMovieWatchRow) CreatePage() *MovieWatchPage {
 	return &MovieWatchPage{
-		Title:     r.MovieTitle,
-		FileTitle: cleanTitle(r.MovieTitle),
-		Watched:   r.Watched,
-		ImdbId:    r.ImdbId,
-		FirstTime: r.FirstTime,
-		JoeBob:    r.JoeBob,
-		Service:   r.Service,
-		Notes:     r.Notes,
+		Title:       r.MovieTitle,
+		FileTitle:   cleanTitle(r.MovieTitle),
+		Watched:     r.Watched,
+		ImdbLink:    r.ImdbLink,
+		ImdbId:      r.ImdbId,
+		FirstTime:   r.FirstTime,
+		JoeBob:      r.JoeBob,
+		CallFelissa: r.CallFelissa,
+		Beast:       r.Beast,
+		Godzilla:    r.Godzilla,
+		Zombies:     r.Zombies,
+		Slasher:     r.Slasher,
+		WallpaperFu: r.WallpaperFu,
+		Service:     r.Service,
+		Notes:       r.Notes,
 	}
 }
 
-func (p *MovieWatchPage) CreateRow() *MovieWatchRow {
-	return &MovieWatchRow{
+func (p *MovieWatchPage) CreateRow() *EnrichedMovieWatchRow {
+	return &EnrichedMovieWatchRow{
 		// The uuids live only in the database.
-		// The will not be parsed from the page cause why do I care what
-		// the uuid is in obsidian?
-		MovieTitle:  p.Title,
-		ImdbId:      p.ImdbId,
-		Watched:     p.Watched,
-		Service:     p.Service,
-		FirstTime:   p.FirstTime,
-		JoeBob:      p.JoeBob,
+		// The will not be parsed from the page.
+		MovieWatchRow: MovieWatchRow{
+			MovieTitle: p.Title,
+			ImdbId:     p.ImdbId,
+			Watched:    p.Watched,
+			Service:    p.Service,
+			FirstTime:  p.FirstTime,
+			JoeBob:     p.JoeBob,
+			Notes:      p.Notes,
+		},
+		ImdbLink:    p.ImdbLink,
 		Slasher:     p.Slasher,
 		CallFelissa: p.CallFelissa,
 		WallpaperFu: p.WallpaperFu,
 		Beast:       p.Beast,
 		Godzilla:    p.Godzilla,
 		Zombies:     p.Zombies,
-		Notes:       p.Notes,
 	}
 }
 
@@ -486,7 +495,7 @@ func (r *MovieRow) CreatePage(
 }
 
 func CreateMoviePage(
-	omdbResponse *OmdbMovieResponse, movieWatch *MovieWatchRow,
+	omdbResponse *OmdbMovieResponse, movieWatch *EnrichedMovieWatchRow,
 ) (*MoviePage, error) {
 	year, err := strconv.Atoi(omdbResponse.Year)
 	if err != nil {

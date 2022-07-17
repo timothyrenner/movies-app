@@ -194,7 +194,8 @@ func updateMovies(cmd *cobra.Command, args []string) {
 		// Now that we have a movie uuid for the foreign key we can insert the
 		// movie watch itself.
 		movieWatchRow.MovieUuid = movieUuid
-		_, err = db.InsertMovieWatch(movieWatchRow)
+		// Yeesh that looks ugly, but it does work.
+		_, err = db.InsertMovieWatch(&movieWatchRow.MovieWatchRow)
 		if err != nil {
 			log.Panicf(
 				"Error inserting movie watch into database: %v", err,

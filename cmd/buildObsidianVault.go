@@ -113,12 +113,12 @@ func buildObsidianVault(cmd *cobra.Command, args []string) {
 	// Note: this is should be like ... paginated or something. Future
 	// improvement if for some crazy reason memory becomes an issue.
 	log.Println("Getting movie watches.")
-	allMovieWatches, err := db.GetAllMovieWatches()
+	allMovieWatches, err := db.GetAllEnrichedMovieWatches()
 	if err != nil {
 		log.Panicf("Error getting all movie watches: %v", err)
 	}
 
-	var movieWatches []MovieWatchRow
+	var movieWatches []EnrichedMovieWatchRow
 	if limit > 0 {
 		movieWatches = allMovieWatches[:limit]
 	} else {

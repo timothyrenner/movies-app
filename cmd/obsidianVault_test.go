@@ -121,19 +121,15 @@ A fuckin sack race half marathon obstacle course
 		`,
 	}
 
-	truth := MovieWatchRow{
-		MovieTitle:  "Uncle Sam",
-		Watched:     "2022-07-01",
-		ImdbId:      "tt0118025",
-		Service:     "Shudder",
-		FirstTime:   true,
-		JoeBob:      true,
-		CallFelissa: false,
-		Beast:       true,
-		Zombies:     false,
-		Godzilla:    false,
-		WallpaperFu: true,
-		Notes: `
+	truth := EnrichedMovieWatchRow{
+		MovieWatchRow: MovieWatchRow{
+			MovieTitle: "Uncle Sam",
+			Watched:    "2022-07-01",
+			ImdbId:     "tt0118025",
+			Service:    "Shudder",
+			FirstTime:  true,
+			JoeBob:     true,
+			Notes: `
 "Don't be afraid, it's only friendly fire"
 "I must be batting 750 with the bereaved" - army dude who notifies widows
 "Must be awful lonely being dead"
@@ -141,6 +137,12 @@ Prevert uncle sam on stilts
 Literally the worst national anthem rendition in existence.
 A fuckin sack race half marathon obstacle course
 		`,
+		},
+		CallFelissa: false,
+		Beast:       true,
+		Zombies:     false,
+		Godzilla:    false,
+		WallpaperFu: true,
 	}
 
 	answer := page.CreateRow()
@@ -151,13 +153,15 @@ A fuckin sack race half marathon obstacle course
 
 func TestCreateMoviePage(t *testing.T) {
 	omdbResponse := omdbSampleMovie()
-	movieWatch := &MovieWatchRow{
-		MovieTitle:  "Tenebrae",
-		ImdbId:      "tt0084777",
-		Watched:     "2022-05-27",
-		Service:     "Shudder",
-		FirstTime:   false,
-		JoeBob:      true,
+	movieWatch := &EnrichedMovieWatchRow{
+		MovieWatchRow: MovieWatchRow{
+			MovieTitle: "Tenebrae",
+			ImdbId:     "tt0084777",
+			Watched:    "2022-05-27",
+			Service:    "Shudder",
+			FirstTime:  false,
+			JoeBob:     true,
+		},
 		CallFelissa: false,
 		Beast:       false,
 		Godzilla:    false,

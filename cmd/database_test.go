@@ -320,15 +320,25 @@ func TestGetAllMovieWatches(t *testing.T) {
 	c.loadMovieWatch()
 	defer teardownDatabase(c, m)
 
-	truth := []MovieWatchRow{{
-		Uuid:       "def-123",
-		MovieUuid:  "abc-123",
-		MovieTitle: "Tenebrae",
-		ImdbId:     "tt0084777",
-		Watched:    "2022-05-27",
-		Service:    "Shudder",
-		FirstTime:  false,
-		JoeBob:     true,
+	truth := []EnrichedMovieWatchRow{{
+		MovieWatchRow: MovieWatchRow{
+			Uuid:       "def-123",
+			MovieUuid:  "abc-123",
+			MovieTitle: "Tenebrae",
+			ImdbId:     "tt0084777",
+			Watched:    "2022-05-27",
+			Service:    "Shudder",
+			FirstTime:  false,
+			JoeBob:     true,
+			Notes:      "Some notes",
+		},
+		Slasher:     true,
+		CallFelissa: false,
+		Beast:       false,
+		WallpaperFu: false,
+		Zombies:     false,
+		Godzilla:    false,
+		ImdbLink:    "https://www.imdb.com/title/tt0084777/",
 	}}
 
 	answer, err := c.GetAllEnrichedMovieWatches()
@@ -337,7 +347,7 @@ func TestGetAllMovieWatches(t *testing.T) {
 	}
 
 	if !cmp.Equal(truth, answer) {
-		t.Errorf("Expected %v, got %v", truth, answer)
+		t.Errorf("Expected \n%v, got \n%v", truth, answer)
 	}
 }
 

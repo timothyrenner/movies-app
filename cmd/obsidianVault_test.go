@@ -138,6 +138,7 @@ Literally the worst national anthem rendition in existence.
 A fuckin sack race half marathon obstacle course
 		`,
 		},
+		ImdbLink:    "https://www.imdb.com/title/tt0118025/",
 		CallFelissa: false,
 		Beast:       true,
 		Zombies:     false,

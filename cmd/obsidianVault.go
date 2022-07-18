@@ -384,7 +384,7 @@ func (r *EnrichedMovieWatchRow) CreatePage() *MovieWatchPage {
 		Slasher:     r.Slasher,
 		WallpaperFu: r.WallpaperFu,
 		Service:     r.Service,
-		Notes:       r.Notes,
+		Notes:       r.Notes.String,
 	}
 }
 
@@ -399,7 +399,7 @@ func (p *MovieWatchPage) CreateRow() *EnrichedMovieWatchRow {
 			Service:    p.Service,
 			FirstTime:  p.FirstTime,
 			JoeBob:     p.JoeBob,
-			Notes:      p.Notes,
+			Notes:      textToNullString(p.Notes),
 		},
 		ImdbLink:    p.ImdbLink,
 		Slasher:     p.Slasher,

@@ -272,7 +272,7 @@ func sampleMovieWatchRow() *MovieWatchRow {
 		Watched:    "2022-05-27",
 		JoeBob:     true,
 		Service:    "Shudder",
-		Notes:      "Hi there",
+		Notes:      textToNullString("Hi there"),
 	}
 }
 
@@ -330,7 +330,7 @@ func TestGetAllMovieWatches(t *testing.T) {
 			Service:    "Shudder",
 			FirstTime:  false,
 			JoeBob:     true,
-			Notes:      "Some notes",
+			Notes:      textToNullString("Some notes"),
 		},
 		Slasher:     true,
 		CallFelissa: false,
@@ -1017,7 +1017,7 @@ func TestInsertMovieWatch(t *testing.T) {
 			Service:    "Shudder",
 			FirstTime:  false,
 			JoeBob:     true,
-			Notes:      "Hi there",
+			Notes:      textToNullString("Hi there"),
 		},
 	}
 	if !cmp.Equal(truth, answer) {

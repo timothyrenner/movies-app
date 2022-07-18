@@ -129,14 +129,14 @@ A fuckin sack race half marathon obstacle course
 			Service:    "Shudder",
 			FirstTime:  true,
 			JoeBob:     true,
-			Notes: `
+			Notes: textToNullString(`
 "Don't be afraid, it's only friendly fire"
 "I must be batting 750 with the bereaved" - army dude who notifies widows
 "Must be awful lonely being dead"
 Prevert uncle sam on stilts
 Literally the worst national anthem rendition in existence.
 A fuckin sack race half marathon obstacle course
-		`,
+		`),
 		},
 		ImdbLink:    "https://www.imdb.com/title/tt0118025/",
 		CallFelissa: false,

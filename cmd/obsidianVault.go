@@ -479,7 +479,7 @@ func (r *MovieRow) CreatePage(
 		Year:           r.Year,
 		Rating:         r.Rated.String,
 		Released:       r.Released.String,
-		RuntimeMinutes: r.RuntimeMinutes,
+		RuntimeMinutes: int(r.RuntimeMinutes.Int32),
 		Plot:           r.Plot.String,
 		Country:        r.Country.String,
 		Language:       r.Language.String,

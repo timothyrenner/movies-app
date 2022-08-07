@@ -33,7 +33,7 @@ type MovieRow struct {
 	Year           int
 	Rated          sql.NullString
 	Released       sql.NullString
-	RuntimeMinutes int
+	RuntimeMinutes sql.NullInt32
 	Plot           sql.NullString
 	Country        sql.NullString
 	Language       sql.NullString
@@ -71,19 +71,31 @@ func CreateMovieRow(
 		releasedDate = released.Format("2006-01-02")
 	}
 
-	runtimeMatch := runtimeRegex.FindStringSubmatch(movieRecord.Runtime)
-	if runtimeMatch == nil {
-		return nil, fmt.Errorf("couldn't parse runtime %v", movieRecord.Runtime)
-	}
-	if len(runtimeMatch) <= 1 {
-		return nil, fmt.Errorf("error parsing runtime %v", movieRecord.Runtime)
-	}
-	runtimeStr := runtimeMatch[1]
-	runtimeInt, err := strconv.Atoi(runtimeStr)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"error converting runtime %v to string: %v", runtimeStr, err,
-		)
+	var runtime sql.NullInt32
+	if movieRecord.Runtime == "N/A" {
+		runtime.Int32 = 0
+		runtime.Valid = false
+	} else {
+		runtimeMatch := runtimeRegex.FindStringSubmatch(movieRecord.Runtime)
+		if runtimeMatch == nil {
+			return nil, fmt.Errorf(
+				"couldn't parse runtime %v", movieRecord.Runtime,
+			)
+		}
+		if len(runtimeMatch) <= 1 {
+			return nil, fmt.Errorf(
+				"error parsing runtime %v", movieRecord.Runtime,
+			)
+		}
+		runtimeStr := runtimeMatch[1]
+		runtimeInt, err := strconv.Atoi(runtimeStr)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"error converting runtime %v to string: %v", runtimeStr, err,
+			)
+		}
+		runtime.Int32 = int32(runtimeInt)
+		runtime.Valid = true
 	}
 
 	return &MovieRow{
@@ -94,7 +106,7 @@ func CreateMovieRow(
 		Year:           year,
 		Rated:          textToNullString(movieRecord.Rated),
 		Released:       textToNullString(releasedDate),
-		RuntimeMinutes: runtimeInt,
+		RuntimeMinutes: runtime,
 		Plot:           textToNullString(movieRecord.Plot),
 		Country:        textToNullString(movieRecord.Country),
 		Language:       textToNullString(movieRecord.Language),
@@ -595,28 +607,30 @@ func (c *DBClient) InsertMovieDetails(
 	}
 
 	movieRatingRows := CreateMovieRatingRows(movie, movieRow.Uuid)
-	movieUuids.Rating = make([]string, len(movieRatingRows))
-	values = make([]string, len(movieRatingRows))
-	args = make([]any, len(movieRatingRows)*4)
-	for ii := range movieRatingRows {
-		values[ii] = "(?, ?, ?, ?)"
-		args[4*ii] = movieRatingRows[ii].Uuid
-		args[4*ii+1] = movieRatingRows[ii].MovieUuid
-		args[4*ii+2] = movieRatingRows[ii].Source
-		args[4*ii+3] = movieRatingRows[ii].Value
-		movieUuids.Rating[ii] = movieRatingRows[ii].Uuid
-	}
-	_, err = tx.Exec(fmt.Sprintf(
-		`INSERT INTO movie_rating (
+	if len(movieRatingRows) > 0 {
+		movieUuids.Rating = make([]string, len(movieRatingRows))
+		values = make([]string, len(movieRatingRows))
+		args = make([]any, len(movieRatingRows)*4)
+		for ii := range movieRatingRows {
+			values[ii] = "(?, ?, ?, ?)"
+			args[4*ii] = movieRatingRows[ii].Uuid
+			args[4*ii+1] = movieRatingRows[ii].MovieUuid
+			args[4*ii+2] = movieRatingRows[ii].Source
+			args[4*ii+3] = movieRatingRows[ii].Value
+			movieUuids.Rating[ii] = movieRatingRows[ii].Uuid
+		}
+		_, err = tx.Exec(fmt.Sprintf(
+			`INSERT INTO movie_rating (
 			uuid,
 			movie_uuid,
 			source,
 			value
 		) VALUES %v
 		`, strings.Join(values, ",")), args...,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error inserting movie rating: %v", err)
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error inserting movie rating: %v", err)
+		}
 	}
 
 	err = tx.Commit()

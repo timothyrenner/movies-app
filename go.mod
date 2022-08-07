@@ -7,13 +7,13 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/jarcoal/httpmock v1.2.0
 	github.com/joho/godotenv v1.4.0
+	github.com/mattn/go-sqlite3 v1.14.13
 	github.com/spf13/cobra v1.4.0
 )
 
 require (
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
-	github.com/mattn/go-sqlite3 v1.14.13 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 )
 

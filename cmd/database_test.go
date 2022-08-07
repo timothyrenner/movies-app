@@ -381,7 +381,7 @@ func TestGetMovieDB(t *testing.T) {
 		Year:           1982,
 		Rated:          sql.NullString{String: "R", Valid: true},
 		Released:       sql.NullString{String: "1984-02-17", Valid: true},
-		RuntimeMinutes: 101,
+		RuntimeMinutes: sql.NullInt32{Int32: 101, Valid: true},
 		Plot:           sql.NullString{String: "An American writer in Rome is stalked and harassed by a serial killer who is murdering everyone associated with his work on his latest book.", Valid: true},
 		Country:        sql.NullString{String: "Italy", Valid: true},
 		Language:       sql.NullString{String: "Italian, Spanish", Valid: true},
@@ -451,7 +451,7 @@ func TestCreateMovieRow(t *testing.T) {
 		Year:           1982,
 		Rated:          sql.NullString{String: "R", Valid: true},
 		Released:       sql.NullString{String: "1984-02-17", Valid: true},
-		RuntimeMinutes: 101,
+		RuntimeMinutes: sql.NullInt32{Int32: 101, Valid: true},
 		Plot:           sql.NullString{String: "An American writer in Rome is stalked and harassed by a serial killer who is murdering everyone associated with his work on his latest book.", Valid: true},
 		Country:        sql.NullString{String: "Italy", Valid: true},
 		Language:       sql.NullString{String: "Italian, Spanish", Valid: true},
@@ -467,6 +467,79 @@ func TestCreateMovieRow(t *testing.T) {
 		t.Errorf("Expected %v \n got %v", truth, *movieRow)
 	}
 
+	// Now test when there's a null runtime.
+	prey := OmdbMovieResponse{
+		Title:      "Prey",
+		Year:       "2022",
+		Rated:      "R",
+		Released:   "05 Aug 2022",
+		Runtime:    "N/A",
+		Genre:      "Action, Drama, Horror",
+		Director:   "Dan Trachtenberg",
+		Writer:     "Patrick Aison",
+		Actors:     "Amber Midthunder, Dane DiLiegro, Harlan Blayne Kytwayhat",
+		Plot:       "The origin story of the Predator in the world of the Comanche Nation 300 years ago. Naru, a skilled female warrior, fights to protect her tribe against one of the first highly-evolved Predators to land on Earth.",
+		Language:   "English",
+		Country:    "United States",
+		Awards:     "N/A",
+		Poster:     "https://m.media-amazon.com/images/M/MV5BMWE2YjY4MGQtNjRkYy00ZTQxLTkyNTUtODI1Y2I3M2M3ODE2XkEyXkFqcGdeQXVyMTEyMjM2NDc2._V1_SX300.jpg",
+		Ratings:    []Rating{},
+		Metascore:  "N/A",
+		ImdbRating: "N/A",
+		ImdbVotes:  "N/A",
+		ImdbID:     "tt11866324",
+		Type:       "movie",
+		DVD:        "05 Aug 2022",
+		BoxOffice:  "N/A",
+		Production: "N/A",
+		Website:    "N/A",
+		Response:   "True",
+	}
+	preyWatch := EnrichedMovieWatchRow{
+		MovieWatchRow: MovieWatchRow{
+			MovieTitle: "Prey",
+			ImdbId:     "tt11866324",
+			Watched:    "2022-08-06",
+			Service:    "Hulu",
+			FirstTime:  true,
+			JoeBob:     false,
+		},
+		CallFelissa: false,
+		Beast:       true,
+		Godzilla:    false,
+		Zombies:     false,
+		Slasher:     false,
+		WallpaperFu: false,
+	}
+
+	preyRow, err := CreateMovieRow(&prey, &preyWatch)
+	if err != nil {
+		t.Errorf("Encountered error: %v", err)
+	}
+
+	preyTruth := MovieRow{
+		Uuid:           preyRow.Uuid,
+		Title:          "Prey",
+		ImdbLink:       "https://www.imdb.com/title/tt11866324/",
+		ImdbId:         "tt11866324",
+		Year:           2022,
+		Rated:          sql.NullString{String: "R", Valid: true},
+		Released:       sql.NullString{String: "2022-08-05", Valid: true},
+		RuntimeMinutes: sql.NullInt32{Int32: 0, Valid: false},
+		Plot:           sql.NullString{String: "The origin story of the Predator in the world of the Comanche Nation 300 years ago. Naru, a skilled female warrior, fights to protect her tribe against one of the first highly-evolved Predators to land on Earth.", Valid: true},
+		Country:        sql.NullString{String: "United States", Valid: true},
+		Language:       sql.NullString{String: "English", Valid: true},
+		BoxOffice:      sql.NullString{String: "", Valid: false},
+		Production:     sql.NullString{String: "", Valid: false},
+		CallFelissa:    false,
+		Beast:          true,
+		Slasher:        false,
+		Godzilla:       false,
+	}
+
+	if !cmp.Equal(preyTruth, *preyRow) {
+		t.Errorf("Expected \n%v, got \n%v", preyTruth, *preyRow)
+	}
 }
 
 func TestCreateMovieGenreRow(t *testing.T) {
@@ -672,7 +745,7 @@ func TestInsertMovieDetails(t *testing.T) {
 			Year:           1982,
 			Rated:          sql.NullString{String: "R", Valid: true},
 			Released:       sql.NullString{String: "1984-02-17", Valid: true},
-			RuntimeMinutes: 101,
+			RuntimeMinutes: sql.NullInt32{Int32: 101, Valid: true},
 			Plot:           sql.NullString{String: "An American writer in Rome is stalked and harassed by a serial killer who is murdering everyone associated with his work on his latest book.", Valid: true},
 			Country:        sql.NullString{String: "Italy", Valid: true},
 			Language:       sql.NullString{String: "Italian, Spanish", Valid: true},
@@ -951,6 +1024,55 @@ func TestInsertMovieDetails(t *testing.T) {
 		t.Errorf("Expected %v, got %v", movieRatingTruth, movieRatingAnswer)
 	}
 
+	// Now do one where the runtime minutes is null. We just need to make
+	// sure this is going to error.
+	prey := OmdbMovieResponse{
+		Title:      "Prey",
+		Year:       "2022",
+		Rated:      "R",
+		Released:   "05 Aug 2022",
+		Runtime:    "N/A",
+		Genre:      "Action, Drama, Horror",
+		Director:   "Dan Trachtenberg",
+		Writer:     "Patrick Aison",
+		Actors:     "Amber Midthunder, Dane DiLiegro, Harlan Blayne Kytwayhat",
+		Plot:       "The origin story of the Predator in the world of the Comanche Nation 300 years ago. Naru, a skilled female warrior, fights to protect her tribe against one of the first highly-evolved Predators to land on Earth.",
+		Language:   "English",
+		Country:    "United States",
+		Awards:     "N/A",
+		Poster:     "https://m.media-amazon.com/images/M/MV5BMWE2YjY4MGQtNjRkYy00ZTQxLTkyNTUtODI1Y2I3M2M3ODE2XkEyXkFqcGdeQXVyMTEyMjM2NDc2._V1_SX300.jpg",
+		Ratings:    []Rating{},
+		Metascore:  "N/A",
+		ImdbRating: "N/A",
+		ImdbVotes:  "N/A",
+		ImdbID:     "tt11866324",
+		Type:       "movie",
+		DVD:        "05 Aug 2022",
+		BoxOffice:  "N/A",
+		Production: "N/A",
+		Website:    "N/A",
+		Response:   "True",
+	}
+	preyWatch := EnrichedMovieWatchRow{
+		MovieWatchRow: MovieWatchRow{
+			MovieTitle: "Prey",
+			ImdbId:     "tt11866324",
+			Watched:    "2022-08-06",
+			Service:    "Hulu",
+			FirstTime:  true,
+			JoeBob:     false,
+		},
+		CallFelissa: false,
+		Beast:       true,
+		Godzilla:    false,
+		Zombies:     false,
+		Slasher:     false,
+		WallpaperFu: false,
+	}
+	_, err = c.InsertMovieDetails(&prey, &preyWatch)
+	if err != nil {
+		t.Errorf("Error inserting movie with null runtime: %v", err)
+	}
 }
 
 func TestInsertMovieWatch(t *testing.T) {

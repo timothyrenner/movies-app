@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"testing"
@@ -10,7 +9,7 @@ import (
 )
 
 func createTestWatchPage() *os.File {
-	file, err := ioutil.TempFile(".", "test_watch")
+	file, err := os.CreateTemp(".", "test_watch")
 	if err != nil {
 		log.Panicf("Error creating temp file: %v", err)
 	}

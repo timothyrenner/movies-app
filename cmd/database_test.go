@@ -1024,6 +1024,55 @@ func TestInsertMovieDetails(t *testing.T) {
 		t.Errorf("Expected %v, got %v", movieRatingTruth, movieRatingAnswer)
 	}
 
+	// Now do one where the runtime minutes is null. We just need to make
+	// sure this is going to error.
+	prey := OmdbMovieResponse{
+		Title:      "Prey",
+		Year:       "2022",
+		Rated:      "R",
+		Released:   "05 Aug 2022",
+		Runtime:    "N/A",
+		Genre:      "Action, Drama, Horror",
+		Director:   "Dan Trachtenberg",
+		Writer:     "Patrick Aison",
+		Actors:     "Amber Midthunder, Dane DiLiegro, Harlan Blayne Kytwayhat",
+		Plot:       "The origin story of the Predator in the world of the Comanche Nation 300 years ago. Naru, a skilled female warrior, fights to protect her tribe against one of the first highly-evolved Predators to land on Earth.",
+		Language:   "English",
+		Country:    "United States",
+		Awards:     "N/A",
+		Poster:     "https://m.media-amazon.com/images/M/MV5BMWE2YjY4MGQtNjRkYy00ZTQxLTkyNTUtODI1Y2I3M2M3ODE2XkEyXkFqcGdeQXVyMTEyMjM2NDc2._V1_SX300.jpg",
+		Ratings:    []Rating{},
+		Metascore:  "N/A",
+		ImdbRating: "N/A",
+		ImdbVotes:  "N/A",
+		ImdbID:     "tt11866324",
+		Type:       "movie",
+		DVD:        "05 Aug 2022",
+		BoxOffice:  "N/A",
+		Production: "N/A",
+		Website:    "N/A",
+		Response:   "True",
+	}
+	preyWatch := EnrichedMovieWatchRow{
+		MovieWatchRow: MovieWatchRow{
+			MovieTitle: "Prey",
+			ImdbId:     "tt11866324",
+			Watched:    "2022-08-06",
+			Service:    "Hulu",
+			FirstTime:  true,
+			JoeBob:     false,
+		},
+		CallFelissa: false,
+		Beast:       true,
+		Godzilla:    false,
+		Zombies:     false,
+		Slasher:     false,
+		WallpaperFu: false,
+	}
+	_, err = c.InsertMovieDetails(&prey, &preyWatch)
+	if err != nil {
+		t.Errorf("Error inserting movie with null runtime: %v", err)
+	}
 }
 
 func TestInsertMovieWatch(t *testing.T) {

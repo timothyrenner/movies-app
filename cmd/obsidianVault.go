@@ -424,7 +424,7 @@ writer:: {{$sep = ""}}{{range $elem := .Writers}}{{$sep}}[[{{$elem}}]]{{$sep = "
 year:: {{.Year}}
 rated:: {{.Rating}}
 released:: {{.Released}}
-runtime_minutes:: {{.RuntimeMinutes}}
+runtime_minutes:: {{if .RuntimeMinutes}} {{.RuntimeMinutes}} {{end}}
 plot:: {{.Plot}}
 country:: {{.Country}}
 language:: {{.Language}}
@@ -516,19 +516,25 @@ func CreateMoviePage(
 		}
 		releasedDate = released.Format("2006-01-02")
 	}
-	runtimeMatch := runtimeRegex.FindStringSubmatch(omdbResponse.Runtime)
-	if runtimeMatch == nil {
-		return nil, fmt.Errorf("couldn't parse runtime %v", omdbResponse.Runtime)
-	}
-	if len(runtimeMatch) != 2 {
-		return nil, fmt.Errorf("error parsing runtime %v", omdbResponse.Runtime)
-	}
-	runtimeStr := runtimeMatch[1]
-	runtime, err := strconv.Atoi(runtimeStr)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"error converting runtime %v to string: %v", runtimeStr, err,
-		)
+	var runtime int
+	if omdbResponse.Runtime == "N/A" {
+		runtime = 0
+	} else {
+		runtimeMatch := runtimeRegex.FindStringSubmatch(omdbResponse.Runtime)
+		if runtimeMatch == nil {
+			return nil, fmt.Errorf("couldn't parse runtime %v", omdbResponse.Runtime)
+		}
+		if len(runtimeMatch) != 2 {
+			return nil, fmt.Errorf("error parsing runtime %v", omdbResponse.Runtime)
+		}
+		runtimeStr := runtimeMatch[1]
+		runtimeInt, err := strconv.Atoi(runtimeStr)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"error converting runtime %v to string: %v", runtimeStr, err,
+			)
+		}
+		runtime = runtimeInt
 	}
 
 	genreStrings := strings.Split(omdbResponse.Genre, ",")

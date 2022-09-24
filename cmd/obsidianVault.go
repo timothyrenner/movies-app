@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"regexp"
 	"strconv"
@@ -516,25 +517,9 @@ func CreateMoviePage(
 		}
 		releasedDate = released.Format("2006-01-02")
 	}
-	var runtime int
-	if omdbResponse.Runtime == "N/A" {
-		runtime = 0
-	} else {
-		runtimeMatch := runtimeRegex.FindStringSubmatch(omdbResponse.Runtime)
-		if runtimeMatch == nil {
-			return nil, fmt.Errorf("couldn't parse runtime %v", omdbResponse.Runtime)
-		}
-		if len(runtimeMatch) != 2 {
-			return nil, fmt.Errorf("error parsing runtime %v", omdbResponse.Runtime)
-		}
-		runtimeStr := runtimeMatch[1]
-		runtimeInt, err := strconv.Atoi(runtimeStr)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"error converting runtime %v to string: %v", runtimeStr, err,
-			)
-		}
-		runtime = runtimeInt
+	runtime := ParseRuntime(omdbResponse.Runtime)
+	if !runtime.Valid {
+		log.Printf("Unable to parse %v, setting to null", omdbResponse.Runtime)
 	}
 
 	genreStrings := strings.Split(omdbResponse.Genre, ",")
@@ -571,7 +556,7 @@ func CreateMoviePage(
 		Year:           year,
 		Rating:         omdbResponse.Rated,
 		Released:       releasedDate,
-		RuntimeMinutes: runtime,
+		RuntimeMinutes: int(runtime.Int32),
 		Plot:           omdbResponse.Plot,
 		Country:        omdbResponse.Country,
 		Language:       omdbResponse.Language,

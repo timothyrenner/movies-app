@@ -4,15 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"regexp"
+	"log"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 )
-
-var runtimeRegex = regexp.MustCompile("([0-9]+) min")
 
 type DBClient struct {
 	DB *sql.DB
@@ -71,31 +69,9 @@ func CreateMovieRow(
 		releasedDate = released.Format("2006-01-02")
 	}
 
-	var runtime sql.NullInt32
-	if movieRecord.Runtime == "N/A" {
-		runtime.Int32 = 0
-		runtime.Valid = false
-	} else {
-		runtimeMatch := runtimeRegex.FindStringSubmatch(movieRecord.Runtime)
-		if runtimeMatch == nil {
-			return nil, fmt.Errorf(
-				"couldn't parse runtime %v", movieRecord.Runtime,
-			)
-		}
-		if len(runtimeMatch) <= 1 {
-			return nil, fmt.Errorf(
-				"error parsing runtime %v", movieRecord.Runtime,
-			)
-		}
-		runtimeStr := runtimeMatch[1]
-		runtimeInt, err := strconv.Atoi(runtimeStr)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"error converting runtime %v to string: %v", runtimeStr, err,
-			)
-		}
-		runtime.Int32 = int32(runtimeInt)
-		runtime.Valid = true
+	runtime := ParseRuntime(movieRecord.Runtime)
+	if !runtime.Valid {
+		log.Printf("Unable to parse %v, setting to null.", movieRecord.Runtime)
 	}
 
 	return &MovieRow{
@@ -106,7 +82,7 @@ func CreateMovieRow(
 		Year:           year,
 		Rated:          textToNullString(movieRecord.Rated),
 		Released:       textToNullString(releasedDate),
-		RuntimeMinutes: runtime,
+		RuntimeMinutes: *runtime,
 		Plot:           textToNullString(movieRecord.Plot),
 		Country:        textToNullString(movieRecord.Country),
 		Language:       textToNullString(movieRecord.Language),

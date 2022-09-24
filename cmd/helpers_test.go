@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"database/sql"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -10,35 +9,35 @@ import (
 func TestParseRuntime(t *testing.T) {
 	// Test valid runtime minutes.
 	validRuntimeString := "85 min"
-	validTruth := sql.NullInt32{
-		Int32: 85,
-		Valid: true,
+	validTruth := 85
+	validAnswer, err := ParseRuntime(validRuntimeString)
+	if err != nil {
+		t.Errorf("Encountered error: %v", err)
 	}
-	validAnswer := ParseRuntime(validRuntimeString)
-	if !cmp.Equal(validTruth, *validAnswer) {
-		t.Errorf("Expected %v, got %v", validTruth, *validAnswer)
+	if !cmp.Equal(validTruth, validAnswer) {
+		t.Errorf("Expected %v, got %v", validTruth, validAnswer)
 	}
 
 	// Test null runtime minutes.
 	nullRuntimeString := "N/A"
-	nullTruth := sql.NullInt32{
-		Int32: 0,
-		Valid: false,
+	nullTruth := 0
+	nullAnswer, err := ParseRuntime(nullRuntimeString)
+	if err == nil {
+		t.Errorf("Expected error, got nil.")
 	}
-	nullAnswer := ParseRuntime(nullRuntimeString)
-	if !cmp.Equal(nullTruth, *nullAnswer) {
-		t.Errorf("Expected %v, got %v", nullTruth, *nullAnswer)
+	if !cmp.Equal(nullTruth, nullAnswer) {
+		t.Errorf("Expected %v, got %v", nullTruth, nullAnswer)
 	}
 
 	// Test invalid runtime minutes.
 	invalidRuntimeString := "31S min"
-	invalidTruth := sql.NullInt32{
-		Int32: 0,
-		Valid: false,
+	invalidTruth := 0
+	invalidAnswer, err := ParseRuntime(invalidRuntimeString)
+	if err == nil {
+		t.Errorf("Expected error, got nil.")
 	}
-	invalidAnswer := ParseRuntime(invalidRuntimeString)
-	if !cmp.Equal(invalidTruth, *invalidAnswer) {
-		t.Errorf("Expected %v, got %v", invalidTruth, *invalidAnswer)
+	if !cmp.Equal(invalidTruth, invalidAnswer) {
+		t.Errorf("Expected %v, got %v", invalidTruth, invalidAnswer)
 	}
 }
 

@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"database/sql"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -10,26 +9,25 @@ import (
 
 var runtimeRegex = regexp.MustCompile("([0-9]+) min")
 
-func ParseRuntime(runtimeString string) *sql.NullInt32 {
-	var runtime sql.NullInt32
+func ParseRuntime(runtimeString string) (int, error) {
 	runtimeMatch := runtimeRegex.FindStringSubmatch(runtimeString)
 	if runtimeMatch == nil {
-		runtime.Int32 = 0
-		runtime.Valid = false
+		return 0, fmt.Errorf("unable to parse runtime %v", runtimeString)
 	} else if len(runtimeMatch) <= 1 {
-		runtime.Int32 = 0
-		runtime.Valid = false
+		return 0, fmt.Errorf(
+			"got multiple matches for runtime %v: %v",
+			runtimeString, len(runtimeMatch),
+		)
 	} else {
 		runtimeStr := runtimeMatch[1]
 		runtimeInt, err := strconv.Atoi(runtimeStr)
 		if err != nil {
-			runtime.Int32 = 0
-			runtime.Valid = false
+			return 0, fmt.Errorf(
+				"error converting match %v to int: %v", runtimeStr, err,
+			)
 		}
-		runtime.Int32 = int32(runtimeInt)
-		runtime.Valid = true
+		return runtimeInt, nil
 	}
-	return &runtime
 }
 
 func ParseReleased(releasedString string) (string, error) {

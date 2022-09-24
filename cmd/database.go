@@ -62,9 +62,22 @@ func CreateMovieRow(
 		)
 	}
 
-	runtime := ParseRuntime(movieRecord.Runtime)
-	if !runtime.Valid {
-		log.Printf("Unable to parse %v, setting to null.", movieRecord.Runtime)
+	var runtime sql.NullInt32
+	runtimeInt, err := ParseRuntime(movieRecord.Runtime)
+	if err != nil {
+		log.Printf(
+			"Unable to parse %v (%v). setting to null.",
+			movieRecord.Runtime, err,
+		)
+		runtime = sql.NullInt32{
+			Int32: 0,
+			Valid: false,
+		}
+	} else {
+		runtime = sql.NullInt32{
+			Int32: int32(runtimeInt),
+			Valid: true,
+		}
 	}
 
 	return &MovieRow{
@@ -75,7 +88,7 @@ func CreateMovieRow(
 		Year:           year,
 		Rated:          textToNullString(movieRecord.Rated),
 		Released:       textToNullString(releasedDate),
-		RuntimeMinutes: *runtime,
+		RuntimeMinutes: runtime,
 		Plot:           textToNullString(movieRecord.Plot),
 		Country:        textToNullString(movieRecord.Country),
 		Language:       textToNullString(movieRecord.Language),

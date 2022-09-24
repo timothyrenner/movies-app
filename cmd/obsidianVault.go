@@ -510,8 +510,8 @@ func CreateMoviePage(
 			"error parsing date %v: %v", omdbResponse.Released, err,
 		)
 	}
-	runtime := ParseRuntime(omdbResponse.Runtime)
-	if !runtime.Valid {
+	runtime, err := ParseRuntime(omdbResponse.Runtime)
+	if err != nil {
 		log.Printf("Unable to parse %v, setting to null", omdbResponse.Runtime)
 	}
 
@@ -549,7 +549,7 @@ func CreateMoviePage(
 		Year:           year,
 		Rating:         omdbResponse.Rated,
 		Released:       releasedDate,
-		RuntimeMinutes: int(runtime.Int32),
+		RuntimeMinutes: runtime,
 		Plot:           omdbResponse.Plot,
 		Country:        omdbResponse.Country,
 		Language:       omdbResponse.Language,

@@ -7,7 +7,6 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -56,17 +55,11 @@ func CreateMovieRow(
 		)
 	}
 
-	var releasedDate string
-	if movieRecord.Released == "N/A" {
-		releasedDate = movieRecord.Released
-	} else {
-		released, err := time.Parse("2 Jan 2006", movieRecord.Released)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"error parsing date %v: %v", movieRecord.Released, err,
-			)
-		}
-		releasedDate = released.Format("2006-01-02")
+	releasedDate, err := ParseReleased(movieRecord.Released)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"error parsing date %v: %v", movieRecord.Released, err,
+		)
 	}
 
 	runtime := ParseRuntime(movieRecord.Runtime)

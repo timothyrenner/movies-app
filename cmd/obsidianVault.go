@@ -7,7 +7,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type MovieWatchParser struct {
@@ -505,17 +504,11 @@ func CreateMoviePage(
 		)
 	}
 
-	var releasedDate string
-	if omdbResponse.Released == "N/A" {
-		releasedDate = omdbResponse.Released
-	} else {
-		released, err := time.Parse("2 Jan 2006", omdbResponse.Released)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"error parsing date %v: %v", omdbResponse.Released, err,
-			)
-		}
-		releasedDate = released.Format("2006-01-02")
+	releasedDate, err := ParseReleased(omdbResponse.Released)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"error parsing date %v: %v", omdbResponse.Released, err,
+		)
 	}
 	runtime := ParseRuntime(omdbResponse.Runtime)
 	if !runtime.Valid {

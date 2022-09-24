@@ -40,5 +40,28 @@ func TestParseRuntime(t *testing.T) {
 	if !cmp.Equal(invalidTruth, *invalidAnswer) {
 		t.Errorf("Expected %v, got %v", invalidTruth, *invalidAnswer)
 	}
+}
 
+func TestParseReleased(t *testing.T) {
+	// Test "N/A"
+	nullReleased := "N/A"
+	nullReleasedTruth := "N/A"
+	nullReleasedAnswer, err := ParseReleased(nullReleased)
+	if err != nil {
+		t.Errorf("Encountered error: %v", err)
+	}
+	if !cmp.Equal(nullReleasedTruth, nullReleasedAnswer) {
+		t.Errorf("Expected %v, got %v", nullReleasedTruth, nullReleasedAnswer)
+	}
+
+	// Test a real date.
+	released := "08 Sep 2022"
+	releasedTruth := "2022-09-08"
+	releasedAnswer, err := ParseReleased(released)
+	if err != nil {
+		t.Errorf("Encountered error: %v", err)
+	}
+	if !cmp.Equal(releasedTruth, releasedAnswer) {
+		t.Errorf("Expected %v, got %v", releasedTruth, releasedAnswer)
+	}
 }

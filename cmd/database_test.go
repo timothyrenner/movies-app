@@ -461,6 +461,7 @@ func TestCreateMovieRow(t *testing.T) {
 		Beast:          false,
 		Slasher:        true,
 		Godzilla:       false,
+		WallpaperFu:    false,
 	}
 
 	if !cmp.Equal(truth, *movieRow) {
@@ -535,10 +536,84 @@ func TestCreateMovieRow(t *testing.T) {
 		Beast:          true,
 		Slasher:        false,
 		Godzilla:       false,
+		WallpaperFu:    false,
 	}
 
 	if !cmp.Equal(preyTruth, *preyRow) {
 		t.Errorf("Expected \n%v, got \n%v", preyTruth, *preyRow)
+	}
+
+	// Now test when the row is invalid format.
+	barbarian := OmdbMovieResponse{
+		Title:      "Barbarian",
+		Year:       "2022",
+		Rated:      "R",
+		Released:   "09 Sep 2022",
+		Runtime:    "31S min",
+		Genre:      "Horror, Thriller",
+		Director:   "Zach Cregger",
+		Writer:     "Zach Cregger",
+		Actors:     "Georgina Campbell, Bill Skarsgård, Justin Long",
+		Plot:       "A woman staying at an Airbnb discovers that the house she has rented is not what it seems.",
+		Language:   "English",
+		Country:    "United States",
+		Awards:     "N/A", // <- travesty cause this movie R U L E S
+		Poster:     "https://m.media-amazon.com/images/M/MV5BN2M3Y2NhMGYtYjUxOS00M2UwLTlmMGUtYzY4MzFlNjZkYzY2XkEyXkFqcGdeQXVyODc0OTEyNDU@._V1_SX300.jpg",
+		Ratings:    []Rating{},
+		Metascore:  "N/A",
+		ImdbRating: "N/A",
+		ImdbVotes:  "N/A",
+		ImdbID:     "tt15791034",
+		Type:       "movie",
+		DVD:        "N/A",
+		BoxOffice:  "N/A",
+		Production: "N/A",
+		Website:    "N/A",
+		Response:   "True",
+	}
+	barbarianWatch := EnrichedMovieWatchRow{
+		MovieWatchRow: MovieWatchRow{
+			MovieTitle: "Barbarian",
+			ImdbId:     "tt15791034",
+			Watched:    "2022-09-12",
+			Service:    "Theater",
+			FirstTime:  true,
+			JoeBob:     false,
+		},
+		CallFelissa: false,
+		Beast:       false,
+		Zombies:     false,
+		Godzilla:    false,
+		Slasher:     false,
+		WallpaperFu: true,
+	}
+	barbarianRow, err := CreateMovieRow(&barbarian, &barbarianWatch)
+	if err != nil {
+		t.Errorf("Encountered error: %v", err)
+	}
+
+	barbarianTruth := MovieRow{
+		Uuid:           barbarianRow.Uuid,
+		Title:          "Barbarian",
+		ImdbLink:       "https://www.imdb.com/title/tt15791034/",
+		ImdbId:         "tt15791034",
+		Year:           2022,
+		Rated:          sql.NullString{String: "R", Valid: true},
+		Released:       sql.NullString{String: "2022-09-09", Valid: true},
+		RuntimeMinutes: sql.NullInt32{Int32: 0, Valid: false},
+		Plot:           sql.NullString{String: "A woman staying at an Airbnb discovers that the house she has rented is not what it seems.", Valid: true},
+		Country:        sql.NullString{String: "United States", Valid: true},
+		Language:       sql.NullString{String: "English", Valid: true},
+		BoxOffice:      sql.NullString{String: "", Valid: false},
+		Production:     sql.NullString{String: "", Valid: false},
+		CallFelissa:    false,
+		Beast:          false,
+		Slasher:        false,
+		Godzilla:       false,
+		WallpaperFu:    false,
+	}
+	if !cmp.Equal(barbarianTruth, *barbarianRow) {
+		t.Errorf("Expected \n%v, got \n%v", barbarianTruth, *barbarianRow)
 	}
 }
 

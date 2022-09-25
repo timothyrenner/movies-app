@@ -111,13 +111,13 @@ func CreateMovieGenreRows(
 	movieRecord *OmdbMovieResponse,
 	movieUuid string,
 ) []MovieGenreRow {
-	genres := strings.Split(movieRecord.Genre, ",")
+	genres := SplitOnCommaAndTrim(movieRecord.Genre)
 	rows := make([]MovieGenreRow, len(genres))
 	for ii := range genres {
 		rows[ii] = MovieGenreRow{
 			Uuid:      uuid.New().String(),
 			MovieUuid: movieUuid,
-			Name:      strings.TrimSpace(genres[ii]),
+			Name:      genres[ii],
 		}
 	}
 	return rows
@@ -133,13 +133,13 @@ func CreateMovieActorRows(
 	movieRecord *OmdbMovieResponse,
 	movieUuid string,
 ) []MovieActorRow {
-	actors := strings.Split(movieRecord.Actors, ",")
+	actors := SplitOnCommaAndTrim(movieRecord.Actors)
 	rows := make([]MovieActorRow, len(actors))
 	for ii := range actors {
 		rows[ii] = MovieActorRow{
 			Uuid:      uuid.New().String(),
 			MovieUuid: movieUuid,
-			Name:      strings.TrimSpace(actors[ii]),
+			Name:      actors[ii],
 		}
 	}
 	return rows
@@ -166,13 +166,13 @@ func CreateMovieDirectorRows(
 	movieRecord *OmdbMovieResponse,
 	movieUuid string,
 ) []MovieDirectorRow {
-	directors := strings.Split(movieRecord.Director, ",")
+	directors := SplitOnCommaAndTrim(movieRecord.Director)
 	rows := make([]MovieDirectorRow, len(directors))
 	for ii := range directors {
 		rows[ii] = MovieDirectorRow{
 			Uuid:      uuid.New().String(),
 			MovieUuid: movieUuid,
-			Name:      strings.TrimSpace(directors[ii]),
+			Name:      directors[ii],
 		}
 	}
 	return rows
@@ -188,13 +188,13 @@ func CreateMovieWriterRows(
 	movieRecord *OmdbMovieResponse,
 	movieUuid string,
 ) []MovieWriterRow {
-	writers := strings.Split(movieRecord.Writer, ",")
+	writers := SplitOnCommaAndTrim(movieRecord.Writer)
 	rows := make([]MovieWriterRow, len(writers))
 	for ii := range writers {
 		rows[ii] = MovieWriterRow{
 			Uuid:      uuid.New().String(),
 			MovieUuid: movieUuid,
-			Name:      strings.TrimSpace(writers[ii]),
+			Name:      writers[ii],
 		}
 	}
 	return rows

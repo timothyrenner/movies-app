@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -44,4 +45,13 @@ func ParseReleased(releasedString string) (string, error) {
 		releasedDate = released.Format("2006-01-02")
 	}
 	return releasedDate, nil
+}
+
+func SplitOnCommaAndTrim(toSplit string) []string {
+	splitStrings := strings.Split(toSplit, ",")
+	stringSlice := make([]string, len(splitStrings))
+	for ii := range stringSlice {
+		stringSlice[ii] = strings.TrimSpace(splitStrings[ii])
+	}
+	return stringSlice
 }

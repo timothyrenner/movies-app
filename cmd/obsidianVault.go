@@ -6,7 +6,6 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	"strings"
 )
 
 type MovieWatchParser struct {
@@ -515,29 +514,13 @@ func CreateMoviePage(
 		log.Printf("Unable to parse %v, setting to null", omdbResponse.Runtime)
 	}
 
-	genreStrings := strings.Split(omdbResponse.Genre, ",")
-	genres := make([]string, len(genreStrings))
-	for ii := range genreStrings {
-		genres[ii] = strings.TrimSpace(genreStrings[ii])
-	}
+	genres := SplitOnCommaAndTrim(omdbResponse.Genre)
 
-	directorStrings := strings.Split(omdbResponse.Director, ",")
-	directors := make([]string, len(directorStrings))
-	for ii := range directorStrings {
-		directors[ii] = strings.TrimSpace(directorStrings[ii])
-	}
+	directors := SplitOnCommaAndTrim(omdbResponse.Director)
 
-	writerStrings := strings.Split(omdbResponse.Writer, ",")
-	writers := make([]string, len(writerStrings))
-	for ii := range writerStrings {
-		writers[ii] = strings.TrimSpace(writerStrings[ii])
-	}
+	writers := SplitOnCommaAndTrim(omdbResponse.Writer)
 
-	actorStrings := strings.Split(omdbResponse.Actors, ",")
-	actors := make([]string, len(actorStrings))
-	for ii := range actorStrings {
-		actors[ii] = strings.TrimSpace(actorStrings[ii])
-	}
+	actors := SplitOnCommaAndTrim(omdbResponse.Actors)
 
 	return &MoviePage{
 		Title:          omdbResponse.Title,

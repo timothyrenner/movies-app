@@ -64,3 +64,12 @@ func TestParseReleased(t *testing.T) {
 		t.Errorf("Expected %v, got %v", releasedTruth, releasedAnswer)
 	}
 }
+
+func TestSplitOnCommaAndTrim(t *testing.T) {
+	toSplit := "Bela Lugosi  ,  Vincent Price,Christopher Lee"
+	truth := []string{"Bela Lugosi", "Vincent Price", "Christopher Lee"}
+	answer := SplitOnCommaAndTrim(toSplit)
+	if !cmp.Equal(truth, answer) {
+		t.Errorf("Expected %v, got %v", truth, answer)
+	}
+}

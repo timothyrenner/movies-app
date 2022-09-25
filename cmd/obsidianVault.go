@@ -6,8 +6,6 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	"strings"
-	"time"
 )
 
 type MovieWatchParser struct {
@@ -505,46 +503,24 @@ func CreateMoviePage(
 		)
 	}
 
-	var releasedDate string
-	if omdbResponse.Released == "N/A" {
-		releasedDate = omdbResponse.Released
-	} else {
-		released, err := time.Parse("2 Jan 2006", omdbResponse.Released)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"error parsing date %v: %v", omdbResponse.Released, err,
-			)
-		}
-		releasedDate = released.Format("2006-01-02")
+	releasedDate, err := ParseReleased(omdbResponse.Released)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"error parsing date %v: %v", omdbResponse.Released, err,
+		)
 	}
-	runtime := ParseRuntime(omdbResponse.Runtime)
-	if !runtime.Valid {
+	runtime, err := ParseRuntime(omdbResponse.Runtime)
+	if err != nil {
 		log.Printf("Unable to parse %v, setting to null", omdbResponse.Runtime)
 	}
 
-	genreStrings := strings.Split(omdbResponse.Genre, ",")
-	genres := make([]string, len(genreStrings))
-	for ii := range genreStrings {
-		genres[ii] = strings.TrimSpace(genreStrings[ii])
-	}
+	genres := SplitOnCommaAndTrim(omdbResponse.Genre)
 
-	directorStrings := strings.Split(omdbResponse.Director, ",")
-	directors := make([]string, len(directorStrings))
-	for ii := range directorStrings {
-		directors[ii] = strings.TrimSpace(directorStrings[ii])
-	}
+	directors := SplitOnCommaAndTrim(omdbResponse.Director)
 
-	writerStrings := strings.Split(omdbResponse.Writer, ",")
-	writers := make([]string, len(writerStrings))
-	for ii := range writerStrings {
-		writers[ii] = strings.TrimSpace(writerStrings[ii])
-	}
+	writers := SplitOnCommaAndTrim(omdbResponse.Writer)
 
-	actorStrings := strings.Split(omdbResponse.Actors, ",")
-	actors := make([]string, len(actorStrings))
-	for ii := range actorStrings {
-		actors[ii] = strings.TrimSpace(actorStrings[ii])
-	}
+	actors := SplitOnCommaAndTrim(omdbResponse.Actors)
 
 	return &MoviePage{
 		Title:          omdbResponse.Title,
@@ -556,7 +532,7 @@ func CreateMoviePage(
 		Year:           year,
 		Rating:         omdbResponse.Rated,
 		Released:       releasedDate,
-		RuntimeMinutes: int(runtime.Int32),
+		RuntimeMinutes: runtime,
 		Plot:           omdbResponse.Plot,
 		Country:        omdbResponse.Country,
 		Language:       omdbResponse.Language,

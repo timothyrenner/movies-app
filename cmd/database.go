@@ -7,7 +7,6 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -56,22 +55,29 @@ func CreateMovieRow(
 		)
 	}
 
-	var releasedDate string
-	if movieRecord.Released == "N/A" {
-		releasedDate = movieRecord.Released
-	} else {
-		released, err := time.Parse("2 Jan 2006", movieRecord.Released)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"error parsing date %v: %v", movieRecord.Released, err,
-			)
-		}
-		releasedDate = released.Format("2006-01-02")
+	releasedDate, err := ParseReleased(movieRecord.Released)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"error parsing date %v: %v", movieRecord.Released, err,
+		)
 	}
 
-	runtime := ParseRuntime(movieRecord.Runtime)
-	if !runtime.Valid {
-		log.Printf("Unable to parse %v, setting to null.", movieRecord.Runtime)
+	var runtime sql.NullInt32
+	runtimeInt, err := ParseRuntime(movieRecord.Runtime)
+	if err != nil {
+		log.Printf(
+			"Unable to parse %v (%v). setting to null.",
+			movieRecord.Runtime, err,
+		)
+		runtime = sql.NullInt32{
+			Int32: 0,
+			Valid: false,
+		}
+	} else {
+		runtime = sql.NullInt32{
+			Int32: int32(runtimeInt),
+			Valid: true,
+		}
 	}
 
 	return &MovieRow{
@@ -82,7 +88,7 @@ func CreateMovieRow(
 		Year:           year,
 		Rated:          textToNullString(movieRecord.Rated),
 		Released:       textToNullString(releasedDate),
-		RuntimeMinutes: *runtime,
+		RuntimeMinutes: runtime,
 		Plot:           textToNullString(movieRecord.Plot),
 		Country:        textToNullString(movieRecord.Country),
 		Language:       textToNullString(movieRecord.Language),
@@ -105,13 +111,13 @@ func CreateMovieGenreRows(
 	movieRecord *OmdbMovieResponse,
 	movieUuid string,
 ) []MovieGenreRow {
-	genres := strings.Split(movieRecord.Genre, ",")
+	genres := SplitOnCommaAndTrim(movieRecord.Genre)
 	rows := make([]MovieGenreRow, len(genres))
 	for ii := range genres {
 		rows[ii] = MovieGenreRow{
 			Uuid:      uuid.New().String(),
 			MovieUuid: movieUuid,
-			Name:      strings.TrimSpace(genres[ii]),
+			Name:      genres[ii],
 		}
 	}
 	return rows
@@ -127,13 +133,13 @@ func CreateMovieActorRows(
 	movieRecord *OmdbMovieResponse,
 	movieUuid string,
 ) []MovieActorRow {
-	actors := strings.Split(movieRecord.Actors, ",")
+	actors := SplitOnCommaAndTrim(movieRecord.Actors)
 	rows := make([]MovieActorRow, len(actors))
 	for ii := range actors {
 		rows[ii] = MovieActorRow{
 			Uuid:      uuid.New().String(),
 			MovieUuid: movieUuid,
-			Name:      strings.TrimSpace(actors[ii]),
+			Name:      actors[ii],
 		}
 	}
 	return rows
@@ -160,13 +166,13 @@ func CreateMovieDirectorRows(
 	movieRecord *OmdbMovieResponse,
 	movieUuid string,
 ) []MovieDirectorRow {
-	directors := strings.Split(movieRecord.Director, ",")
+	directors := SplitOnCommaAndTrim(movieRecord.Director)
 	rows := make([]MovieDirectorRow, len(directors))
 	for ii := range directors {
 		rows[ii] = MovieDirectorRow{
 			Uuid:      uuid.New().String(),
 			MovieUuid: movieUuid,
-			Name:      strings.TrimSpace(directors[ii]),
+			Name:      directors[ii],
 		}
 	}
 	return rows
@@ -182,13 +188,13 @@ func CreateMovieWriterRows(
 	movieRecord *OmdbMovieResponse,
 	movieUuid string,
 ) []MovieWriterRow {
-	writers := strings.Split(movieRecord.Writer, ",")
+	writers := SplitOnCommaAndTrim(movieRecord.Writer)
 	rows := make([]MovieWriterRow, len(writers))
 	for ii := range writers {
 		rows[ii] = MovieWriterRow{
 			Uuid:      uuid.New().String(),
 			MovieUuid: movieUuid,
-			Name:      strings.TrimSpace(writers[ii]),
+			Name:      writers[ii],
 		}
 	}
 	return rows

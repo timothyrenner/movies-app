@@ -1,6 +1,5 @@
 /*
 Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
@@ -201,6 +200,7 @@ func updateMovies(cmd *cobra.Command, args []string) {
 				"Error inserting movie watch into database: %v", err,
 			)
 		}
+		// TODO: Add letterboxd post call here too, once it's in the database.
 		newMovies += 1
 	}
 	log.Printf("Completed. Inserted %v new movie watches.", newMovies)

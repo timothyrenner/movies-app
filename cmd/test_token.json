@@ -1,0 +1,7 @@
+{
+    "access_token": "abc",
+    "token_type": "bearer",
+    "refresh_token": "def",
+    "expires_in": 10,
+    "created_at": 0
+}

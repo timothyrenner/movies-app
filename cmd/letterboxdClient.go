@@ -63,12 +63,15 @@ func prepareUrl(requestUrl string, key string) string {
 
 func (c *LetterboxdClient) Load(credFile string) error {
 	data, err := os.ReadFile(credFile)
-	if err != nil {
-		return fmt.Errorf("error reading creds file %v: %v", credFile, err)
-	}
 	var token LetterboxdLoginToken
-	if err = json.Unmarshal(data, &token); err != nil {
-		return fmt.Errorf("error unmarshalling token %v", err)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("error reading creds file %v: %v", credFile, err)
+		}
+	} else {
+		if err = json.Unmarshal(data, &token); err != nil {
+			return fmt.Errorf("error unmarshalling token %v", err)
+		}
 	}
 	c.token = token
 	return nil

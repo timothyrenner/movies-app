@@ -9,10 +9,13 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/timothyrenner/movies-app/models"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 type DBClient struct {
-	DB *sql.DB
+	DB  *sql.DB
+	ctx context.Context
 }
 
 func (c *DBClient) Close() error {
@@ -340,12 +343,14 @@ func (c *DBClient) GetAllEnrichedMovieWatches() (
 }
 
 func (c *DBClient) GetLatestMovieWatchDate() (string, error) {
-	dbRow := c.DB.QueryRow(`SELECT MAX(watched) FROM movie_watch`)
-	var watched string
-	if err := dbRow.Scan(&watched); err != nil {
+	latestMovieWatch, err := models.MovieWatches(
+		qm.Select(models.MovieWatchColumns.Watched),
+		qm.OrderBy(fmt.Sprintf("%v DESC", models.MovieWatchColumns.Watched)),
+	).One(c.ctx, c.DB)
+	if err != nil {
 		return "", fmt.Errorf("error getting latest watched date: %v", err)
 	}
-	return watched, nil
+	return latestMovieWatch.Watched.String, nil
 }
 
 func (c *DBClient) FindMovie(imdbId string) (string, error) {

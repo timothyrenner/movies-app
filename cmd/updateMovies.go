@@ -1,10 +1,10 @@
 /*
 Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -70,7 +70,7 @@ func updateMovies(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Panicf("Error opening database %v: %v", DB, err)
 	}
-	db := DBClient{DB: dbc}
+	db := DBClient{DB: dbc, ctx: context.Background()}
 	defer db.Close()
 
 	latestMovieWatch, err := db.GetLatestMovieWatchDate()

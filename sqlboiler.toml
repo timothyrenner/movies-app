@@ -1,0 +1,6 @@
+wipe = true
+no-hooks = true
+no-auto-timestamps = true
+[sqlite3]
+dbname = "./data/movies.db"
+blacklist = ["schema_migrations", "uuid_grist"]

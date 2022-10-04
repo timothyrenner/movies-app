@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -262,30 +263,19 @@ type MovieDetailUuids struct {
 }
 
 func (c *DBClient) FindMovieWatch(imdbId string, watched string) (string, error) {
-	query := `
-	SELECT
-		uuid
-	FROM
-		movie_watch
-	WHERE
-		imdb_id = ? AND
-		watched = ?
-	`
-
-	dbRow := c.DB.QueryRow(
-		query, imdbId, watched,
-	)
-
-	var uuid string
-
-	if err := dbRow.Scan(&uuid); err != nil {
-		if err == sql.ErrNoRows {
+	movieWatch, err := models.MovieWatches(
+		qm.Select(models.MovieWatchColumns.UUID),
+		qm.Where(models.MovieWatchColumns.ImdbID+"=?", imdbId),
+		qm.Where(models.MovieWatchColumns.Watched+"=?", watched),
+	).One(c.ctx, c.DB)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
 			return "", nil
 		} else {
 			return "", fmt.Errorf("encountered error with query: %v", err)
 		}
 	}
-	return uuid, nil
+	return movieWatch.UUID.String, nil
 }
 
 func (c *DBClient) GetAllEnrichedMovieWatches() (
@@ -354,25 +344,18 @@ func (c *DBClient) GetLatestMovieWatchDate() (string, error) {
 }
 
 func (c *DBClient) FindMovie(imdbId string) (string, error) {
-	query := `
-	SELECT
-		uuid
-	FROM
-		movie
-	WHERE
-		imdb_id = ?
-	`
-	dbRow := c.DB.QueryRow(query, imdbId)
-	var uuid string
-	if err := dbRow.Scan(&uuid); err != nil {
-		if err == sql.ErrNoRows {
+	movie, err := models.Movies(
+		qm.Select(models.MovieColumns.UUID),
+		qm.Where(models.MovieColumns.ImdbID+"=?", imdbId),
+	).One(c.ctx, c.DB)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
 			return "", nil
 		} else {
 			return "", fmt.Errorf("encountered error with query: %v", err)
 		}
 	}
-
-	return uuid, nil
+	return movie.UUID.String, nil
 }
 
 func (c *DBClient) GetMovie(movieUuid string) (*MovieRow, error) {

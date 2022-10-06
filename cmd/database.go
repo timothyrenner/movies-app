@@ -11,6 +11,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/timothyrenner/movies-app/models"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
@@ -26,31 +28,9 @@ func (c *DBClient) Close() error {
 	return nil
 }
 
-type MovieRow struct {
-	Uuid           string
-	Title          string
-	ImdbLink       string
-	ImdbId         string
-	Year           int
-	Rated          sql.NullString
-	Released       sql.NullString
-	RuntimeMinutes sql.NullInt32
-	Plot           sql.NullString
-	Country        sql.NullString
-	Language       sql.NullString
-	BoxOffice      sql.NullString
-	Production     sql.NullString
-	CallFelissa    bool
-	Slasher        bool
-	Zombies        bool
-	Beast          bool
-	Godzilla       bool
-	WallpaperFu    bool
-}
-
 func CreateMovieRow(
 	movieRecord *OmdbMovieResponse, movieWatch *EnrichedMovieWatchRow,
-) (*MovieRow, error) {
+) (*models.Movie, error) {
 
 	year, err := strconv.Atoi(movieRecord.Year)
 	if err != nil {
@@ -66,30 +46,51 @@ func CreateMovieRow(
 		)
 	}
 
-	var runtime sql.NullInt32
+	var runtime null.Int64
 	runtimeInt, err := ParseRuntime(movieRecord.Runtime)
 	if err != nil {
 		log.Printf(
 			"Unable to parse %v (%v). setting to null.",
 			movieRecord.Runtime, err,
 		)
-		runtime = sql.NullInt32{
-			Int32: 0,
+		runtime = null.Int64{
+			Int64: 0,
 			Valid: false,
 		}
 	} else {
-		runtime = sql.NullInt32{
-			Int32: int32(runtimeInt),
+		runtime = null.Int64{
+			Int64: int64(runtimeInt),
 			Valid: true,
 		}
 	}
 
-	return &MovieRow{
-		Uuid:           uuid.New().String(),
+	// SQLite doesn't support booleans.
+	// Golang doesn't allow explicit conversion from int to boolean
+	// ! Might get to delete this code when MovieWatch gets switched to the
+	// ! sqlboiler generated model.
+	var callFelissa int64 // Remember default is zero.
+	if movieWatch.CallFelissa {
+		callFelissa = 1
+	}
+	var slasher int64
+	if movieWatch.Slasher {
+		slasher = 1
+	}
+	var beast int64
+	if movieWatch.Beast {
+		beast = 1
+	}
+	var godzilla int64
+	if movieWatch.Godzilla {
+		godzilla = 1
+	}
+
+	return &models.Movie{
+		UUID:           textToNullString(uuid.New().String()),
 		Title:          movieWatch.MovieTitle,
 		ImdbLink:       fmt.Sprintf("https://www.imdb.com/title/%v/", movieWatch.ImdbId),
-		ImdbId:         movieWatch.ImdbId,
-		Year:           year,
+		ImdbID:         movieWatch.ImdbId,
+		Year:           int64(year),
 		Rated:          textToNullString(movieRecord.Rated),
 		Released:       textToNullString(releasedDate),
 		RuntimeMinutes: runtime,
@@ -98,29 +99,23 @@ func CreateMovieRow(
 		Language:       textToNullString(movieRecord.Language),
 		BoxOffice:      textToNullString(movieRecord.BoxOffice),
 		Production:     textToNullString(movieRecord.Production),
-		CallFelissa:    movieWatch.CallFelissa,
-		Slasher:        movieWatch.Slasher,
-		Beast:          movieWatch.Beast,
-		Godzilla:       movieWatch.Godzilla,
+		CallFelissa:    callFelissa,
+		Slasher:        slasher,
+		Beast:          beast,
+		Godzilla:       godzilla,
 	}, nil
-}
-
-type MovieGenreRow struct {
-	Uuid      string
-	MovieUuid string
-	Name      string
 }
 
 func CreateMovieGenreRows(
 	movieRecord *OmdbMovieResponse,
 	movieUuid string,
-) []MovieGenreRow {
+) []*models.MovieGenre {
 	genres := SplitOnCommaAndTrim(movieRecord.Genre)
-	rows := make([]MovieGenreRow, len(genres))
+	rows := make([]*models.MovieGenre, len(genres))
 	for ii := range genres {
-		rows[ii] = MovieGenreRow{
-			Uuid:      uuid.New().String(),
-			MovieUuid: movieUuid,
+		rows[ii] = &models.MovieGenre{
+			UUID:      null.String{String: uuid.New().String()},
+			MovieUUID: null.String{String: movieUuid},
 			Name:      genres[ii],
 		}
 	}
@@ -149,11 +144,11 @@ func CreateMovieActorRows(
 	return rows
 }
 
-func textToNullString(text string) sql.NullString {
+func textToNullString(text string) null.String {
 	if text == "N/A" || len(text) == 0 {
-		return sql.NullString{}
+		return null.String{}
 	} else {
-		return sql.NullString{
+		return null.String{
 			String: text,
 			Valid:  true,
 		}
@@ -358,58 +353,13 @@ func (c *DBClient) FindMovie(imdbId string) (string, error) {
 	return movie.UUID.String, nil
 }
 
-func (c *DBClient) GetMovie(movieUuid string) (*MovieRow, error) {
-	query := `
-	SELECT
-		uuid,
-		title,
-		imdb_link,
-		imdb_id,
-		year,
-		rated,
-		released,
-		runtime_minutes,
-		plot,
-		country,
-		language,
-		box_office,
-		production,
-		call_felissa,
-		slasher,
-		zombies,
-		beast,
-		godzilla
-	FROM
-		movie
-	WHERE
-		uuid = ?
-	`
-	dbRow := c.DB.QueryRow(query, movieUuid)
-	var movieRow MovieRow
-	if err := dbRow.Scan(
-		&movieRow.Uuid,
-		&movieRow.Title,
-		&movieRow.ImdbLink,
-		&movieRow.ImdbId,
-		&movieRow.Year,
-		&movieRow.Rated,
-		&movieRow.Released,
-		&movieRow.RuntimeMinutes,
-		&movieRow.Plot,
-		&movieRow.Country,
-		&movieRow.Language,
-		&movieRow.BoxOffice,
-		&movieRow.Production,
-		&movieRow.CallFelissa,
-		&movieRow.Slasher,
-		&movieRow.Zombies,
-		&movieRow.Beast,
-		&movieRow.Godzilla,
-	); err != nil {
+func (c *DBClient) GetMovie(movieUuid string) (*models.Movie, error) {
+	movie, err := models.FindMovie(c.ctx, c.DB, null.String{String: movieUuid})
+	if err != nil {
 		return nil, fmt.Errorf("error getting movie: %v", err)
 	}
 
-	return &movieRow, nil
+	return movie, nil
 
 }
 
@@ -423,7 +373,7 @@ func (c *DBClient) InsertMovieDetails(
 	if err != nil {
 		return nil, fmt.Errorf("error creating movie row: %v", err)
 	}
-	movieUuids.Movie = movieRow.Uuid
+	movieUuids.Movie = movieRow.UUID.String
 
 	ctx := context.Background()
 	tx, err := c.DB.BeginTx(ctx, nil)
@@ -431,82 +381,27 @@ func (c *DBClient) InsertMovieDetails(
 		return nil, fmt.Errorf("error starting transaction: %v", err)
 	}
 	defer tx.Rollback()
-	_, err = tx.Exec(
-		`INSERT INTO movie (
-			uuid,
-			title,
-			imdb_link,
-			imdb_id,
-			year,
-			rated,
-			released,
-			runtime_minutes,
-			plot,
-			country,
-			language,
-			box_office,
-			production,
-			call_felissa,
-			slasher,
-			zombies,
-			beast,
-			godzilla,
-			wallpaper_fu
-		) VALUES(
-			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-		)
-	`,
-		movieRow.Uuid,
-		movieRow.Title,
-		movieRow.ImdbLink,
-		movieRow.ImdbId,
-		movieRow.Year,
-		movieRow.Rated,
-		movieRow.Released,
-		movieRow.RuntimeMinutes,
-		movieRow.Plot,
-		movieRow.Country,
-		movieRow.Language,
-		movieRow.BoxOffice,
-		movieRow.Production,
-		movieRow.CallFelissa,
-		movieRow.Slasher,
-		movieRow.Zombies,
-		movieRow.Beast,
-		movieRow.Godzilla,
-		movieRow.WallpaperFu,
-	)
-
-	if err != nil {
-		return nil, fmt.Errorf("encountered error inserting movie: %v", err)
+	if err := movieRow.Insert(c.ctx, tx, boil.Infer()); err != nil {
+		return nil, fmt.Errorf("error inserting movie: %v", err)
 	}
 
-	movieGenreRows := CreateMovieGenreRows(movie, movieRow.Uuid)
+	// For these we'll use the ORM's SetX methods, which I'm not a huge fan of
+	// but it seems to be the encouraged pattern here.
+	movieGenreRows := CreateMovieGenreRows(movie, movieRow.UUID.String)
 	movieUuids.Genre = make([]string, len(movieGenreRows))
 	values := make([]string, len(movieGenreRows))
 	args := make([]any, len(movieGenreRows)*3)
 
 	for ii := range movieGenreRows {
-		values[ii] = "(?, ?, ?)"
-		args[3*ii] = movieGenreRows[ii].Uuid
-		args[3*ii+1] = movieGenreRows[ii].MovieUuid
-		args[3*ii+2] = movieGenreRows[ii].Name
-		movieUuids.Genre[ii] = movieGenreRows[ii].Uuid
+		movieUuids.Genre[ii] = movieGenreRows[ii].UUID.String
 	}
-	_, err = tx.Exec(
-		fmt.Sprintf(`INSERT INTO movie_genre (
-			uuid,
-			movie_uuid,
-			name
-		) VALUES %v
-		`, strings.Join(values, ",")),
-		args...,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error inserting movie genre: %v", err)
+	if err := movieRow.SetMovieGenres(
+		c.ctx, tx, true, movieGenreRows...,
+	); err != nil {
+		return nil, fmt.Errorf("error inserting movie genres: %v", err)
 	}
 
-	movieActorRows := CreateMovieActorRows(movie, movieRow.Uuid)
+	movieActorRows := CreateMovieActorRows(movie, movieRow.UUID.String)
 	movieUuids.Actor = make([]string, len(movieActorRows))
 	values = make([]string, len(movieActorRows))
 	args = make([]any, len(movieActorRows)*3)

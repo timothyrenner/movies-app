@@ -52,6 +52,32 @@ A fuckin sack race half marathon obstacle course
 	return file
 }
 
+func createTestMovieReviewPage() *os.File {
+	file, err := os.CreateTemp(".", "test_review")
+	if err != nil {
+		log.Panicf("Error creating test review page: %v", err)
+	}
+
+	_, err = file.WriteString(`
+# Review: Uncle Same
+
+movie::[[Uncle Sam (tt0118025)]]
+liked::true
+
+## Review
+Look there's a zombie soldier dressed as Uncle Sam who blows people up with fireworks.
+Do you really want anything more in a movie?
+Oh you want a prevert peeping Tom not-zombie Uncle Sam on stilts too?
+We got you.
+		`)
+
+	if err != nil {
+		log.Panicf("error writing review contents: %v", err)
+		os.Remove(file.Name())
+	}
+	return file
+}
+
 func TestParsePage(t *testing.T) {
 	file := createTestWatchPage()
 	defer file.Close()
@@ -201,5 +227,67 @@ func TestCreateMoviePage(t *testing.T) {
 
 	if !cmp.Equal(truth, answer) {
 		t.Errorf("Expected \n%v, got \n%v", *truth, *answer)
+	}
+}
+
+func TestParseMovieReviewPage(t *testing.T) {
+	file := createTestMovieReviewPage()
+	defer file.Close()
+	defer os.Remove(file.Name())
+
+	parser, err := CreateMovieReviewParser()
+	if err != nil {
+		t.Errorf("Error creating parser: %v", err)
+	}
+
+	answer, err := parser.ParseMovieReviewPage(file.Name())
+	if err != nil {
+		t.Errorf("Error parsing page: %v", err)
+	}
+	truth := MovieReviewPage{
+		MovieTitle: "Uncle Sam",
+		ImdbId:     "tt0118025",
+		Liked:      true,
+		Review: `
+Look there's a zombie soldier dressed as Uncle Sam who blows people up with fireworks.
+Do you really want anything more in a movie?
+Oh you want a prevert peeping Tom not-zombie Uncle Sam on stilts too?
+We got you.
+		`,
+	}
+	if !cmp.Equal(truth, *answer) {
+		t.Errorf("Expected \n%v, got \n%v", truth, *answer)
+	}
+}
+
+func TestCreateReviewRow(t *testing.T) {
+	reviewPage := MovieReviewPage{
+		MovieTitle: "Uncle Sam",
+		ImdbId:     "tt0118025",
+		Liked:      true,
+		Review: `
+Look there's a zombie soldier dressed as Uncle Sam who blows people up with fireworks.
+Do you really want anything more in a movie?
+Oh you want a prevert peeping Tom not-zombie Uncle Sam on stilts too?
+We got you.
+		`,
+	}
+
+	answer := reviewPage.CreateRow("abc-123")
+	truth := MovieReviewRow{
+		Uuid:       answer.Uuid,
+		MovieUuid:  "abc-123",
+		MovieTitle: "Uncle Sam",
+		Review: `
+Look there's a zombie soldier dressed as Uncle Sam who blows people up with fireworks.
+Do you really want anything more in a movie?
+Oh you want a prevert peeping Tom not-zombie Uncle Sam on stilts too?
+We got you.
+		`,
+		Liked: true,
+	}
+
+	if !cmp.Equal(truth, *answer) {
+		t.Errorf("Expected \n%v, got \n%v", truth, *answer)
 	}
 }

@@ -6,6 +6,8 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+
+	"github.com/google/uuid"
 )
 
 type MovieWatchParser struct {
@@ -545,4 +547,102 @@ func CreateMoviePage(
 		Godzilla:       movieWatch.Godzilla,
 		WallpaperFu:    movieWatch.WallpaperFu,
 	}, nil
+}
+
+type MovieReviewParser struct {
+	MovieTitleExtractor  *regexp.Regexp
+	MovieLikedExtractor  *regexp.Regexp
+	MovieReviewExtractor *regexp.Regexp
+}
+
+func CreateMovieReviewParser() (*MovieReviewParser, error) {
+	parser := MovieReviewParser{}
+
+	movieTitleExtractor, err := regexp.Compile(
+		`movie::\s*\[\[([a-zA-z0-9:\-/' ]+) \((tt\d{7,8})\)\]\]\s*\n`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error compiling regex for movie: %v", err)
+	}
+	parser.MovieTitleExtractor = movieTitleExtractor
+
+	movieLikedExtractor, err := regexp.Compile(
+		`liked::\s*(true|false)\s*\n`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error compiling regex for liked: %v", err)
+	}
+	parser.MovieLikedExtractor = movieLikedExtractor
+
+	movieReviewExtractor, err := regexp.Compile(
+		`(?s)## Review(.*)$`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error compiling regex for notes: %v", err)
+	}
+	parser.MovieReviewExtractor = movieReviewExtractor
+	return &parser, nil
+}
+
+type MovieReviewPage struct {
+	MovieTitle string
+	ImdbId     string
+	Liked      bool
+	Review     string
+}
+
+func (p *MovieReviewParser) ParseMovieReviewPage(filename string) (
+	*MovieReviewPage, error,
+) {
+	pageText, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("error reading file %v: %v", filename, err)
+	}
+
+	page := MovieReviewPage{}
+
+	movieTitleMatch := p.MovieTitleExtractor.FindSubmatch(pageText)
+	if matchLen := len(movieTitleMatch); matchLen != 3 {
+		return nil, fmt.Errorf(
+			"expected 3 matches for movie name, got %v", matchLen,
+		)
+	}
+	page.MovieTitle = string(movieTitleMatch[1])
+	page.ImdbId = string(movieTitleMatch[2])
+
+	likedMatch := p.MovieLikedExtractor.FindSubmatch(pageText)
+	if matchLen := len(likedMatch); matchLen != 2 {
+		return nil, fmt.Errorf(
+			"expected 2 matches for liked, got %v", matchLen,
+		)
+	}
+	liked, err := strconv.ParseBool(string(likedMatch[1]))
+	if err != nil {
+		return nil, fmt.Errorf(
+			"error parsing liked match %v: %v",
+			string(likedMatch[1]),
+			err,
+		)
+	}
+	page.Liked = liked
+
+	reviewMatch := p.MovieReviewExtractor.FindSubmatch(pageText)
+	if matchLen := len(reviewMatch); matchLen != 2 {
+		return nil, fmt.Errorf(
+			"expected 2 matches for review, got %v", matchLen,
+		)
+	}
+	page.Review = string(reviewMatch[1])
+
+	return &page, nil
+}
+
+func (p *MovieReviewPage) CreateRow(movieUuid string) *MovieReviewRow {
+	return &MovieReviewRow{
+		Uuid:       uuid.New().String(),
+		MovieUuid:  movieUuid,
+		MovieTitle: p.MovieTitle,
+		Review:     p.Review,
+		Liked:      p.Liked,
+	}
 }

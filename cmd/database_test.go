@@ -177,6 +177,16 @@ func (c *DBClient) loadMovie() {
 		log.Panicf("Encountered error loading movie rating table: %v", err)
 	}
 
+	_, err = tx.Exec(
+		`INSERT INTO review (uuid, movie_uuid, movie_title, review, liked)
+		VALUES
+			('review1', 'abc-456', 'Slaughterhouse', 'Here piggy piggy', TRUE)
+		`,
+	)
+	if err != nil {
+		log.Panicf("Encountered error loading review table: %v", err)
+	}
+
 	if err = tx.Commit(); err != nil {
 		log.Panicf("Encountered error committing transaction: %v", err)
 	}
@@ -1317,5 +1327,105 @@ func TestGetRatingsForMovie(t *testing.T) {
 	}
 	if !cmp.Equal(truth, answer) {
 		t.Errorf("Expected %v, got %v", truth, answer)
+	}
+}
+
+func TestGetReviewForMovie(t *testing.T) {
+	c, m := setupDatabase()
+	defer teardownDatabase(c, m)
+	c.loadMovie()
+
+	truth := MovieReviewRow{
+		Uuid:       "review1",
+		MovieUuid:  "abc-456",
+		MovieTitle: "Slaughterhouse",
+		Liked:      true,
+		Review:     "Here piggy piggy",
+	}
+
+	answer, err := c.GetReviewForMovie("Slaughterhouse")
+	if err != nil {
+		t.Errorf("Encountered error: %v", err)
+	}
+	if !cmp.Equal(truth, *answer) {
+		t.Errorf("Expected \n%v, got \n%v", truth, *answer)
+	}
+}
+
+func TestInsertReview(t *testing.T) {
+	c, m := setupDatabase()
+	defer teardownDatabase(c, m)
+	c.loadMovie()
+
+	review := MovieReviewRow{
+		Uuid:       "review2",
+		MovieTitle: "Tenebrae",
+		MovieUuid:  "abc-123",
+		Review:     "Great twist",
+		Liked:      true,
+	}
+
+	if err := c.InsertReview(&review); err != nil {
+		t.Errorf("Encountered error: %v", err)
+	}
+
+	var answer MovieReviewRow
+	row := c.DB.QueryRow(
+		`SELECT uuid, movie_uuid, movie_title, review, liked
+		FROM review
+		WHERE movie_title='Tenebrae'
+		`,
+	)
+	if err := row.Scan(
+		&answer.Uuid,
+		&answer.MovieUuid,
+		&answer.MovieTitle,
+		&answer.Review,
+		&answer.Liked,
+	); err != nil {
+		t.Errorf("Encountered error: %v", err)
+	}
+
+	if !cmp.Equal(review, answer) {
+		t.Errorf("Expected \n%v, got \n%v", review, answer)
+	}
+
+	// Check that upsert works properly.
+	reviewUpdate := MovieReviewRow{
+		Uuid:       "review3", // application generates uuids, so this won't be the same.
+		MovieTitle: "Tenebrae",
+		MovieUuid:  "abc-123",
+		Review:     "Massive wallpaper fu",
+		Liked:      false,
+	}
+
+	if err := c.InsertReview(&reviewUpdate); err != nil {
+		t.Errorf("Encountered error %v", err)
+	}
+	var updateAnswer MovieReviewRow
+	updateRow := c.DB.QueryRow(
+		`SELECT uuid, movie_uuid, movie_title, review, liked
+		FROM review
+		WHERE movie_title='Tenebrae'
+		`,
+	)
+	if err := updateRow.Scan(
+		&updateAnswer.Uuid,
+		&updateAnswer.MovieUuid,
+		&updateAnswer.MovieTitle,
+		&updateAnswer.Review,
+		&updateAnswer.Liked,
+	); err != nil {
+		t.Errorf("Encountered error: %v", err)
+	}
+	updateTruth := MovieReviewRow{
+		Uuid:       "review2", // does not get updated.
+		MovieTitle: "Tenebrae",
+		MovieUuid:  "abc-123",
+		Review:     "Massive wallpaper fu",
+		Liked:      false,
+	}
+	if !cmp.Equal(updateTruth, updateAnswer) {
+		t.Errorf("Expected \n%v, got \n%v", updateTruth, updateAnswer)
 	}
 }

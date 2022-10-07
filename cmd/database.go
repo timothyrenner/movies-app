@@ -779,3 +779,49 @@ func (c *DBClient) GetRatingsForMovie(movieUuid string) (
 	}
 	return movieRatings, nil
 }
+
+type MovieReview struct {
+	Uuid       string
+	MovieUuid  string
+	MovieTitle string
+	Review     string
+	Liked      bool
+}
+
+func (c *DBClient) GetReviewForMovie(movieTitle string) (*MovieReview, error) {
+	row := c.DB.QueryRow(`
+	SELECT uuid, movie_uuid, movie_title, review, liked
+	FROM review
+	WHERE movie_title = ?
+	`, movieTitle)
+	var movieReview MovieReview
+	if err := row.Scan(
+		&movieReview.Uuid,
+		&movieReview.MovieUuid,
+		&movieReview.MovieTitle,
+		&movieReview.Review,
+		&movieReview.Liked,
+	); err != nil {
+		return nil, fmt.Errorf("error getting review for %v: %v", movieTitle, err)
+	}
+
+	return &movieReview, nil
+}
+
+func (c *DBClient) InsertReview(review *MovieReview) error {
+
+	if _, err := c.DB.Exec(
+		`INSERT INTO review (uuid, movie_uuid, movie_title, review, liked)
+		VALUES
+		(?, ?, ?, ?, ?)
+		`,
+		review.Uuid,
+		review.MovieUuid,
+		review.MovieTitle,
+		review.Review,
+		review.Liked,
+	); err != nil {
+		return fmt.Errorf("error inserting review %v: %v", review, err)
+	}
+	return nil
+}

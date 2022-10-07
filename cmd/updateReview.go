@@ -20,16 +20,6 @@ var updateReviewCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(updateReviewCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// updateReviewCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// updateReviewCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func updateReview(cmd *cobra.Command, args []string) {
@@ -69,4 +59,6 @@ func updateReview(cmd *cobra.Command, args []string) {
 			"Error inserting review for %v: %v", movieReviewRow.MovieTitle, err,
 		)
 	}
+
+	log.Printf("Review successfully updated for %v", reviewFile)
 }

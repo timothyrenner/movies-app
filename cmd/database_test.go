@@ -1389,4 +1389,43 @@ func TestInsertReview(t *testing.T) {
 	if !cmp.Equal(review, answer) {
 		t.Errorf("Expected \n%v, got \n%v", review, answer)
 	}
+
+	// Check that upsert works properly.
+	reviewUpdate := MovieReviewRow{
+		Uuid:       "review3", // application generates uuids, so this won't be the same.
+		MovieTitle: "Tenebrae",
+		MovieUuid:  "abc-123",
+		Review:     "Massive wallpaper fu",
+		Liked:      false,
+	}
+
+	if err := c.InsertReview(&reviewUpdate); err != nil {
+		t.Errorf("Encountered error %v", err)
+	}
+	var updateAnswer MovieReviewRow
+	updateRow := c.DB.QueryRow(
+		`SELECT uuid, movie_uuid, movie_title, review, liked
+		FROM review
+		WHERE movie_title='Tenebrae'
+		`,
+	)
+	if err := updateRow.Scan(
+		&updateAnswer.Uuid,
+		&updateAnswer.MovieUuid,
+		&updateAnswer.MovieTitle,
+		&updateAnswer.Review,
+		&updateAnswer.Liked,
+	); err != nil {
+		t.Errorf("Encountered error: %v", err)
+	}
+	updateTruth := MovieReviewRow{
+		Uuid:       "review2", // does not get updated.
+		MovieTitle: "Tenebrae",
+		MovieUuid:  "abc-123",
+		Review:     "Massive wallpaper fu",
+		Liked:      false,
+	}
+	if !cmp.Equal(updateTruth, updateAnswer) {
+		t.Errorf("Expected \n%v, got \n%v", updateTruth, updateAnswer)
+	}
 }

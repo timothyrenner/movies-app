@@ -814,6 +814,8 @@ func (c *DBClient) InsertReview(review *MovieReviewRow) error {
 		`INSERT INTO review (uuid, movie_uuid, movie_title, review, liked)
 		VALUES
 		(?, ?, ?, ?, ?)
+		ON CONFLICT (movie_uuid) DO
+		UPDATE SET review = excluded.review, liked = excluded.liked
 		`,
 		review.Uuid,
 		review.MovieUuid,

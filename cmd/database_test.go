@@ -1335,7 +1335,7 @@ func TestGetReviewForMovie(t *testing.T) {
 	defer teardownDatabase(c, m)
 	c.loadMovie()
 
-	truth := MovieReview{
+	truth := MovieReviewRow{
 		Uuid:       "review1",
 		MovieUuid:  "abc-456",
 		MovieTitle: "Slaughterhouse",
@@ -1357,7 +1357,7 @@ func TestInsertReview(t *testing.T) {
 	defer teardownDatabase(c, m)
 	c.loadMovie()
 
-	review := MovieReview{
+	review := MovieReviewRow{
 		Uuid:       "review2",
 		MovieTitle: "Tenebrae",
 		MovieUuid:  "abc-123",
@@ -1369,7 +1369,7 @@ func TestInsertReview(t *testing.T) {
 		t.Errorf("Encountered error: %v", err)
 	}
 
-	var answer MovieReview
+	var answer MovieReviewRow
 	row := c.DB.QueryRow(
 		`SELECT uuid, movie_uuid, movie_title, review, liked
 		FROM review

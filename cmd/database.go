@@ -780,7 +780,7 @@ func (c *DBClient) GetRatingsForMovie(movieUuid string) (
 	return movieRatings, nil
 }
 
-type MovieReview struct {
+type MovieReviewRow struct {
 	Uuid       string
 	MovieUuid  string
 	MovieTitle string
@@ -788,13 +788,13 @@ type MovieReview struct {
 	Liked      bool
 }
 
-func (c *DBClient) GetReviewForMovie(movieTitle string) (*MovieReview, error) {
+func (c *DBClient) GetReviewForMovie(movieTitle string) (*MovieReviewRow, error) {
 	row := c.DB.QueryRow(`
 	SELECT uuid, movie_uuid, movie_title, review, liked
 	FROM review
 	WHERE movie_title = ?
 	`, movieTitle)
-	var movieReview MovieReview
+	var movieReview MovieReviewRow
 	if err := row.Scan(
 		&movieReview.Uuid,
 		&movieReview.MovieUuid,
@@ -808,7 +808,7 @@ func (c *DBClient) GetReviewForMovie(movieTitle string) (*MovieReview, error) {
 	return &movieReview, nil
 }
 
-func (c *DBClient) InsertReview(review *MovieReview) error {
+func (c *DBClient) InsertReview(review *MovieReviewRow) error {
 
 	if _, err := c.DB.Exec(
 		`INSERT INTO review (uuid, movie_uuid, movie_title, review, liked)

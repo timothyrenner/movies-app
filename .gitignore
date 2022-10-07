@@ -134,3 +134,4 @@ movie_vault
 # Definitely don't want those open sourced.
 scripts/addNotes_20220716
 scripts/addNotes_20220726
+data/letterboxd_export.csv

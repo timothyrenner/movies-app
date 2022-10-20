@@ -33,7 +33,7 @@ func CreateMovieWatchParser() (*MovieWatchParser, error) {
 	// Time for some regex fu.
 
 	titleExtractor, err := regexp.Compile(
-		`name::\s*\[\[([a-zA-z0-9:\-/' ]+) \(tt\d{7,8}\)\]\]\s*\n`,
+		`name::\s*\[\[([a-zA-z0-9:\-/()' ]+) \(tt\d{7,8}\)\]\]\s*\n`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error compiling regex for title: %v", err)

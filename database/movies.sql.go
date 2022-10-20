@@ -86,7 +86,8 @@ SELECT w.uuid,
     m.call_felissa,
     m.beast,
     m.godzilla,
-    m.zombies
+    m.zombies,
+    m.wallpaper_fu
 FROM movie_watch AS w
     INNER JOIN movie AS m ON m.uuid = w.movie_uuid
 `
@@ -107,6 +108,7 @@ type GetAllMovieWatchesRow struct {
 	Beast       int64
 	Godzilla    int64
 	Zombies     int64
+	WallpaperFu sql.NullBool
 }
 
 func (q *Queries) GetAllMovieWatches(ctx context.Context) ([]GetAllMovieWatchesRow, error) {
@@ -134,6 +136,7 @@ func (q *Queries) GetAllMovieWatches(ctx context.Context) ([]GetAllMovieWatchesR
 			&i.Beast,
 			&i.Godzilla,
 			&i.Zombies,
+			&i.WallpaperFu,
 		); err != nil {
 			return nil, err
 		}
@@ -224,7 +227,8 @@ SELECT uuid,
     slasher,
     zombies,
     beast,
-    godzilla
+    godzilla,
+    wallpaper_fu
 FROM movie
 WHERE uuid = ?
 `
@@ -248,6 +252,7 @@ type GetMovieRow struct {
 	Zombies        int64
 	Beast          int64
 	Godzilla       int64
+	WallpaperFu    sql.NullBool
 }
 
 func (q *Queries) GetMovie(ctx context.Context, uuid string) (GetMovieRow, error) {
@@ -272,6 +277,7 @@ func (q *Queries) GetMovie(ctx context.Context, uuid string) (GetMovieRow, error
 		&i.Zombies,
 		&i.Beast,
 		&i.Godzilla,
+		&i.WallpaperFu,
 	)
 	return i, err
 }

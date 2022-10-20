@@ -18,7 +18,8 @@ SELECT w.uuid,
     m.call_felissa,
     m.beast,
     m.godzilla,
-    m.zombies
+    m.zombies,
+    m.wallpaper_fu
 FROM movie_watch AS w
     INNER JOIN movie AS m ON m.uuid = w.movie_uuid;
 -- name: FindMovie :one
@@ -43,7 +44,8 @@ SELECT uuid,
     slasher,
     zombies,
     beast,
-    godzilla
+    godzilla,
+    wallpaper_fu
 FROM movie
 WHERE uuid = ?;
 -- name: InsertMovie :exec

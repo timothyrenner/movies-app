@@ -1,10 +1,10 @@
 /*
 Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -16,6 +16,7 @@ import (
 	"text/template"
 
 	"github.com/spf13/cobra"
+	"github.com/timothyrenner/movies-app/database"
 )
 
 // buildObsidianVaultCmd represents the buildObsidianVault command
@@ -84,11 +85,12 @@ func buildObsidianVault(cmd *cobra.Command, args []string) {
 		log.Println("Rebuilding entire vault (except notes).")
 	}
 
-	dbc, err := sql.Open("sqlite3", DB)
+	ctx := context.Background()
+	db, err := sql.Open("sqlite3", DB)
 	if err != nil {
 		log.Panicf("Error opening database %v: %v", DB, err)
 	}
-	db := DBClient{DB: dbc}
+	queries := database.New(db)
 	defer db.Close()
 
 	// Set up the directories.
@@ -113,12 +115,12 @@ func buildObsidianVault(cmd *cobra.Command, args []string) {
 	// Note: this is should be like ... paginated or something. Future
 	// improvement if for some crazy reason memory becomes an issue.
 	log.Println("Getting movie watches.")
-	allMovieWatches, err := db.GetAllEnrichedMovieWatches()
+	allMovieWatches, err := queries.GetAllMovieWatches(ctx)
 	if err != nil {
 		log.Panicf("Error getting all movie watches: %v", err)
 	}
 
-	var movieWatches []EnrichedMovieWatchRow
+	var movieWatches []database.GetAllMovieWatchesRow
 	if limit > 0 {
 		movieWatches = allMovieWatches[:limit]
 	} else {
@@ -136,7 +138,7 @@ func buildObsidianVault(cmd *cobra.Command, args []string) {
 	}
 	var wg sync.WaitGroup
 	for ii := range movieWatches {
-		movieWatchPage := movieWatches[ii].CreatePage()
+		movieWatchPage := CreateMovieWatchPage(&movieWatches[ii])
 		// Step 2: If there's no movie watch page, create one.
 		wg.Add(1)
 		go func() {
@@ -180,7 +182,8 @@ func buildObsidianVault(cmd *cobra.Command, args []string) {
 			defer moviePageFile.Close()
 			if !skipMovie {
 				// Get directors for movie.
-				directors, err := db.GetDirectorNamesForMovie(
+				directors, err := queries.GetDirectorNamesForMovie(
+					ctx,
 					movieWatches[ii].MovieUuid,
 				)
 				if err != nil {
@@ -192,7 +195,8 @@ func buildObsidianVault(cmd *cobra.Command, args []string) {
 				}
 
 				// Get writers for movie.
-				writers, err := db.GetWriterNamesForMovie(
+				writers, err := queries.GetWriterNamesForMovie(
+					ctx,
 					movieWatches[ii].MovieUuid,
 				)
 				if err != nil {
@@ -204,7 +208,8 @@ func buildObsidianVault(cmd *cobra.Command, args []string) {
 				}
 
 				// Get actors for movie.
-				actors, err := db.GetActorNamesForMovie(
+				actors, err := queries.GetActorNamesForMovie(
+					ctx,
 					movieWatches[ii].MovieUuid,
 				)
 				if err != nil {
@@ -216,7 +221,8 @@ func buildObsidianVault(cmd *cobra.Command, args []string) {
 				}
 
 				// Get genres for movie.
-				genres, err := db.GetGenreNamesForMovie(
+				genres, err := queries.GetGenreNamesForMovie(
+					ctx,
 					movieWatches[ii].MovieUuid,
 				)
 				if err != nil {
@@ -227,15 +233,17 @@ func buildObsidianVault(cmd *cobra.Command, args []string) {
 					)
 				}
 
-				movieRow, err := db.GetMovie(movieWatches[ii].MovieUuid)
+				movieRow, err := queries.GetMovie(
+					ctx, movieWatches[ii].MovieUuid.String,
+				)
 				if err != nil {
 					log.Panicf(
 						"Error getting movie %v: %v",
 						movieWatches[ii].MovieTitle, err,
 					)
 				}
-				moviePage := movieRow.CreatePage(
-					genres, directors, writers, actors,
+				moviePage := CreateMoviePageFromRow(
+					&movieRow, genres, directors, writers, actors,
 				)
 				if err := movieTemplate.Execute(
 					moviePageFile, moviePage,

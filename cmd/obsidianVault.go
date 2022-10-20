@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/google/uuid"
+	"github.com/timothyrenner/movies-app/database"
 )
 
 type MovieWatchParser struct {
@@ -369,23 +370,23 @@ type MovieWatchPage struct {
 	Notes       string
 }
 
-func (r *EnrichedMovieWatchRow) CreatePage() *MovieWatchPage {
+func CreateMovieWatchPage(row *database.GetAllMovieWatchesRow) *MovieWatchPage {
 	return &MovieWatchPage{
-		Title:       r.MovieTitle,
-		FileTitle:   cleanTitle(r.MovieTitle),
-		Watched:     r.Watched,
-		ImdbLink:    r.ImdbLink,
-		ImdbId:      r.ImdbId,
-		FirstTime:   r.FirstTime,
-		JoeBob:      r.JoeBob,
-		CallFelissa: r.CallFelissa,
-		Beast:       r.Beast,
-		Godzilla:    r.Godzilla,
-		Zombies:     r.Zombies,
-		Slasher:     r.Slasher,
-		WallpaperFu: r.WallpaperFu,
-		Service:     r.Service,
-		Notes:       r.Notes.String,
+		Title:       row.MovieTitle.String,
+		FileTitle:   cleanTitle(row.MovieTitle.String),
+		Watched:     row.Watched.String,
+		ImdbLink:    row.ImdbLink,
+		ImdbId:      row.ImdbID,
+		FirstTime:   row.FirstTime != 0,
+		JoeBob:      row.JoeBob != 0,
+		CallFelissa: row.CallFelissa != 0,
+		Beast:       row.Beast != 0,
+		Godzilla:    row.Godzilla != 0,
+		Zombies:     row.Zombies != 0,
+		Slasher:     row.Slasher != 0,
+		WallpaperFu: row.WallpaperFu.Bool,
+		Service:     row.Service,
+		Notes:       row.Notes.String,
 	}
 }
 
@@ -467,31 +468,35 @@ type MoviePage struct {
 	WallpaperFu    bool
 }
 
-func (r *MovieRow) CreatePage(
-	genres []string, directors []string, writers []string, actors []string,
+func CreateMoviePageFromRow(
+	row *database.GetMovieRow,
+	genres []string,
+	directors []string,
+	writers []string,
+	actors []string,
 ) *MoviePage {
 	return &MoviePage{
-		Title:          r.Title,
-		ImdbLink:       r.ImdbLink,
+		Title:          row.Title,
+		ImdbLink:       row.ImdbLink,
 		Genres:         genres,
 		Directors:      directors,
 		Actors:         actors,
 		Writers:        writers,
-		Year:           r.Year,
-		Rating:         r.Rated.String,
-		Released:       r.Released.String,
-		RuntimeMinutes: int(r.RuntimeMinutes.Int32),
-		Plot:           r.Plot.String,
-		Country:        r.Country.String,
-		Language:       r.Language.String,
-		BoxOffice:      r.BoxOffice.String,
-		Production:     r.Production.String,
-		CallFelissa:    r.CallFelissa,
-		Slasher:        r.Slasher,
-		Zombies:        r.Zombies,
-		Beast:          r.Beast,
-		Godzilla:       r.Godzilla,
-		WallpaperFu:    r.WallpaperFu,
+		Year:           int(row.Year),
+		Rating:         row.Rated.String,
+		Released:       row.Released.String,
+		RuntimeMinutes: int(row.RuntimeMinutes.Int64),
+		Plot:           row.Plot.String,
+		Country:        row.Country.String,
+		Language:       row.Language.String,
+		BoxOffice:      row.BoxOffice.String,
+		Production:     row.Production.String,
+		CallFelissa:    row.CallFelissa != 0,
+		Slasher:        row.Slasher != 0,
+		Zombies:        row.Zombies != 0,
+		Beast:          row.Beast != 0,
+		Godzilla:       row.Godzilla != 0,
+		WallpaperFu:    row.WallpaperFu.Bool,
 	}
 }
 

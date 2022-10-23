@@ -179,15 +179,13 @@ A fuckin sack race half marathon obstacle course
 
 func TestCreateMoviePage(t *testing.T) {
 	omdbResponse := omdbSampleMovie()
-	movieWatch := &EnrichedMovieWatchRow{
-		MovieWatchRow: MovieWatchRow{
-			MovieTitle: "Tenebrae",
-			ImdbId:     "tt0084777",
-			Watched:    "2022-05-27",
-			Service:    "Shudder",
-			FirstTime:  false,
-			JoeBob:     true,
-		},
+	movieWatch := &MovieWatchPage{
+		Title:       "Tenebrae",
+		ImdbId:      "tt0084777",
+		Watched:     "2022-05-27",
+		Service:     "Shudder",
+		FirstTime:   false,
+		JoeBob:      true,
 		CallFelissa: false,
 		Beast:       false,
 		Godzilla:    false,

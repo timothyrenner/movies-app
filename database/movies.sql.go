@@ -209,64 +209,34 @@ func (q *Queries) GetGenreNamesForMovie(ctx context.Context, movieUuid sql.NullS
 	return items, nil
 }
 
+const getLatestMovieWatchDate = `-- name: GetLatestMovieWatchDate :one
+SELECT MAX(watched)
+FROM movie_watch
+`
+
+func (q *Queries) GetLatestMovieWatchDate(ctx context.Context) (interface{}, error) {
+	row := q.db.QueryRowContext(ctx, getLatestMovieWatchDate)
+	var max interface{}
+	err := row.Scan(&max)
+	return max, err
+}
+
 const getMovie = `-- name: GetMovie :one
-SELECT uuid,
-    title,
-    imdb_link,
-    imdb_id,
-    year,
-    rated,
-    released,
-    runtime_minutes,
-    plot,
-    country,
-    language,
-    box_office,
-    production,
-    call_felissa,
-    slasher,
-    zombies,
-    beast,
-    godzilla,
-    wallpaper_fu
+SELECT uuid, title, imdb_link, year, rated, released, plot, country, language, box_office, production, call_felissa, slasher, zombies, beast, godzilla, created_datetime, imdb_id, wallpaper_fu, runtime_minutes
 FROM movie
 WHERE uuid = ?
 `
 
-type GetMovieRow struct {
-	Uuid           string
-	Title          string
-	ImdbLink       string
-	ImdbID         string
-	Year           int64
-	Rated          sql.NullString
-	Released       sql.NullString
-	RuntimeMinutes sql.NullInt64
-	Plot           sql.NullString
-	Country        sql.NullString
-	Language       sql.NullString
-	BoxOffice      sql.NullString
-	Production     sql.NullString
-	CallFelissa    int64
-	Slasher        int64
-	Zombies        int64
-	Beast          int64
-	Godzilla       int64
-	WallpaperFu    sql.NullBool
-}
-
-func (q *Queries) GetMovie(ctx context.Context, uuid string) (GetMovieRow, error) {
+func (q *Queries) GetMovie(ctx context.Context, uuid string) (Movie, error) {
 	row := q.db.QueryRowContext(ctx, getMovie, uuid)
-	var i GetMovieRow
+	var i Movie
 	err := row.Scan(
 		&i.Uuid,
 		&i.Title,
 		&i.ImdbLink,
-		&i.ImdbID,
 		&i.Year,
 		&i.Rated,
 		&i.Released,
-		&i.RuntimeMinutes,
 		&i.Plot,
 		&i.Country,
 		&i.Language,
@@ -277,41 +247,35 @@ func (q *Queries) GetMovie(ctx context.Context, uuid string) (GetMovieRow, error
 		&i.Zombies,
 		&i.Beast,
 		&i.Godzilla,
+		&i.CreatedDatetime,
+		&i.ImdbID,
 		&i.WallpaperFu,
+		&i.RuntimeMinutes,
 	)
 	return i, err
 }
 
 const getRatingsForMovie = `-- name: GetRatingsForMovie :many
-SELECT uuid,
-    movie_uuid,
-    source,
-    value
+SELECT uuid, movie_uuid, source, value, created_datetime
 FROM movie_rating
 WHERE movie_uuid = ?
 `
 
-type GetRatingsForMovieRow struct {
-	Uuid      string
-	MovieUuid sql.NullString
-	Source    string
-	Value     string
-}
-
-func (q *Queries) GetRatingsForMovie(ctx context.Context, movieUuid sql.NullString) ([]GetRatingsForMovieRow, error) {
+func (q *Queries) GetRatingsForMovie(ctx context.Context, movieUuid sql.NullString) ([]MovieRating, error) {
 	rows, err := q.db.QueryContext(ctx, getRatingsForMovie, movieUuid)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetRatingsForMovieRow
+	var items []MovieRating
 	for rows.Next() {
-		var i GetRatingsForMovieRow
+		var i MovieRating
 		if err := rows.Scan(
 			&i.Uuid,
 			&i.MovieUuid,
 			&i.Source,
 			&i.Value,
+			&i.CreatedDatetime,
 		); err != nil {
 			return nil, err
 		}

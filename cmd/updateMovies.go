@@ -1,10 +1,10 @@
 /*
 Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -16,6 +16,7 @@ import (
 	"text/template"
 
 	"github.com/spf13/cobra"
+	"github.com/timothyrenner/movies-app/database"
 )
 
 // updateMoviesCmd represents the updateMovies command
@@ -66,17 +67,20 @@ func updateMovies(cmd *cobra.Command, args []string) {
 
 	omdbClient := NewOmdbClient(OMDB_KEY)
 
-	dbc, err := sql.Open("sqlite3", DB)
+	ctx := context.Background()
+	db, err := sql.Open("sqlite3", DB)
 	if err != nil {
 		log.Panicf("Error opening database %v: %v", DB, err)
 	}
-	db := DBClient{DB: dbc}
 	defer db.Close()
+	queries := database.New(db)
 
-	latestMovieWatch, err := db.GetLatestMovieWatchDate()
+	latestMovieWatchRow, err := queries.GetLatestMovieWatchDate(ctx)
 	if err != nil {
 		log.Panicf("Error getting latest movie watch date: %v", err)
 	}
+	// Panics if the conversion doesn't work.
+	latestMovieWatch := latestMovieWatchRow.(string)
 
 	newMovieWatchFiles := make([]string, 0)
 	allWatches, err := os.ReadDir(path.Join(vaultDir, "Watches"))
@@ -119,8 +123,13 @@ func updateMovies(cmd *cobra.Command, args []string) {
 		}
 		// Determine if it's already in the database.
 
-		movieWatchUuid, err := db.FindMovieWatch(
-			movieWatchPage.ImdbId, movieWatchPage.Watched,
+		movieWatchUuid, err := queries.FindMovieWatch(
+			ctx, database.FindMovieWatchParams{
+				ImdbID: movieWatchPage.ImdbId,
+				Watched: sql.NullString{
+					String: movieWatchPage.Watched, Valid: true,
+				},
+			},
 		)
 		if err != nil {
 			log.Panicf("Encountered error obtaining movie watch: %v", err)
@@ -136,21 +145,20 @@ func updateMovies(cmd *cobra.Command, args []string) {
 		}
 
 		// See if the movie and details are already in the database.
-		movieUuid, err := db.FindMovie(movieWatchPage.ImdbId)
+		movieUuid, err := queries.FindMovie(ctx, movieWatchPage.ImdbId)
 		if err != nil {
 			log.Panicf("Error finding movie: %v", err)
 		}
 		// If the movie's not in the database, we need to insert it and the
 		// details.
-		movieWatchRow := movieWatchPage.CreateRow()
 		if movieUuid == "" {
 			log.Printf("Fetching %v from OMDB.", movieWatchPage.Title)
 			omdbResponse, err := omdbClient.GetMovie(movieWatchPage.ImdbId)
 			if err != nil {
 				log.Panicf("Error fetching movie from OMDB: %v", err)
 			}
-			movieDetailUuids, err := db.InsertMovieDetails(
-				omdbResponse, movieWatchRow,
+			movieDetailUuids, err := InsertMovieDetails(
+				db, ctx, queries, omdbResponse, movieWatchPage,
 			)
 			if err != nil {
 				log.Panicf(
@@ -161,7 +169,7 @@ func updateMovies(cmd *cobra.Command, args []string) {
 			// ! There's some repeated code here with buildObsidianVault.
 			// ! Opportunity to put this into its own function. An item for
 			// ! later I think, after I've let the design marinate a bit.
-			moviePage, err := CreateMoviePage(omdbResponse, movieWatchRow)
+			moviePage, err := CreateMoviePage(omdbResponse, movieWatchPage)
 			if err != nil {
 				log.Panicf("Error creating movie page: %v", err)
 			}
@@ -193,13 +201,9 @@ func updateMovies(cmd *cobra.Command, args []string) {
 		}
 		// Now that we have a movie uuid for the foreign key we can insert the
 		// movie watch itself.
-		movieWatchRow.MovieUuid = movieUuid
-		// Yeesh that looks ugly, but it does work.
-		_, err = db.InsertMovieWatch(&movieWatchRow.MovieWatchRow)
-		if err != nil {
-			log.Panicf(
-				"Error inserting movie watch into database: %v", err,
-			)
+		movieWatchParams := CreateInsertMovieWatchParams(movieWatchPage, movieUuid)
+		if err := queries.InsertMovieWatch(ctx, *movieWatchParams); err != nil {
+			log.Panicf("Error inserting movie watch into database: %v", err)
 		}
 		newMovies += 1
 	}

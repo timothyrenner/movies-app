@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	"strings"
 
 	"github.com/google/uuid"
+	"github.com/timothyrenner/movies-app/database"
 )
 
 type DBClient struct {
@@ -44,9 +44,9 @@ type MovieRow struct {
 	WallpaperFu    bool
 }
 
-func CreateMovieRow(
-	movieRecord *OmdbMovieResponse, movieWatch *EnrichedMovieWatchRow,
-) (*MovieRow, error) {
+func CreateInsertMovieParams(
+	movieRecord *OmdbMovieResponse, movieWatch *MovieWatchPage,
+) (*database.InsertMovieParams, error) {
 
 	year, err := strconv.Atoi(movieRecord.Year)
 	if err != nil {
@@ -62,30 +62,50 @@ func CreateMovieRow(
 		)
 	}
 
-	var runtime sql.NullInt32
+	var runtime sql.NullInt64
 	runtimeInt, err := ParseRuntime(movieRecord.Runtime)
 	if err != nil {
 		log.Printf(
 			"Unable to parse %v (%v). setting to null.",
 			movieRecord.Runtime, err,
 		)
-		runtime = sql.NullInt32{
-			Int32: 0,
+		runtime = sql.NullInt64{
+			Int64: 0,
 			Valid: false,
 		}
 	} else {
-		runtime = sql.NullInt32{
-			Int32: int32(runtimeInt),
+		runtime = sql.NullInt64{
+			Int64: int64(runtimeInt),
 			Valid: true,
 		}
 	}
 
-	return &MovieRow{
+	var callFelissa int64
+	if movieWatch.CallFelissa {
+		callFelissa = 1
+	}
+
+	var slasher int64
+	if movieWatch.Slasher {
+		slasher = 1
+	}
+
+	var beast int64
+	if movieWatch.Beast {
+		beast = 1
+	}
+
+	var godzilla int64
+	if movieWatch.Godzilla {
+		godzilla = 1
+	}
+
+	return &database.InsertMovieParams{
 		Uuid:           uuid.New().String(),
-		Title:          movieWatch.MovieTitle,
+		Title:          movieWatch.Title,
 		ImdbLink:       fmt.Sprintf("https://www.imdb.com/title/%v/", movieWatch.ImdbId),
-		ImdbId:         movieWatch.ImdbId,
-		Year:           year,
+		ImdbID:         movieWatch.ImdbId,
+		Year:           int64(year),
 		Rated:          textToNullString(movieRecord.Rated),
 		Released:       textToNullString(releasedDate),
 		RuntimeMinutes: runtime,
@@ -94,11 +114,40 @@ func CreateMovieRow(
 		Language:       textToNullString(movieRecord.Language),
 		BoxOffice:      textToNullString(movieRecord.BoxOffice),
 		Production:     textToNullString(movieRecord.Production),
-		CallFelissa:    movieWatch.CallFelissa,
-		Slasher:        movieWatch.Slasher,
-		Beast:          movieWatch.Beast,
-		Godzilla:       movieWatch.Godzilla,
+		CallFelissa:    callFelissa,
+		Slasher:        slasher,
+		Beast:          beast,
+		Godzilla:       godzilla,
+		WallpaperFu:    sql.NullBool{Bool: movieWatch.WallpaperFu, Valid: true},
 	}, nil
+}
+
+func CreateInsertMovieWatchParams(movieWatch *MovieWatchPage, movieUuid string) *database.InsertMovieWatchParams {
+
+	var firstTime int64
+	if movieWatch.FirstTime {
+		firstTime = 1
+	}
+	var joeBob int64
+	if movieWatch.JoeBob {
+		joeBob = 1
+	}
+	var movieNotes sql.NullString
+	if movieWatch.Notes != "" {
+		movieNotes.String = movieWatch.Notes
+		movieNotes.Valid = true
+	}
+	return &database.InsertMovieWatchParams{
+		Uuid:       uuid.New().String(),
+		MovieUuid:  sql.NullString{String: movieUuid, Valid: true},
+		MovieTitle: sql.NullString{String: movieWatch.Title, Valid: true},
+		ImdbID:     movieWatch.ImdbId,
+		Watched:    sql.NullString{String: movieWatch.Watched, Valid: true},
+		Service:    movieWatch.Service,
+		FirstTime:  firstTime,
+		JoeBob:     joeBob,
+		Notes:      movieNotes,
+	}
 }
 
 type MovieGenreRow struct {
@@ -107,16 +156,16 @@ type MovieGenreRow struct {
 	Name      string
 }
 
-func CreateMovieGenreRows(
+func CreateInsertMovieGenreParams(
 	movieRecord *OmdbMovieResponse,
 	movieUuid string,
-) []MovieGenreRow {
+) []database.InsertMovieGenreParams {
 	genres := SplitOnCommaAndTrim(movieRecord.Genre)
-	rows := make([]MovieGenreRow, len(genres))
+	rows := make([]database.InsertMovieGenreParams, len(genres))
 	for ii := range genres {
-		rows[ii] = MovieGenreRow{
+		rows[ii] = database.InsertMovieGenreParams{
 			Uuid:      uuid.New().String(),
-			MovieUuid: movieUuid,
+			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
 			Name:      genres[ii],
 		}
 	}
@@ -129,16 +178,16 @@ type MovieActorRow struct {
 	Name      string
 }
 
-func CreateMovieActorRows(
+func CreateInsertMovieActorParams(
 	movieRecord *OmdbMovieResponse,
 	movieUuid string,
-) []MovieActorRow {
+) []database.InsertMovieActorParams {
 	actors := SplitOnCommaAndTrim(movieRecord.Actors)
-	rows := make([]MovieActorRow, len(actors))
+	rows := make([]database.InsertMovieActorParams, len(actors))
 	for ii := range actors {
-		rows[ii] = MovieActorRow{
+		rows[ii] = database.InsertMovieActorParams{
 			Uuid:      uuid.New().String(),
-			MovieUuid: movieUuid,
+			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
 			Name:      actors[ii],
 		}
 	}
@@ -162,16 +211,16 @@ type MovieDirectorRow struct {
 	Name      string
 }
 
-func CreateMovieDirectorRows(
+func CreateInsertMovieDirectorParams(
 	movieRecord *OmdbMovieResponse,
 	movieUuid string,
-) []MovieDirectorRow {
+) []database.InsertMovieDirectorParams {
 	directors := SplitOnCommaAndTrim(movieRecord.Director)
-	rows := make([]MovieDirectorRow, len(directors))
+	rows := make([]database.InsertMovieDirectorParams, len(directors))
 	for ii := range directors {
-		rows[ii] = MovieDirectorRow{
+		rows[ii] = database.InsertMovieDirectorParams{
 			Uuid:      uuid.New().String(),
-			MovieUuid: movieUuid,
+			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
 			Name:      directors[ii],
 		}
 	}
@@ -184,16 +233,16 @@ type MovieWriterRow struct {
 	Name      string
 }
 
-func CreateMovieWriterRows(
+func CreateInsertMovieWriterParams(
 	movieRecord *OmdbMovieResponse,
 	movieUuid string,
-) []MovieWriterRow {
+) []database.InsertMovieWriterParams {
 	writers := SplitOnCommaAndTrim(movieRecord.Writer)
-	rows := make([]MovieWriterRow, len(writers))
+	rows := make([]database.InsertMovieWriterParams, len(writers))
 	for ii := range writers {
-		rows[ii] = MovieWriterRow{
+		rows[ii] = database.InsertMovieWriterParams{
 			Uuid:      uuid.New().String(),
-			MovieUuid: movieUuid,
+			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
 			Name:      writers[ii],
 		}
 	}
@@ -207,15 +256,15 @@ type MovieRatingRow struct {
 	Value     string
 }
 
-func CreateMovieRatingRows(
+func CreateInsertMovieRatingParams(
 	movieRecord *OmdbMovieResponse,
 	movieUuid string,
-) []MovieRatingRow {
-	rows := make([]MovieRatingRow, len(movieRecord.Ratings))
+) []database.InsertMovieRatingParams {
+	rows := make([]database.InsertMovieRatingParams, len(movieRecord.Ratings))
 	for ii := range movieRecord.Ratings {
-		rows[ii] = MovieRatingRow{
+		rows[ii] = database.InsertMovieRatingParams{
 			Uuid:      uuid.New().String(),
-			MovieUuid: movieUuid,
+			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
 			Source:    movieRecord.Ratings[ii].Source,
 			Value:     movieRecord.Ratings[ii].Value,
 		}
@@ -425,193 +474,77 @@ func (c *DBClient) GetMovie(movieUuid string) (*MovieRow, error) {
 
 }
 
-func (c *DBClient) InsertMovieDetails(
+func InsertMovieDetails(
+	db *sql.DB,
+	ctx context.Context,
+	queries *database.Queries,
 	movie *OmdbMovieResponse,
-	movieWatch *EnrichedMovieWatchRow,
+	movieWatch *MovieWatchPage,
 ) (*MovieDetailUuids, error) {
 
 	movieUuids := MovieDetailUuids{}
-	movieRow, err := CreateMovieRow(movie, movieWatch)
+	movieParams, err := CreateInsertMovieParams(movie, movieWatch)
 	if err != nil {
 		return nil, fmt.Errorf("error creating movie row: %v", err)
 	}
-	movieUuids.Movie = movieRow.Uuid
+	movieUuids.Movie = movieParams.Uuid
 
-	ctx := context.Background()
-	tx, err := c.DB.BeginTx(ctx, nil)
+	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error starting transaction: %v", err)
 	}
 	defer tx.Rollback()
-	_, err = tx.Exec(
-		`INSERT INTO movie (
-			uuid,
-			title,
-			imdb_link,
-			imdb_id,
-			year,
-			rated,
-			released,
-			runtime_minutes,
-			plot,
-			country,
-			language,
-			box_office,
-			production,
-			call_felissa,
-			slasher,
-			zombies,
-			beast,
-			godzilla,
-			wallpaper_fu
-		) VALUES(
-			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-		)
-	`,
-		movieRow.Uuid,
-		movieRow.Title,
-		movieRow.ImdbLink,
-		movieRow.ImdbId,
-		movieRow.Year,
-		movieRow.Rated,
-		movieRow.Released,
-		movieRow.RuntimeMinutes,
-		movieRow.Plot,
-		movieRow.Country,
-		movieRow.Language,
-		movieRow.BoxOffice,
-		movieRow.Production,
-		movieRow.CallFelissa,
-		movieRow.Slasher,
-		movieRow.Zombies,
-		movieRow.Beast,
-		movieRow.Godzilla,
-		movieRow.WallpaperFu,
-	)
-
-	if err != nil {
-		return nil, fmt.Errorf("encountered error inserting movie: %v", err)
+	qtx := queries.WithTx(tx)
+	if err := qtx.InsertMovie(ctx, *movieParams); err != nil {
+		return nil, fmt.Errorf("error inserting movie: %v", err)
 	}
 
-	movieGenreRows := CreateMovieGenreRows(movie, movieRow.Uuid)
-	movieUuids.Genre = make([]string, len(movieGenreRows))
-	values := make([]string, len(movieGenreRows))
-	args := make([]any, len(movieGenreRows)*3)
+	movieGenreParams := CreateInsertMovieGenreParams(movie, movieParams.Uuid)
+	movieUuids.Genre = make([]string, len(movieGenreParams))
 
-	for ii := range movieGenreRows {
-		values[ii] = "(?, ?, ?)"
-		args[3*ii] = movieGenreRows[ii].Uuid
-		args[3*ii+1] = movieGenreRows[ii].MovieUuid
-		args[3*ii+2] = movieGenreRows[ii].Name
-		movieUuids.Genre[ii] = movieGenreRows[ii].Uuid
-	}
-	_, err = tx.Exec(
-		fmt.Sprintf(`INSERT INTO movie_genre (
-			uuid,
-			movie_uuid,
-			name
-		) VALUES %v
-		`, strings.Join(values, ",")),
-		args...,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error inserting movie genre: %v", err)
-	}
-
-	movieActorRows := CreateMovieActorRows(movie, movieRow.Uuid)
-	movieUuids.Actor = make([]string, len(movieActorRows))
-	values = make([]string, len(movieActorRows))
-	args = make([]any, len(movieActorRows)*3)
-
-	for ii := range movieActorRows {
-		values[ii] = "(?, ?, ?)"
-		args[3*ii] = movieActorRows[ii].Uuid
-		args[3*ii+1] = movieActorRows[ii].MovieUuid
-		args[3*ii+2] = movieActorRows[ii].Name
-		movieUuids.Actor[ii] = movieActorRows[ii].Uuid
-	}
-	_, err = tx.Exec(fmt.Sprintf(
-		`INSERT INTO movie_actor (
-			uuid,
-			movie_uuid,
-			name
-		) VALUES %v
-		`, strings.Join(values, ",")), args...,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error inserting movie actor: %v", err)
-	}
-
-	movieDirectorRows := CreateMovieDirectorRows(movie, movieRow.Uuid)
-	movieUuids.Director = make([]string, len(movieDirectorRows))
-	values = make([]string, len(movieDirectorRows))
-	args = make([]any, len(movieDirectorRows)*3)
-	for ii := range movieDirectorRows {
-		values[ii] = "(?, ?, ?)"
-		args[3*ii] = movieDirectorRows[ii].Uuid
-		args[3*ii+1] = movieDirectorRows[ii].MovieUuid
-		args[3*ii+2] = movieDirectorRows[ii].Name
-		movieUuids.Director[ii] = movieDirectorRows[ii].Uuid
-	}
-	_, err = tx.Exec(fmt.Sprintf(
-		`INSERT INTO movie_director (
-			uuid,
-			movie_uuid,
-			name
-		) VALUES %v
-		`, strings.Join(values, ",")), args...,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error inserting movie director: %v", err)
-	}
-
-	movieWriterRows := CreateMovieWriterRows(movie, movieRow.Uuid)
-	movieUuids.Writer = make([]string, len(movieWriterRows))
-	values = make([]string, len(movieWriterRows))
-	args = make([]any, len(movieWriterRows)*3)
-	for ii := range movieWriterRows {
-		values[ii] = "(?, ?, ?)"
-		args[3*ii] = movieWriterRows[ii].Uuid
-		args[3*ii+1] = movieWriterRows[ii].MovieUuid
-		args[3*ii+2] = movieWriterRows[ii].Name
-		movieUuids.Writer[ii] = movieWriterRows[ii].Uuid
-	}
-	_, err = tx.Exec(fmt.Sprintf(
-		`INSERT INTO movie_writer (
-			uuid,
-			movie_uuid,
-			name
-		) VALUES %v
-		`, strings.Join(values, ",")), args...,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error inserting movie writer: %v", err)
-	}
-
-	movieRatingRows := CreateMovieRatingRows(movie, movieRow.Uuid)
-	if len(movieRatingRows) > 0 {
-		movieUuids.Rating = make([]string, len(movieRatingRows))
-		values = make([]string, len(movieRatingRows))
-		args = make([]any, len(movieRatingRows)*4)
-		for ii := range movieRatingRows {
-			values[ii] = "(?, ?, ?, ?)"
-			args[4*ii] = movieRatingRows[ii].Uuid
-			args[4*ii+1] = movieRatingRows[ii].MovieUuid
-			args[4*ii+2] = movieRatingRows[ii].Source
-			args[4*ii+3] = movieRatingRows[ii].Value
-			movieUuids.Rating[ii] = movieRatingRows[ii].Uuid
+	for ii := range movieGenreParams {
+		movieUuids.Genre[ii] = movieGenreParams[ii].Uuid
+		if err := qtx.InsertMovieGenre(ctx, movieGenreParams[ii]); err != nil {
+			return nil, fmt.Errorf("error inserting movie genre: %v", err)
 		}
-		_, err = tx.Exec(fmt.Sprintf(
-			`INSERT INTO movie_rating (
-			uuid,
-			movie_uuid,
-			source,
-			value
-		) VALUES %v
-		`, strings.Join(values, ",")), args...,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("error inserting movie rating: %v", err)
+	}
+
+	movieActorParams := CreateInsertMovieActorParams(movie, movieParams.Uuid)
+	movieUuids.Actor = make([]string, len(movieActorParams))
+
+	for ii := range movieActorParams {
+		movieUuids.Actor[ii] = movieActorParams[ii].Uuid
+		if err := qtx.InsertMovieActor(ctx, movieActorParams[ii]); err != nil {
+			return nil, fmt.Errorf("error inserting movie actor: %v", err)
+		}
+	}
+
+	movieDirectorParams := CreateInsertMovieDirectorParams(movie, movieParams.Uuid)
+	movieUuids.Director = make([]string, len(movieDirectorParams))
+	for ii := range movieDirectorParams {
+		movieUuids.Director[ii] = movieDirectorParams[ii].Uuid
+		if err := qtx.InsertMovieDirector(ctx, movieDirectorParams[ii]); err != nil {
+			return nil, fmt.Errorf("error inserting movie director: %v", err)
+		}
+	}
+
+	movieWriterParams := CreateInsertMovieWriterParams(movie, movieParams.Uuid)
+	movieUuids.Writer = make([]string, len(movieWriterParams))
+	for ii := range movieWriterParams {
+		movieUuids.Writer[ii] = movieWriterParams[ii].Uuid
+		if err := qtx.InsertMovieWriter(ctx, movieWriterParams[ii]); err != nil {
+			return nil, fmt.Errorf("error inserting movie writer: %v", err)
+		}
+	}
+
+	movieRatingParams := CreateInsertMovieRatingParams(movie, movieParams.Uuid)
+	if len(movieRatingParams) > 0 {
+		movieUuids.Rating = make([]string, len(movieRatingParams))
+		for ii := range movieRatingParams {
+			movieUuids.Rating[ii] = movieRatingParams[ii].Uuid
+			if err := qtx.InsertMovieRating(ctx, movieRatingParams[ii]); err != nil {
+				return nil, fmt.Errorf("error inserting movie rating: %v", err)
+			}
 		}
 	}
 

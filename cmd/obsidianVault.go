@@ -469,7 +469,7 @@ type MoviePage struct {
 }
 
 func CreateMoviePageFromRow(
-	row *database.GetMovieRow,
+	row *database.Movie,
 	genres []string,
 	directors []string,
 	writers []string,
@@ -501,7 +501,7 @@ func CreateMoviePageFromRow(
 }
 
 func CreateMoviePage(
-	omdbResponse *OmdbMovieResponse, movieWatch *EnrichedMovieWatchRow,
+	omdbResponse *OmdbMovieResponse, movieWatch *MovieWatchPage,
 ) (*MoviePage, error) {
 	year, err := strconv.Atoi(omdbResponse.Year)
 	if err != nil {

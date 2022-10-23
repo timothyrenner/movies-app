@@ -27,25 +27,7 @@ SELECT uuid
 FROM movie
 WHERE imdb_id = ?;
 -- name: GetMovie :one
-SELECT uuid,
-    title,
-    imdb_link,
-    imdb_id,
-    year,
-    rated,
-    released,
-    runtime_minutes,
-    plot,
-    country,
-    language,
-    box_office,
-    production,
-    call_felissa,
-    slasher,
-    zombies,
-    beast,
-    godzilla,
-    wallpaper_fu
+SELECT *
 FROM movie
 WHERE uuid = ?;
 -- name: InsertMovie :exec
@@ -141,9 +123,9 @@ SELECT name
 FROM movie_writer
 WHERE movie_uuid = ?;
 -- name: GetRatingsForMovie :many
-SELECT uuid,
-    movie_uuid,
-    source,
-    value
+SELECT *
 FROM movie_rating
 WHERE movie_uuid = ?;
+-- name: GetLatestMovieWatchDate :one
+SELECT MAX(watched)
+FROM movie_watch;

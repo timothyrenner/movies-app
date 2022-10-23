@@ -7,7 +7,6 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/google/uuid"
 	"github.com/timothyrenner/movies-app/database"
 )
 
@@ -390,29 +389,6 @@ func CreateMovieWatchPage(row *database.GetAllMovieWatchesRow) *MovieWatchPage {
 	}
 }
 
-func (p *MovieWatchPage) CreateRow() *EnrichedMovieWatchRow {
-	return &EnrichedMovieWatchRow{
-		// The uuids live only in the database.
-		// The will not be parsed from the page.
-		MovieWatchRow: MovieWatchRow{
-			MovieTitle: p.Title,
-			ImdbId:     p.ImdbId,
-			Watched:    p.Watched,
-			Service:    p.Service,
-			FirstTime:  p.FirstTime,
-			JoeBob:     p.JoeBob,
-			Notes:      textToNullString(p.Notes),
-		},
-		ImdbLink:    p.ImdbLink,
-		Slasher:     p.Slasher,
-		CallFelissa: p.CallFelissa,
-		WallpaperFu: p.WallpaperFu,
-		Beast:       p.Beast,
-		Godzilla:    p.Godzilla,
-		Zombies:     p.Zombies,
-	}
-}
-
 var MOVIE_TEMPLATE = `
 # {{.Title}}
 ## Data
@@ -640,14 +616,4 @@ func (p *MovieReviewParser) ParseMovieReviewPage(filename string) (
 	page.Review = string(reviewMatch[1])
 
 	return &page, nil
-}
-
-func (p *MovieReviewPage) CreateRow(movieUuid string) *MovieReviewRow {
-	return &MovieReviewRow{
-		Uuid:       uuid.New().String(),
-		MovieUuid:  movieUuid,
-		MovieTitle: p.MovieTitle,
-		Review:     p.Review,
-		Liked:      p.Liked,
-	}
 }

@@ -11,17 +11,6 @@ import (
 	"github.com/timothyrenner/movies-app/database"
 )
 
-type DBClient struct {
-	DB *sql.DB
-}
-
-func (c *DBClient) Close() error {
-	if err := c.DB.Close(); err != nil {
-		return err
-	}
-	return nil
-}
-
 func CreateInsertMovieParams(
 	movieRecord *OmdbMovieResponse, movieWatch *MovieWatchPage,
 ) (*database.InsertMovieParams, error) {

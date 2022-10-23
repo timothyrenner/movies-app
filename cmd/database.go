@@ -22,28 +22,6 @@ func (c *DBClient) Close() error {
 	return nil
 }
 
-type MovieRow struct {
-	Uuid           string
-	Title          string
-	ImdbLink       string
-	ImdbId         string
-	Year           int
-	Rated          sql.NullString
-	Released       sql.NullString
-	RuntimeMinutes sql.NullInt32
-	Plot           sql.NullString
-	Country        sql.NullString
-	Language       sql.NullString
-	BoxOffice      sql.NullString
-	Production     sql.NullString
-	CallFelissa    bool
-	Slasher        bool
-	Zombies        bool
-	Beast          bool
-	Godzilla       bool
-	WallpaperFu    bool
-}
-
 func CreateInsertMovieParams(
 	movieRecord *OmdbMovieResponse, movieWatch *MovieWatchPage,
 ) (*database.InsertMovieParams, error) {
@@ -150,12 +128,6 @@ func CreateInsertMovieWatchParams(movieWatch *MovieWatchPage, movieUuid string) 
 	}
 }
 
-type MovieGenreRow struct {
-	Uuid      string
-	MovieUuid string
-	Name      string
-}
-
 func CreateInsertMovieGenreParams(
 	movieRecord *OmdbMovieResponse,
 	movieUuid string,
@@ -170,12 +142,6 @@ func CreateInsertMovieGenreParams(
 		}
 	}
 	return rows
-}
-
-type MovieActorRow struct {
-	Uuid      string
-	MovieUuid string
-	Name      string
 }
 
 func CreateInsertMovieActorParams(
@@ -205,12 +171,6 @@ func textToNullString(text string) sql.NullString {
 	}
 }
 
-type MovieDirectorRow struct {
-	Uuid      string
-	MovieUuid string
-	Name      string
-}
-
 func CreateInsertMovieDirectorParams(
 	movieRecord *OmdbMovieResponse,
 	movieUuid string,
@@ -227,12 +187,6 @@ func CreateInsertMovieDirectorParams(
 	return rows
 }
 
-type MovieWriterRow struct {
-	Uuid      string
-	MovieUuid string
-	Name      string
-}
-
 func CreateInsertMovieWriterParams(
 	movieRecord *OmdbMovieResponse,
 	movieUuid string,
@@ -247,13 +201,6 @@ func CreateInsertMovieWriterParams(
 		}
 	}
 	return rows
-}
-
-type MovieRatingRow struct {
-	Uuid      string
-	MovieUuid string
-	Source    string
-	Value     string
 }
 
 func CreateInsertMovieRatingParams(
@@ -289,32 +236,6 @@ func CreateInsertMovieReviewParams(
 	}
 }
 
-type MovieWatchRow struct {
-	Uuid       string
-	MovieUuid  string
-	MovieTitle string
-	ImdbId     string
-	Watched    string
-	Service    string
-	FirstTime  bool
-	JoeBob     bool
-	Notes      sql.NullString
-}
-
-type EnrichedMovieWatchRow struct {
-	MovieWatchRow
-	// The extra info that gets recorded when the movie watch happens.
-	// It's not how we'd store it in the DB because the info is redundant,
-	// however these are all the fields that get recorded.
-	ImdbLink    string
-	Slasher     bool
-	CallFelissa bool
-	WallpaperFu bool
-	Beast       bool
-	Godzilla    bool
-	Zombies     bool
-}
-
 type MovieDetailUuids struct {
 	Movie    string
 	Genre    []string
@@ -322,173 +243,6 @@ type MovieDetailUuids struct {
 	Director []string
 	Writer   []string
 	Rating   []string
-}
-
-func (c *DBClient) FindMovieWatch(imdbId string, watched string) (string, error) {
-	query := `
-	SELECT
-		uuid
-	FROM
-		movie_watch
-	WHERE
-		imdb_id = ? AND
-		watched = ?
-	`
-
-	dbRow := c.DB.QueryRow(
-		query, imdbId, watched,
-	)
-
-	var uuid string
-
-	if err := dbRow.Scan(&uuid); err != nil {
-		if err == sql.ErrNoRows {
-			return "", nil
-		} else {
-			return "", fmt.Errorf("encountered error with query: %v", err)
-		}
-	}
-	return uuid, nil
-}
-
-func (c *DBClient) GetAllEnrichedMovieWatches() (
-	[]EnrichedMovieWatchRow, error,
-) {
-	dbRows, err := c.DB.Query(
-		`SELECT
-			w.uuid,
-			w.movie_uuid,
-			w.movie_title,
-			w.imdb_id,
-			w.watched,
-			w.service,
-			w.first_time,
-			w.joe_bob,
-			w.notes,
-			m.imdb_link,
-			m.slasher,
-			m.call_felissa,
-			m.beast,
-			m.godzilla,
-			m.zombies
-		FROM movie_watch AS w
-		JOIN movie AS m
-			ON m.uuid = w.movie_uuid`)
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving movie watches: %v", err)
-	}
-	defer dbRows.Close()
-	movieWatchRows := make([]EnrichedMovieWatchRow, 0)
-	for dbRows.Next() {
-		movieWatchRow := EnrichedMovieWatchRow{}
-		if err := dbRows.Scan(
-			&movieWatchRow.Uuid,
-			&movieWatchRow.MovieUuid,
-			&movieWatchRow.MovieTitle,
-			&movieWatchRow.ImdbId,
-			&movieWatchRow.Watched,
-			&movieWatchRow.Service,
-			&movieWatchRow.FirstTime,
-			&movieWatchRow.JoeBob,
-			&movieWatchRow.Notes,
-			&movieWatchRow.ImdbLink,
-			&movieWatchRow.Slasher,
-			&movieWatchRow.CallFelissa,
-			&movieWatchRow.Beast,
-			&movieWatchRow.Godzilla,
-			&movieWatchRow.Zombies,
-		); err != nil {
-			return nil, fmt.Errorf("error scanning movie watch row: %v", err)
-		}
-		movieWatchRows = append(movieWatchRows, movieWatchRow)
-	}
-	return movieWatchRows, nil
-}
-
-func (c *DBClient) GetLatestMovieWatchDate() (string, error) {
-	dbRow := c.DB.QueryRow(`SELECT MAX(watched) FROM movie_watch`)
-	var watched string
-	if err := dbRow.Scan(&watched); err != nil {
-		return "", fmt.Errorf("error getting latest watched date: %v", err)
-	}
-	return watched, nil
-}
-
-func (c *DBClient) FindMovie(imdbId string) (string, error) {
-	query := `
-	SELECT
-		uuid
-	FROM
-		movie
-	WHERE
-		imdb_id = ?
-	`
-	dbRow := c.DB.QueryRow(query, imdbId)
-	var uuid string
-	if err := dbRow.Scan(&uuid); err != nil {
-		if err == sql.ErrNoRows {
-			return "", nil
-		} else {
-			return "", fmt.Errorf("encountered error with query: %v", err)
-		}
-	}
-
-	return uuid, nil
-}
-
-func (c *DBClient) GetMovie(movieUuid string) (*MovieRow, error) {
-	query := `
-	SELECT
-		uuid,
-		title,
-		imdb_link,
-		imdb_id,
-		year,
-		rated,
-		released,
-		runtime_minutes,
-		plot,
-		country,
-		language,
-		box_office,
-		production,
-		call_felissa,
-		slasher,
-		zombies,
-		beast,
-		godzilla
-	FROM
-		movie
-	WHERE
-		uuid = ?
-	`
-	dbRow := c.DB.QueryRow(query, movieUuid)
-	var movieRow MovieRow
-	if err := dbRow.Scan(
-		&movieRow.Uuid,
-		&movieRow.Title,
-		&movieRow.ImdbLink,
-		&movieRow.ImdbId,
-		&movieRow.Year,
-		&movieRow.Rated,
-		&movieRow.Released,
-		&movieRow.RuntimeMinutes,
-		&movieRow.Plot,
-		&movieRow.Country,
-		&movieRow.Language,
-		&movieRow.BoxOffice,
-		&movieRow.Production,
-		&movieRow.CallFelissa,
-		&movieRow.Slasher,
-		&movieRow.Zombies,
-		&movieRow.Beast,
-		&movieRow.Godzilla,
-	); err != nil {
-		return nil, fmt.Errorf("error getting movie: %v", err)
-	}
-
-	return &movieRow, nil
-
 }
 
 func InsertMovieDetails(
@@ -571,209 +325,4 @@ func InsertMovieDetails(
 	}
 
 	return &movieUuids, nil
-}
-
-func (c *DBClient) InsertMovieWatch(movieWatch *MovieWatchRow) (string, error) {
-	if movieWatch.Uuid == "" {
-		movieWatch.Uuid = uuid.NewString()
-	}
-	_, err := c.DB.Exec(
-		`INSERT INTO movie_watch (
-			uuid,
-			movie_uuid,
-			movie_title,
-			imdb_id,
-			watched,
-			service,
-			first_time,
-			joe_bob,
-			notes
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		movieWatch.Uuid,
-		movieWatch.MovieUuid,
-		movieWatch.MovieTitle,
-		movieWatch.ImdbId,
-		movieWatch.Watched,
-		movieWatch.Service,
-		movieWatch.FirstTime,
-		movieWatch.JoeBob,
-		movieWatch.Notes,
-	)
-	if err != nil {
-		return "", fmt.Errorf(
-			"encountered error inserting movie watch: %v", err,
-		)
-	}
-
-	return movieWatch.Uuid, nil
-}
-
-func (c *DBClient) GetGenreNamesForMovie(movieUuid string) (
-	[]string, error,
-) {
-	rows, err := c.DB.Query(
-		`SELECT name FROM movie_genre WHERE movie_uuid = ?`,
-		movieUuid,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("encountered error making query: %v", err)
-	}
-	defer rows.Close()
-
-	movieGenreNames := make([]string, 0)
-	for rows.Next() {
-		var movieGenreName string
-		if err := rows.Scan(&movieGenreName); err != nil {
-			return nil, fmt.Errorf("encountered error scanning row: %v", err)
-		}
-		movieGenreNames = append(movieGenreNames, movieGenreName)
-	}
-	return movieGenreNames, nil
-}
-
-func (c *DBClient) GetActorNamesForMovie(movieUuid string) (
-	[]string, error,
-) {
-	rows, err := c.DB.Query(
-		`SELECT name FROM movie_actor WHERE movie_uuid = ?`,
-		movieUuid,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("encountered error making query: %v", err)
-	}
-	defer rows.Close()
-
-	movieActorNames := make([]string, 0)
-	for rows.Next() {
-		var movieActorName string
-		if err := rows.Scan(&movieActorName); err != nil {
-			return nil, fmt.Errorf("encountered error scanning row: %v", err)
-		}
-		movieActorNames = append(movieActorNames, movieActorName)
-	}
-
-	return movieActorNames, nil
-}
-
-func (c *DBClient) GetDirectorNamesForMovie(movieUuid string) (
-	[]string, error,
-) {
-	rows, err := c.DB.Query(
-		`SELECT name FROM movie_director WHERE movie_uuid = ?`,
-		movieUuid,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("encountered error making query: %v", err)
-	}
-	defer rows.Close()
-
-	movieDirectorNames := make([]string, 0)
-	for rows.Next() {
-		var movieDirectorName string
-		if err := rows.Scan(&movieDirectorName); err != nil {
-			return nil, fmt.Errorf("encountered error scanning row: %v", err)
-		}
-		movieDirectorNames = append(movieDirectorNames, movieDirectorName)
-	}
-
-	return movieDirectorNames, nil
-}
-
-func (c *DBClient) GetWriterNamesForMovie(movieUuid string) ([]string, error) {
-	rows, err := c.DB.Query(
-		`SELECT name FROM movie_writer WHERE movie_uuid = ?`,
-		movieUuid,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("encountered error making query: %v", err)
-	}
-	defer rows.Close()
-
-	movieWriterNames := make([]string, 0)
-	for rows.Next() {
-		var movieWriterName string
-		if err := rows.Scan(&movieWriterName); err != nil {
-			return nil, fmt.Errorf("encountered error scanning row: %v", err)
-		}
-		movieWriterNames = append(movieWriterNames, movieWriterName)
-	}
-
-	return movieWriterNames, nil
-}
-
-func (c *DBClient) GetRatingsForMovie(movieUuid string) (
-	[]MovieRatingRow, error,
-) {
-	rows, err := c.DB.Query(
-		`SELECT uuid, movie_uuid, source, value 
-		FROM movie_rating WHERE movie_uuid = ?`,
-		movieUuid,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("encountered error making query: %v", err)
-	}
-	defer rows.Close()
-
-	movieRatings := make([]MovieRatingRow, 0)
-	for rows.Next() {
-		movieRating := MovieRatingRow{}
-		if err := rows.Scan(
-			&movieRating.Uuid,
-			&movieRating.MovieUuid,
-			&movieRating.Source,
-			&movieRating.Value,
-		); err != nil {
-			return nil, fmt.Errorf("encountered error scanning row: %v", err)
-		}
-		movieRatings = append(movieRatings, movieRating)
-	}
-	return movieRatings, nil
-}
-
-type MovieReviewRow struct {
-	Uuid       string
-	MovieUuid  string
-	MovieTitle string
-	Review     string
-	Liked      bool
-}
-
-func (c *DBClient) GetReviewForMovie(movieTitle string) (*MovieReviewRow, error) {
-	row := c.DB.QueryRow(`
-	SELECT uuid, movie_uuid, movie_title, review, liked
-	FROM review
-	WHERE movie_title = ?
-	`, movieTitle)
-	var movieReview MovieReviewRow
-	if err := row.Scan(
-		&movieReview.Uuid,
-		&movieReview.MovieUuid,
-		&movieReview.MovieTitle,
-		&movieReview.Review,
-		&movieReview.Liked,
-	); err != nil {
-		return nil, fmt.Errorf("error getting review for %v: %v", movieTitle, err)
-	}
-
-	return &movieReview, nil
-}
-
-func (c *DBClient) InsertReview(review *MovieReviewRow) error {
-
-	if _, err := c.DB.Exec(
-		`INSERT INTO review (uuid, movie_uuid, movie_title, review, liked)
-		VALUES
-		(?, ?, ?, ?, ?)
-		ON CONFLICT (movie_uuid) DO
-		UPDATE SET review = excluded.review, liked = excluded.liked
-		`,
-		review.Uuid,
-		review.MovieUuid,
-		review.MovieTitle,
-		review.Review,
-		review.Liked,
-	); err != nil {
-		return fmt.Errorf("error inserting review %v: %v", review, err)
-	}
-	return nil
 }

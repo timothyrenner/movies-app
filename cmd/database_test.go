@@ -307,6 +307,14 @@ func sampleMovieWatchRow() *MovieWatchRow {
 	}
 }
 
+func sampleReviewPage() *MovieReviewPage {
+	return &MovieReviewPage{
+		MovieTitle: "Things",
+		Review:     "YOU HAVE JUST EXPERIENCED ... THINGS",
+		Liked:      false,
+	}
+}
+
 func TestFindMovieWatch(t *testing.T) {
 	c, m := setupDatabase()
 	c.loadMovie()
@@ -812,6 +820,24 @@ func TestCreateInsertMovieRatingParams(t *testing.T) {
 	}
 	if !cmp.Equal(truth, answer) {
 		t.Errorf("Expected %v, got %v", truth, answer)
+	}
+}
+
+func TestCreateInsertMovieReviewParams(t *testing.T) {
+	movieReview := sampleReviewPage()
+	movieUuid := uuid.New().String()
+
+	answer := CreateInsertMovieReviewParams(movieReview, movieUuid)
+	truth := &database.InsertReviewParams{
+		Uuid:       answer.Uuid,
+		MovieUuid:  movieUuid,
+		MovieTitle: "Things",
+		Review:     "YOU HAVE JUST EXPERIENCED ... THINGS",
+		Liked:      0,
+	}
+
+	if !cmp.Equal(truth, answer) {
+		t.Errorf("Expected \n%v, got \n%v", truth, answer)
 	}
 }
 

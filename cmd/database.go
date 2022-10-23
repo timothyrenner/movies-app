@@ -272,6 +272,23 @@ func CreateInsertMovieRatingParams(
 	return rows
 }
 
+func CreateInsertMovieReviewParams(
+	movieReviewPage *MovieReviewPage,
+	movieUuid string,
+) *database.InsertReviewParams {
+	var liked int64
+	if movieReviewPage.Liked {
+		liked = 1
+	}
+	return &database.InsertReviewParams{
+		Uuid:       uuid.New().String(),
+		MovieUuid:  movieUuid,
+		MovieTitle: movieReviewPage.MovieTitle,
+		Review:     movieReviewPage.Review,
+		Liked:      liked,
+	}
+}
+
 type MovieWatchRow struct {
 	Uuid       string
 	MovieUuid  string

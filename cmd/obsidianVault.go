@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/google/uuid"
+	"github.com/timothyrenner/movies-app/database"
 )
 
 type MovieWatchParser struct {
@@ -32,7 +32,7 @@ func CreateMovieWatchParser() (*MovieWatchParser, error) {
 	// Time for some regex fu.
 
 	titleExtractor, err := regexp.Compile(
-		`name::\s*\[\[([a-zA-z0-9:\-/' ]+) \(tt\d{7,8}\)\]\]\s*\n`,
+		`name::\s*\[\[([a-zA-z0-9:\-/()' ]+) \(tt\d{7,8}\)\]\]\s*\n`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error compiling regex for title: %v", err)
@@ -369,46 +369,23 @@ type MovieWatchPage struct {
 	Notes       string
 }
 
-func (r *EnrichedMovieWatchRow) CreatePage() *MovieWatchPage {
+func CreateMovieWatchPage(row *database.GetAllMovieWatchesRow) *MovieWatchPage {
 	return &MovieWatchPage{
-		Title:       r.MovieTitle,
-		FileTitle:   cleanTitle(r.MovieTitle),
-		Watched:     r.Watched,
-		ImdbLink:    r.ImdbLink,
-		ImdbId:      r.ImdbId,
-		FirstTime:   r.FirstTime,
-		JoeBob:      r.JoeBob,
-		CallFelissa: r.CallFelissa,
-		Beast:       r.Beast,
-		Godzilla:    r.Godzilla,
-		Zombies:     r.Zombies,
-		Slasher:     r.Slasher,
-		WallpaperFu: r.WallpaperFu,
-		Service:     r.Service,
-		Notes:       r.Notes.String,
-	}
-}
-
-func (p *MovieWatchPage) CreateRow() *EnrichedMovieWatchRow {
-	return &EnrichedMovieWatchRow{
-		// The uuids live only in the database.
-		// The will not be parsed from the page.
-		MovieWatchRow: MovieWatchRow{
-			MovieTitle: p.Title,
-			ImdbId:     p.ImdbId,
-			Watched:    p.Watched,
-			Service:    p.Service,
-			FirstTime:  p.FirstTime,
-			JoeBob:     p.JoeBob,
-			Notes:      textToNullString(p.Notes),
-		},
-		ImdbLink:    p.ImdbLink,
-		Slasher:     p.Slasher,
-		CallFelissa: p.CallFelissa,
-		WallpaperFu: p.WallpaperFu,
-		Beast:       p.Beast,
-		Godzilla:    p.Godzilla,
-		Zombies:     p.Zombies,
+		Title:       row.MovieTitle.String,
+		FileTitle:   cleanTitle(row.MovieTitle.String),
+		Watched:     row.Watched.String,
+		ImdbLink:    row.ImdbLink,
+		ImdbId:      row.ImdbID,
+		FirstTime:   row.FirstTime != 0,
+		JoeBob:      row.JoeBob != 0,
+		CallFelissa: row.CallFelissa != 0,
+		Beast:       row.Beast != 0,
+		Godzilla:    row.Godzilla != 0,
+		Zombies:     row.Zombies != 0,
+		Slasher:     row.Slasher != 0,
+		WallpaperFu: row.WallpaperFu.Bool,
+		Service:     row.Service,
+		Notes:       row.Notes.String,
 	}
 }
 
@@ -467,36 +444,40 @@ type MoviePage struct {
 	WallpaperFu    bool
 }
 
-func (r *MovieRow) CreatePage(
-	genres []string, directors []string, writers []string, actors []string,
+func CreateMoviePageFromRow(
+	row *database.Movie,
+	genres []string,
+	directors []string,
+	writers []string,
+	actors []string,
 ) *MoviePage {
 	return &MoviePage{
-		Title:          r.Title,
-		ImdbLink:       r.ImdbLink,
+		Title:          row.Title,
+		ImdbLink:       row.ImdbLink,
 		Genres:         genres,
 		Directors:      directors,
 		Actors:         actors,
 		Writers:        writers,
-		Year:           r.Year,
-		Rating:         r.Rated.String,
-		Released:       r.Released.String,
-		RuntimeMinutes: int(r.RuntimeMinutes.Int32),
-		Plot:           r.Plot.String,
-		Country:        r.Country.String,
-		Language:       r.Language.String,
-		BoxOffice:      r.BoxOffice.String,
-		Production:     r.Production.String,
-		CallFelissa:    r.CallFelissa,
-		Slasher:        r.Slasher,
-		Zombies:        r.Zombies,
-		Beast:          r.Beast,
-		Godzilla:       r.Godzilla,
-		WallpaperFu:    r.WallpaperFu,
+		Year:           int(row.Year),
+		Rating:         row.Rated.String,
+		Released:       row.Released.String,
+		RuntimeMinutes: int(row.RuntimeMinutes.Int64),
+		Plot:           row.Plot.String,
+		Country:        row.Country.String,
+		Language:       row.Language.String,
+		BoxOffice:      row.BoxOffice.String,
+		Production:     row.Production.String,
+		CallFelissa:    row.CallFelissa != 0,
+		Slasher:        row.Slasher != 0,
+		Zombies:        row.Zombies != 0,
+		Beast:          row.Beast != 0,
+		Godzilla:       row.Godzilla != 0,
+		WallpaperFu:    row.WallpaperFu.Bool,
 	}
 }
 
 func CreateMoviePage(
-	omdbResponse *OmdbMovieResponse, movieWatch *EnrichedMovieWatchRow,
+	omdbResponse *OmdbMovieResponse, movieWatch *MovieWatchPage,
 ) (*MoviePage, error) {
 	year, err := strconv.Atoi(omdbResponse.Year)
 	if err != nil {
@@ -635,14 +616,4 @@ func (p *MovieReviewParser) ParseMovieReviewPage(filename string) (
 	page.Review = string(reviewMatch[1])
 
 	return &page, nil
-}
-
-func (p *MovieReviewPage) CreateRow(movieUuid string) *MovieReviewRow {
-	return &MovieReviewRow{
-		Uuid:       uuid.New().String(),
-		MovieUuid:  movieUuid,
-		MovieTitle: p.MovieTitle,
-		Review:     p.Review,
-		Liked:      p.Liked,
-	}
 }

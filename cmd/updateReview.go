@@ -4,10 +4,12 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"context"
 	"database/sql"
 	"log"
 
 	"github.com/spf13/cobra"
+	"github.com/timothyrenner/movies-app/database"
 )
 
 // updateReviewCmd represents the updateReview command
@@ -26,12 +28,12 @@ func updateReview(cmd *cobra.Command, args []string) {
 
 	reviewFile := args[0]
 
-	dbc, err := sql.Open("sqlite3", DB)
+	ctx := context.Background()
+	db, err := sql.Open("sqlite3", DB)
 	if err != nil {
 		log.Panicf("Error opening database %v: %v", DB, err)
 	}
-	db := DBClient{DB: dbc}
-	defer db.Close()
+	queries := database.New(db)
 
 	parser, err := CreateMovieReviewParser()
 	if err != nil {
@@ -44,7 +46,7 @@ func updateReview(cmd *cobra.Command, args []string) {
 	}
 
 	// Get the movie uuid from the db for that title.
-	movieUuid, err := db.FindMovie(page.ImdbId)
+	movieUuid, err := queries.FindMovie(ctx, page.ImdbId)
 	if err != nil {
 		log.Panicf(
 			"Error obtaining movie %v (%v): %v",
@@ -52,11 +54,12 @@ func updateReview(cmd *cobra.Command, args []string) {
 		)
 	}
 
-	movieReviewRow := page.CreateRow(movieUuid)
+	movieReviewParams := CreateInsertMovieReviewParams(page, movieUuid)
 
-	if err := db.InsertReview(movieReviewRow); err != nil {
+	if err := queries.InsertReview(ctx, *movieReviewParams); err != nil {
 		log.Panicf(
-			"Error inserting review for %v: %v", movieReviewRow.MovieTitle, err,
+			"Error inserting review for %v: %v",
+			movieReviewParams.MovieTitle, err,
 		)
 	}
 

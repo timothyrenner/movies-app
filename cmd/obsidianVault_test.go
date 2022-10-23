@@ -121,73 +121,15 @@ A fuckin sack race half marathon obstacle course
 	}
 }
 
-func TestCreateRow(t *testing.T) {
-	page := MovieWatchPage{
-		Title:       "Uncle Sam",
-		FileTitle:   "Uncle Sam",
-		Watched:     "2022-07-01",
-		ImdbLink:    "https://www.imdb.com/title/tt0118025/",
-		ImdbId:      "tt0118025",
-		Service:     "Shudder",
-		FirstTime:   true,
-		JoeBob:      true,
-		CallFelissa: false,
-		Beast:       true,
-		Zombies:     false,
-		Godzilla:    false,
-		WallpaperFu: true,
-		Notes: `
-"Don't be afraid, it's only friendly fire"
-"I must be batting 750 with the bereaved" - army dude who notifies widows
-"Must be awful lonely being dead"
-Prevert uncle sam on stilts
-Literally the worst national anthem rendition in existence.
-A fuckin sack race half marathon obstacle course
-		`,
-	}
-
-	truth := EnrichedMovieWatchRow{
-		MovieWatchRow: MovieWatchRow{
-			MovieTitle: "Uncle Sam",
-			Watched:    "2022-07-01",
-			ImdbId:     "tt0118025",
-			Service:    "Shudder",
-			FirstTime:  true,
-			JoeBob:     true,
-			Notes: textToNullString(`
-"Don't be afraid, it's only friendly fire"
-"I must be batting 750 with the bereaved" - army dude who notifies widows
-"Must be awful lonely being dead"
-Prevert uncle sam on stilts
-Literally the worst national anthem rendition in existence.
-A fuckin sack race half marathon obstacle course
-		`),
-		},
-		ImdbLink:    "https://www.imdb.com/title/tt0118025/",
-		CallFelissa: false,
-		Beast:       true,
-		Zombies:     false,
-		Godzilla:    false,
-		WallpaperFu: true,
-	}
-
-	answer := page.CreateRow()
-	if !cmp.Equal(truth, *answer) {
-		t.Errorf("Expected \n%v, got \n%v", truth, *answer)
-	}
-}
-
 func TestCreateMoviePage(t *testing.T) {
 	omdbResponse := omdbSampleMovie()
-	movieWatch := &EnrichedMovieWatchRow{
-		MovieWatchRow: MovieWatchRow{
-			MovieTitle: "Tenebrae",
-			ImdbId:     "tt0084777",
-			Watched:    "2022-05-27",
-			Service:    "Shudder",
-			FirstTime:  false,
-			JoeBob:     true,
-		},
+	movieWatch := &MovieWatchPage{
+		Title:       "Tenebrae",
+		ImdbId:      "tt0084777",
+		Watched:     "2022-05-27",
+		Service:     "Shudder",
+		FirstTime:   false,
+		JoeBob:      true,
 		CallFelissa: false,
 		Beast:       false,
 		Godzilla:    false,
@@ -255,38 +197,6 @@ Oh you want a prevert peeping Tom not-zombie Uncle Sam on stilts too?
 We got you.
 		`,
 	}
-	if !cmp.Equal(truth, *answer) {
-		t.Errorf("Expected \n%v, got \n%v", truth, *answer)
-	}
-}
-
-func TestCreateReviewRow(t *testing.T) {
-	reviewPage := MovieReviewPage{
-		MovieTitle: "Uncle Sam",
-		ImdbId:     "tt0118025",
-		Liked:      true,
-		Review: `
-Look there's a zombie soldier dressed as Uncle Sam who blows people up with fireworks.
-Do you really want anything more in a movie?
-Oh you want a prevert peeping Tom not-zombie Uncle Sam on stilts too?
-We got you.
-		`,
-	}
-
-	answer := reviewPage.CreateRow("abc-123")
-	truth := MovieReviewRow{
-		Uuid:       answer.Uuid,
-		MovieUuid:  "abc-123",
-		MovieTitle: "Uncle Sam",
-		Review: `
-Look there's a zombie soldier dressed as Uncle Sam who blows people up with fireworks.
-Do you really want anything more in a movie?
-Oh you want a prevert peeping Tom not-zombie Uncle Sam on stilts too?
-We got you.
-		`,
-		Liked: true,
-	}
-
 	if !cmp.Equal(truth, *answer) {
 		t.Errorf("Expected \n%v, got \n%v", truth, *answer)
 	}

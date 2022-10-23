@@ -135,3 +135,5 @@ movie_vault
 scripts/addNotes_20220716
 scripts/addNotes_20220726
 data/letterboxd_export.csv
+# Ignore the executable.
+movies-app

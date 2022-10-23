@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/timothyrenner/movies-app/cmd"
+	"github.com/timothyrenner/movies-app/database"
 )
 
 var DB = cmd.DB
@@ -31,9 +32,9 @@ func main() {
 
 	// We have to load into memory here because we can't have an open read
 	// connection _and_ write to the database at the same time, it'll lock.
-	movieRows := make([]cmd.MovieRow, 0)
+	movieRows := make([]database.Movie, 0)
 	for allMovieRows.Next() {
-		movieRow := cmd.MovieRow{}
+		movieRow := database.Movie{}
 		if err = allMovieRows.Scan(
 			&movieRow.Uuid,
 			&movieRow.ImdbLink,
@@ -45,7 +46,7 @@ func main() {
 		if urlComponents[len(urlComponents)-1] != "" {
 			log.Panicf("Encountered error getting ID from %v", movieRow.ImdbLink)
 		}
-		movieRow.ImdbId = urlComponents[len(urlComponents)-2]
+		movieRow.ImdbID = urlComponents[len(urlComponents)-2]
 		movieRows = append(movieRows, movieRow)
 	}
 	if err = allMovieRows.Close(); err != nil {
@@ -84,14 +85,14 @@ func main() {
 		defer tx.Rollback()
 		// Update the row's imdb id in the database.
 		_, err = tx.Stmt(updateMovieStatement).Exec(
-			movieRows[ii].ImdbId, movieRows[ii].Uuid,
+			movieRows[ii].ImdbID, movieRows[ii].Uuid,
 		)
 		if err != nil {
 			log.Panicf("Encountered error updating movie row: %v", err)
 		}
 		// Update the corresponding movie watches too.
 		_, err = tx.Stmt(updateMovieWatchStatement).Exec(
-			movieRows[ii].ImdbId, movieRows[ii].Uuid,
+			movieRows[ii].ImdbID, movieRows[ii].Uuid,
 		)
 		if err != nil {
 			log.Panicf("Encountered error updating movie watch rows: %v", err)

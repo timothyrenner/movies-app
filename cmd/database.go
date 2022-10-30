@@ -4,88 +4,76 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
-	"strconv"
+	"regexp"
 
 	"github.com/google/uuid"
 	"github.com/timothyrenner/movies-app/database"
 )
 
 func CreateInsertMovieParams(
-	movieRecord *OmdbMovieResponse, movieWatch *MovieWatchPage,
+	moviePage *MoviePage,
 ) (*database.InsertMovieParams, error) {
 
-	year, err := strconv.Atoi(movieRecord.Year)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"error converting year %v to string: %v", movieRecord.Year, err,
-		)
-	}
-
-	releasedDate, err := ParseReleased(movieRecord.Released)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"error parsing date %v: %v", movieRecord.Released, err,
-		)
+	// I can't say I like compiling this regex each time in the function but
+	// whatevs.
+	imdbIdExtractor := regexp.MustCompile(`\s*https://www\.imdb\.com/title/(tt\d{7,8})/`)
+	imdbIdMatch := imdbIdExtractor.FindSubmatch([]byte(moviePage.ImdbLink))
+	if len(imdbIdMatch) != 2 {
+		return nil, fmt.Errorf("expected 2 matches for IMDB ID, got %v", len(imdbIdMatch))
 	}
 
 	var runtime sql.NullInt64
-	runtimeInt, err := ParseRuntime(movieRecord.Runtime)
-	if err != nil {
-		log.Printf(
-			"Unable to parse %v (%v). setting to null.",
-			movieRecord.Runtime, err,
-		)
+	if moviePage.RuntimeMinutes == 0 {
 		runtime = sql.NullInt64{
 			Int64: 0,
 			Valid: false,
 		}
 	} else {
 		runtime = sql.NullInt64{
-			Int64: int64(runtimeInt),
+			Int64: int64(moviePage.RuntimeMinutes),
 			Valid: true,
 		}
 	}
 
 	var callFelissa int64
-	if movieWatch.CallFelissa {
+	if moviePage.CallFelissa {
 		callFelissa = 1
 	}
 
 	var slasher int64
-	if movieWatch.Slasher {
+	if moviePage.Slasher {
 		slasher = 1
 	}
 
 	var beast int64
-	if movieWatch.Beast {
+	if moviePage.Beast {
 		beast = 1
 	}
 
 	var godzilla int64
-	if movieWatch.Godzilla {
+	if moviePage.Godzilla {
 		godzilla = 1
 	}
 
 	return &database.InsertMovieParams{
 		Uuid:           uuid.New().String(),
-		Title:          movieWatch.Title,
-		ImdbLink:       fmt.Sprintf("https://www.imdb.com/title/%v/", movieWatch.ImdbId),
-		ImdbID:         movieWatch.ImdbId,
-		Year:           int64(year),
-		Rated:          textToNullString(movieRecord.Rated),
-		Released:       textToNullString(releasedDate),
+		Title:          moviePage.Title,
+		ImdbLink:       moviePage.ImdbLink,
+		ImdbID:         string(imdbIdMatch[1]),
+		Year:           int64(moviePage.Year),
+		Rated:          textToNullString(moviePage.Rating),
+		Released:       textToNullString(moviePage.Released),
 		RuntimeMinutes: runtime,
-		Plot:           textToNullString(movieRecord.Plot),
-		Country:        textToNullString(movieRecord.Country),
-		Language:       textToNullString(movieRecord.Language),
-		BoxOffice:      textToNullString(movieRecord.BoxOffice),
-		Production:     textToNullString(movieRecord.Production),
+		Plot:           textToNullString(moviePage.Plot),
+		Country:        textToNullString(moviePage.Country),
+		Language:       textToNullString(moviePage.Language),
+		BoxOffice:      textToNullString(moviePage.BoxOffice),
+		Production:     textToNullString(moviePage.Production),
 		CallFelissa:    callFelissa,
 		Slasher:        slasher,
 		Beast:          beast,
 		Godzilla:       godzilla,
-		WallpaperFu:    sql.NullBool{Bool: movieWatch.WallpaperFu, Valid: true},
+		WallpaperFu:    sql.NullBool{Bool: moviePage.WallpaperFu, Valid: true},
 	}, nil
 }
 
@@ -118,32 +106,30 @@ func CreateInsertMovieWatchParams(movieWatch *MovieWatchPage, movieUuid string) 
 }
 
 func CreateInsertMovieGenreParams(
-	movieRecord *OmdbMovieResponse,
+	moviePage *MoviePage,
 	movieUuid string,
 ) []database.InsertMovieGenreParams {
-	genres := SplitOnCommaAndTrim(movieRecord.Genre)
-	rows := make([]database.InsertMovieGenreParams, len(genres))
-	for ii := range genres {
+	rows := make([]database.InsertMovieGenreParams, len(moviePage.Genres))
+	for ii := range moviePage.Genres {
 		rows[ii] = database.InsertMovieGenreParams{
 			Uuid:      uuid.New().String(),
 			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
-			Name:      genres[ii],
+			Name:      moviePage.Genres[ii],
 		}
 	}
 	return rows
 }
 
 func CreateInsertMovieActorParams(
-	movieRecord *OmdbMovieResponse,
+	moviePage *MoviePage,
 	movieUuid string,
 ) []database.InsertMovieActorParams {
-	actors := SplitOnCommaAndTrim(movieRecord.Actors)
-	rows := make([]database.InsertMovieActorParams, len(actors))
-	for ii := range actors {
+	rows := make([]database.InsertMovieActorParams, len(moviePage.Actors))
+	for ii := range moviePage.Actors {
 		rows[ii] = database.InsertMovieActorParams{
 			Uuid:      uuid.New().String(),
 			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
-			Name:      actors[ii],
+			Name:      moviePage.Actors[ii],
 		}
 	}
 	return rows
@@ -161,48 +147,46 @@ func textToNullString(text string) sql.NullString {
 }
 
 func CreateInsertMovieDirectorParams(
-	movieRecord *OmdbMovieResponse,
+	moviePage *MoviePage,
 	movieUuid string,
 ) []database.InsertMovieDirectorParams {
-	directors := SplitOnCommaAndTrim(movieRecord.Director)
-	rows := make([]database.InsertMovieDirectorParams, len(directors))
-	for ii := range directors {
+	rows := make([]database.InsertMovieDirectorParams, len(moviePage.Directors))
+	for ii := range moviePage.Directors {
 		rows[ii] = database.InsertMovieDirectorParams{
 			Uuid:      uuid.New().String(),
 			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
-			Name:      directors[ii],
+			Name:      moviePage.Directors[ii],
 		}
 	}
 	return rows
 }
 
 func CreateInsertMovieWriterParams(
-	movieRecord *OmdbMovieResponse,
+	moviePage *MoviePage,
 	movieUuid string,
 ) []database.InsertMovieWriterParams {
-	writers := SplitOnCommaAndTrim(movieRecord.Writer)
-	rows := make([]database.InsertMovieWriterParams, len(writers))
-	for ii := range writers {
+	rows := make([]database.InsertMovieWriterParams, len(moviePage.Writers))
+	for ii := range moviePage.Writers {
 		rows[ii] = database.InsertMovieWriterParams{
 			Uuid:      uuid.New().String(),
 			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
-			Name:      writers[ii],
+			Name:      moviePage.Writers[ii],
 		}
 	}
 	return rows
 }
 
 func CreateInsertMovieRatingParams(
-	movieRecord *OmdbMovieResponse,
+	ratings []Rating,
 	movieUuid string,
 ) []database.InsertMovieRatingParams {
-	rows := make([]database.InsertMovieRatingParams, len(movieRecord.Ratings))
-	for ii := range movieRecord.Ratings {
+	rows := make([]database.InsertMovieRatingParams, len(ratings))
+	for ii := range ratings {
 		rows[ii] = database.InsertMovieRatingParams{
 			Uuid:      uuid.New().String(),
 			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
-			Source:    movieRecord.Ratings[ii].Source,
-			Value:     movieRecord.Ratings[ii].Value,
+			Source:    ratings[ii].Source,
+			Value:     ratings[ii].Value,
 		}
 	}
 	return rows
@@ -238,12 +222,12 @@ func InsertMovieDetails(
 	db *sql.DB,
 	ctx context.Context,
 	queries *database.Queries,
-	movie *OmdbMovieResponse,
-	movieWatch *MovieWatchPage,
+	movie *MoviePage,
+	ratings []Rating,
 ) (*MovieDetailUuids, error) {
 
 	movieUuids := MovieDetailUuids{}
-	movieParams, err := CreateInsertMovieParams(movie, movieWatch)
+	movieParams, err := CreateInsertMovieParams(movie)
 	if err != nil {
 		return nil, fmt.Errorf("error creating movie row: %v", err)
 	}
@@ -297,7 +281,7 @@ func InsertMovieDetails(
 		}
 	}
 
-	movieRatingParams := CreateInsertMovieRatingParams(movie, movieParams.Uuid)
+	movieRatingParams := CreateInsertMovieRatingParams(ratings, movieParams.Uuid)
 	if len(movieRatingParams) > 0 {
 		movieUuids.Rating = make([]string, len(movieRatingParams))
 		for ii := range movieRatingParams {

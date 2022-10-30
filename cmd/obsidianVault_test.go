@@ -46,8 +46,51 @@ A fuckin sack race half marathon obstacle course
 		`,
 	)
 	if err != nil {
-		log.Panicf("error writing contents: %v", err)
 		os.Remove(file.Name())
+		log.Panicf("error writing contents: %v", err)
+	}
+	return file
+}
+
+func createTestMoviePage() *os.File {
+	file, err := os.CreateTemp(".", "test_movie")
+	if err != nil {
+		log.Panicf("Error creating test movie page: %v", err)
+	}
+	_, err = file.WriteString(`
+# XTRO
+## Data
+title:: XTRO
+imdb_link:: https://www.imdb.com/title/tt0086610/
+
+genre:: [[Horror]], [[Sci-Fi]]
+director:: [[Harry Bromley Davenport]]
+actor:: [[Philip Sayer]], [[Bernice Stegers]], [[Danny Brainin]]
+writer:: [[Harry Bromley Davenport]], [[Iain Cassie]], [[Michel Parry]]
+year:: 1982
+rated:: R
+released:: 1983-01-07
+runtime_minutes:: 84
+plot:: An alien creature impregnates a woman who gives birth to a man that was abducted by aliens three years ago. The man reconnects with his wife and son for a sinister purpose.
+country:: United Kingdom
+language:: English
+box_office:: 
+production:: 
+call_felissa:: true
+slasher:: false
+zombies:: false
+beast:: true
+godzilla:: false
+wallpaper_fu:: false
+
+## Tags
+#movie
+#Horror
+#Sci-Fi
+`)
+	if err != nil {
+		os.Remove(file.Name())
+		log.Panicf("error writing review_contents: %v", err)
 	}
 	return file
 }
@@ -72,8 +115,8 @@ We got you.
 		`)
 
 	if err != nil {
-		log.Panicf("error writing review contents: %v", err)
 		os.Remove(file.Name())
+		log.Panicf("error writing review contents: %v", err)
 	}
 	return file
 }
@@ -118,6 +161,48 @@ A fuckin sack race half marathon obstacle course
 	}
 	if !cmp.Equal(truth, *answer) {
 		t.Errorf("expected \n%v, got \n%v", truth, *answer)
+	}
+}
+
+func TestParseMoviePage(t *testing.T) {
+	file := createTestMoviePage()
+	defer file.Close()
+	defer os.Remove(file.Name())
+
+	truth := &MoviePage{
+		Title:          "XTRO",
+		ImdbLink:       "https://www.imdb.com/title/tt0086610/",
+		Genres:         []string{"Horror", "Sci-Fi"},
+		Directors:      []string{"Harry Bromley Davenport"},
+		Actors:         []string{"Philip Sayer", "Bernice Stegers", "Danny Brainin"},
+		Writers:        []string{"Harry Bromley Davenport", "Iain Cassie", "Michel Parry"},
+		Year:           1982,
+		Rating:         "R",
+		Released:       "1983-01-07",
+		RuntimeMinutes: 84,
+		Plot:           "An alien creature impregnates a woman who gives birth to a man that was abducted by aliens three years ago. The man reconnects with his wife and son for a sinister purpose.",
+		Country:        "United Kingdom",
+		Language:       "English",
+		BoxOffice:      "",
+		Production:     "",
+		CallFelissa:    true,
+		Slasher:        false,
+		Zombies:        false,
+		Beast:          true,
+		Godzilla:       false,
+		WallpaperFu:    false,
+	}
+
+	parser, err := CreateMovieParser()
+	if err != nil {
+		t.Errorf("error creating parser: %v", err)
+	}
+	answer, err := parser.ParsePage(file.Name())
+	if err != nil {
+		t.Errorf("error parsing page: %v", err)
+	}
+	if !cmp.Equal(truth, answer) {
+		t.Errorf("Expected \n%v, got \n%v", truth, answer)
 	}
 }
 

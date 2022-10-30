@@ -157,8 +157,14 @@ func updateMovies(cmd *cobra.Command, args []string) {
 			if err != nil {
 				log.Panicf("Error fetching movie from OMDB: %v", err)
 			}
+
+			moviePage, err := CreateMoviePage(omdbResponse, movieWatchPage)
+			if err != nil {
+				log.Panicf("Error creating movie page: %v", err)
+			}
+
 			movieDetailUuids, err := InsertMovieDetails(
-				db, ctx, queries, omdbResponse, movieWatchPage,
+				db, ctx, queries, moviePage, omdbResponse.Ratings,
 			)
 			if err != nil {
 				log.Panicf(
@@ -166,13 +172,7 @@ func updateMovies(cmd *cobra.Command, args []string) {
 				)
 			}
 			movieUuid = movieDetailUuids.Movie
-			// ! There's some repeated code here with buildObsidianVault.
-			// ! Opportunity to put this into its own function. An item for
-			// ! later I think, after I've let the design marinate a bit.
-			moviePage, err := CreateMoviePage(omdbResponse, movieWatchPage)
-			if err != nil {
-				log.Panicf("Error creating movie page: %v", err)
-			}
+
 			moviePageFileName := fmt.Sprintf(
 				"%v (%v).md", movieWatchPage.FileTitle, movieWatchPage.ImdbId,
 			)

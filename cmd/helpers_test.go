@@ -66,7 +66,7 @@ func TestParseReleased(t *testing.T) {
 }
 
 func TestSplitOnCommaAndTrim(t *testing.T) {
-	toSplit := "Bela Lugosi  ,  Vincent Price,Christopher Lee"
+	toSplit := "[[Bela Lugosi]]  ,  Vincent Price,[[Christopher Lee]]"
 	truth := []string{"Bela Lugosi", "Vincent Price", "Christopher Lee"}
 	answer := SplitOnCommaAndTrim(toSplit)
 	if !cmp.Equal(truth, answer) {

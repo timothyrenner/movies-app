@@ -121,7 +121,7 @@ We got you.
 	return file
 }
 
-func TestParsePage(t *testing.T) {
+func TestParseWatchPage(t *testing.T) {
 	file := createTestWatchPage()
 	defer file.Close()
 	defer os.Remove(file.Name())

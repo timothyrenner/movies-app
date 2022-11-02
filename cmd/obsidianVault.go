@@ -520,37 +520,37 @@ func CreateMoviePage(
 }
 
 type MovieReviewParser struct {
-	MovieTitleExtractor  *regexp.Regexp
-	MovieLikedExtractor  *regexp.Regexp
-	MovieReviewExtractor *regexp.Regexp
+	DataExtractor   *regexp.Regexp
+	TitleExtractor  *regexp.Regexp
+	ReviewExtractor *regexp.Regexp
 }
 
 func CreateMovieReviewParser() (*MovieReviewParser, error) {
 	parser := MovieReviewParser{}
 
-	movieTitleExtractor, err := regexp.Compile(
-		`movie::\s*\[\[([a-zA-z0-9:\-/' ]+) \((tt\d{7,8})\)\]\]\s*\n`,
+	dataExtractor, err := regexp.Compile(
+		`# Review:.*\n((?:.|\n)*)\n## Review`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error compiling regex for data: %v", err)
+	}
+	parser.DataExtractor = dataExtractor
+
+	titleExtractor, err := regexp.Compile(
+		`\[\[([a-zA-z0-9:\-/' ]+) \((tt\d{7,8})\)\]\]`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error compiling regex for movie: %v", err)
 	}
-	parser.MovieTitleExtractor = movieTitleExtractor
+	parser.TitleExtractor = titleExtractor
 
-	movieLikedExtractor, err := regexp.Compile(
-		`liked::\s*(true|false)\s*\n`,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error compiling regex for liked: %v", err)
-	}
-	parser.MovieLikedExtractor = movieLikedExtractor
-
-	movieReviewExtractor, err := regexp.Compile(
+	reviewExtractor, err := regexp.Compile(
 		`(?s)## Review(.*)$`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error compiling regex for notes: %v", err)
 	}
-	parser.MovieReviewExtractor = movieReviewExtractor
+	parser.ReviewExtractor = reviewExtractor
 	return &parser, nil
 }
 
@@ -571,32 +571,44 @@ func (p *MovieReviewParser) ParseMovieReviewPage(filename string) (
 
 	page := MovieReviewPage{}
 
-	movieTitleMatch := p.MovieTitleExtractor.FindSubmatch(pageText)
-	if matchLen := len(movieTitleMatch); matchLen != 3 {
+	reviewDataMatch := p.DataExtractor.FindSubmatch(pageText)
+	if len(reviewDataMatch) != 2 {
 		return nil, fmt.Errorf(
-			"expected 3 matches for movie name, got %v", matchLen,
+			"expected 2 matches for review data, got %v", len(reviewDataMatch),
 		)
 	}
-	page.MovieTitle = string(movieTitleMatch[1])
-	page.ImdbId = string(movieTitleMatch[2])
+	dataLines := strings.Split(string(reviewDataMatch[1]), "\n")
+	for ii := range dataLines {
+		splitLine := strings.Split(dataLines[ii], "::")
+		tag := splitLine[0]
+		var data string
+		if len(splitLine) > 1 {
+			data = strings.Join(splitLine[1:], "::")
+			data = strings.TrimSpace(data)
+		}
 
-	likedMatch := p.MovieLikedExtractor.FindSubmatch(pageText)
-	if matchLen := len(likedMatch); matchLen != 2 {
-		return nil, fmt.Errorf(
-			"expected 2 matches for liked, got %v", matchLen,
-		)
+		switch tag {
+		case "movie":
+			titleMatch := p.TitleExtractor.FindSubmatch([]byte(data))
+			if len(titleMatch) != 3 {
+				return nil, fmt.Errorf(
+					"expected %v to give 2 groups, got %v", data, len(titleMatch),
+				)
+			}
+			page.MovieTitle = string(titleMatch[1])
+			page.ImdbId = string(titleMatch[2])
+		case "liked":
+			liked, err := strconv.ParseBool(data)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"unabled to parse liked %v as bool: %v", data, err,
+				)
+			}
+			page.Liked = liked
+		}
 	}
-	liked, err := strconv.ParseBool(string(likedMatch[1]))
-	if err != nil {
-		return nil, fmt.Errorf(
-			"error parsing liked match %v: %v",
-			string(likedMatch[1]),
-			err,
-		)
-	}
-	page.Liked = liked
 
-	reviewMatch := p.MovieReviewExtractor.FindSubmatch(pageText)
+	reviewMatch := p.ReviewExtractor.FindSubmatch(pageText)
 	if matchLen := len(reviewMatch); matchLen != 2 {
 		return nil, fmt.Errorf(
 			"expected 2 matches for review, got %v", matchLen,

@@ -102,8 +102,7 @@ func createTestMovieReviewPage() *os.File {
 	}
 
 	_, err = file.WriteString(`
-# Review: Uncle Same
-
+# Review: Uncle Sam
 movie::[[Uncle Sam (tt0118025)]]
 liked::true
 

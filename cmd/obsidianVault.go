@@ -236,157 +236,18 @@ func CreateMovieWatchPage(row *database.GetAllMovieWatchesRow) *MovieWatchPage {
 }
 
 type MovieParser struct {
-	TitleExtractor          *regexp.Regexp
-	ImdbLinkExtractor       *regexp.Regexp
-	GenreExtractor          *regexp.Regexp
-	DirectorExtractor       *regexp.Regexp
-	ActorExtractor          *regexp.Regexp
-	WriterExtractor         *regexp.Regexp
-	YearExtractor           *regexp.Regexp
-	RatedExtractor          *regexp.Regexp
-	ReleasedExtractor       *regexp.Regexp
-	RuntimeMinutesExtractor *regexp.Regexp
-	PlotExtractor           *regexp.Regexp
-	CountryExtractor        *regexp.Regexp
-	LanguageExtractor       *regexp.Regexp
-	BoxOfficeExtractor      *regexp.Regexp
-	ProductionExtractor     *regexp.Regexp
-	CallFelissaExtractor    *regexp.Regexp
-	SlasherExtractor        *regexp.Regexp
-	ZombiesExtractor        *regexp.Regexp
-	BeastExtractor          *regexp.Regexp
-	GodzillaExtractor       *regexp.Regexp
-	WallpaperFuExtractor    *regexp.Regexp
+	DataExtractor   *regexp.Regexp
+	ImdbIDExtractor *regexp.Regexp
 }
 
 func CreateMovieParser() (*MovieParser, error) {
 	parser := MovieParser{}
 
-	titleExtractor, err := regexp.Compile(`title::\s*(.*)\s*\n`)
+	dataExtractor, err := regexp.Compile(`## Data\n((?:.|\n)*)\n## Tags`)
 	if err != nil {
-		return nil, fmt.Errorf("error compiling title extractor: %v", err)
+		return nil, fmt.Errorf("error compiling regex for data: %v", err)
 	}
-	parser.TitleExtractor = titleExtractor
-
-	imdbLinkExtractor, err := regexp.Compile(`imdb_link::\s*(.*)\s*\n`)
-	if err != nil {
-		return nil, fmt.Errorf("error compiling the imdb link extractor: %v", err)
-	}
-	parser.ImdbLinkExtractor = imdbLinkExtractor
-
-	genreExtractor, err := regexp.Compile(`genre::\s*(.*)\s*\n`)
-	if err != nil {
-		return nil, fmt.Errorf("error compiling the genre extractor: %v", err)
-	}
-	parser.GenreExtractor = genreExtractor
-
-	directorExtractor, err := regexp.Compile(`director::\s*(.*)\s*\n`)
-	if err != nil {
-		return nil, fmt.Errorf("error compiling the director extractor: %v", err)
-	}
-	parser.DirectorExtractor = directorExtractor
-
-	actorExtractor, err := regexp.Compile(`actor::\s*(.*)\s*\n`)
-	if err != nil {
-		return nil, fmt.Errorf("error compiling the actor extractor: %v", err)
-	}
-	parser.ActorExtractor = actorExtractor
-
-	writerExtractor, err := regexp.Compile(`writer::\s*(.*)\s*\n`)
-	if err != nil {
-		return nil, fmt.Errorf("error compiling the write extractor: %v", err)
-	}
-	parser.WriterExtractor = writerExtractor
-
-	yearExtractor, err := regexp.Compile(`year::\s*(.*)\s*\n`)
-	if err != nil {
-		return nil, fmt.Errorf("error compiling the year extractor: %v", err)
-	}
-	parser.YearExtractor = yearExtractor
-
-	ratedExtractor, err := regexp.Compile(`rated::\s*(.*)\s*\n`)
-	if err != nil {
-		return nil, fmt.Errorf("error compiling the rated extractor: %v", err)
-	}
-	parser.RatedExtractor = ratedExtractor
-
-	releasedExtractor, err := regexp.Compile(`released::\s*(.*)\s*\n`)
-	if err != nil {
-		return nil, fmt.Errorf("error compiling the released extractor: %v", err)
-	}
-	parser.ReleasedExtractor = releasedExtractor
-
-	runtimeMinutesExtractor, err := regexp.Compile(`runtime_minutes::\s*(.*)\s*\n`)
-	if err != nil {
-		return nil, fmt.Errorf("error compiling the runtime minutes extractor: %v", err)
-	}
-	parser.RuntimeMinutesExtractor = runtimeMinutesExtractor
-
-	plotExtractor, err := regexp.Compile(`plot::\s*(.*)\s*\n`)
-	if err != nil {
-		return nil, fmt.Errorf("error compiling the plot extractor: %v", err)
-	}
-	parser.PlotExtractor = plotExtractor
-
-	countryExtractor, err := regexp.Compile(`country::\s*(.*)\s*\n`)
-	if err != nil {
-		return nil, fmt.Errorf("error compiling the country extractor: %v", err)
-	}
-	parser.CountryExtractor = countryExtractor
-
-	languageExtractor, err := regexp.Compile(`language::\s*(.*)\s*\n`)
-	if err != nil {
-		return nil, fmt.Errorf("error compiling the language extractor: %v", err)
-	}
-	parser.LanguageExtractor = languageExtractor
-
-	boxOfficeExtractor, err := regexp.Compile(`box_office::\s*(.*)\s*\n`)
-	if err != nil {
-		return nil, fmt.Errorf("error compiling the box office extractor: %v", err)
-	}
-	parser.BoxOfficeExtractor = boxOfficeExtractor
-
-	productionExtractor, err := regexp.Compile(`production::\s*(.*)\s*\n`)
-	if err != nil {
-		return nil, fmt.Errorf("error compiling the production extractor: %v", err)
-	}
-	parser.ProductionExtractor = productionExtractor
-
-	callFelissaExtractor, err := regexp.Compile(`call_felissa::\s*(.*)\s*\n`)
-	if err != nil {
-		return nil, fmt.Errorf("error compiling the call felissa extractor: %v", err)
-	}
-	parser.CallFelissaExtractor = callFelissaExtractor
-
-	slasherExtractor, err := regexp.Compile(`slasher::\s*(.*)\s*\n`)
-	if err != nil {
-		return nil, fmt.Errorf("error compiling the slasher extractor: %v", err)
-	}
-	parser.SlasherExtractor = slasherExtractor
-
-	zombiesExtractor, err := regexp.Compile(`zombies::\s*(.*)\s*\n`)
-	if err != nil {
-		return nil, fmt.Errorf("error compiling the zombies extractor: %v", err)
-	}
-	parser.ZombiesExtractor = zombiesExtractor
-
-	beastExtractor, err := regexp.Compile(`beast::\s*(.*)\s*\n`)
-	if err != nil {
-		return nil, fmt.Errorf("error compiling the beast extractor: %v", err)
-	}
-	parser.BeastExtractor = beastExtractor
-
-	godzillaExtractor, err := regexp.Compile(`godzilla::\s*(.*)\s*\n`)
-	if err != nil {
-		return nil, fmt.Errorf("error compiling the godzilla extractor: %v", err)
-	}
-	parser.GodzillaExtractor = godzillaExtractor
-
-	wallpaperFuExtractor, err := regexp.Compile(`wallpaper_fu::\s*(.*)\s*\n`)
-	if err != nil {
-		return nil, fmt.Errorf("error compiling the wallpaper fu extractor: %v", err)
-	}
-	parser.WallpaperFuExtractor = wallpaperFuExtractor
+	parser.DataExtractor = dataExtractor
 
 	return &parser, nil
 }
@@ -399,222 +260,120 @@ func (p *MovieParser) ParsePage(fileName string) (*MoviePage, error) {
 
 	page := MoviePage{}
 
-	movieTitleMatch := p.TitleExtractor.FindSubmatch(pageText)
-	if len(movieTitleMatch) != 2 {
+	movieDataMatch := p.DataExtractor.FindSubmatch(pageText)
+	if len(movieDataMatch) != 2 {
 		return nil, fmt.Errorf(
-			"expected 2 matches for movie title, got %v", len(movieTitleMatch),
+			"expected 2 matches for movie data, got %v", len(movieDataMatch),
 		)
 	}
-	page.Title = strings.TrimSpace(string(movieTitleMatch[1]))
 
-	imdbLinkMatch := p.ImdbLinkExtractor.FindSubmatch(pageText)
-	if len(imdbLinkMatch) != 2 {
-		return nil, fmt.Errorf(
-			"expected 2 matches for imdb link, got %v", len(imdbLinkMatch),
-		)
-	}
-	page.ImdbLink = strings.TrimSpace(string(imdbLinkMatch[1]))
+	dataLines := strings.Split(string(movieDataMatch[1]), "\n")
+	for ii := range dataLines {
+		splitLine := strings.Split(dataLines[ii], "::")
+		tag := splitLine[0]
+		// Usually this will add nothing. On the edge case where there are two
+		// colons in the data it will prevent data truncation.
+		var data string
+		if len(splitLine) > 1 {
+			data = strings.Join(splitLine[1:], "::")
+			data = strings.TrimSpace(data)
+		}
 
-	genreMatch := p.GenreExtractor.FindSubmatch(pageText)
-	if len(genreMatch) != 2 {
-		return nil, fmt.Errorf(
-			"expected 2 matches for genre, got %v", len(genreMatch),
-		)
+		switch tag {
+		case "title":
+			page.Title = data
+		case "imdb_link":
+			page.ImdbLink = data
+		case "":
+			// Do nothing, this is a blank line.
+		case "genre":
+			page.Genres = SplitOnCommaAndTrim(data)
+		case "director":
+			page.Directors = SplitOnCommaAndTrim(data)
+		case "actor":
+			page.Actors = SplitOnCommaAndTrim(data)
+		case "writer":
+			page.Writers = SplitOnCommaAndTrim(data)
+		case "year":
+			year, err := strconv.Atoi(data)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"error parsing year %v as int: %v", data, err,
+				)
+			}
+			page.Year = year
+		case "rated":
+			page.Rating = data
+		case "released":
+			page.Released = data
+		case "runtime_minutes":
+			runtimeMinutes, err := strconv.Atoi(data)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"error parsing runtime %v as int: %v", data, err,
+				)
+			}
+			page.RuntimeMinutes = runtimeMinutes
+		case "plot":
+			page.Plot = data
+		case "country":
+			page.Country = data
+		case "language":
+			page.Language = data
+		case "box_office":
+			page.BoxOffice = data
+		case "production":
+			page.Production = data
+		case "call_felissa":
+			callFelissa, err := strconv.ParseBool(data)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"error parsing call felissa %v as bool: %v", data, err,
+				)
+			}
+			page.CallFelissa = callFelissa
+		case "slasher":
+			slasher, err := strconv.ParseBool(data)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"error parsing slasher %v as bool: %v", data, err,
+				)
+			}
+			page.Slasher = slasher
+		case "zombies":
+			zombies, err := strconv.ParseBool(data)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"error parsing zombies %v as bool: %v", data, err,
+				)
+			}
+			page.Zombies = zombies
+		case "beast":
+			beast, err := strconv.ParseBool(data)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"error parsing beast %v as bool: %v", data, err,
+				)
+			}
+			page.Beast = beast
+		case "godzilla":
+			godzilla, err := strconv.ParseBool(data)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"error parsing godzilla %v as bool: %v", data, err,
+				)
+			}
+			page.Godzilla = godzilla
+		case "wallpaper_fu":
+			wallpaperFu, err := strconv.ParseBool(data)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"error parsing wallpaper fu %v as bool: %v", data, err,
+				)
+			}
+			page.WallpaperFu = wallpaperFu
+		}
 	}
-	page.Genres = SplitOnCommaAndTrim(string(genreMatch[1]))
-
-	directorMatch := p.DirectorExtractor.FindSubmatch(pageText)
-	if len(directorMatch) != 2 {
-		return nil, fmt.Errorf(
-			"expected 2 matches for director, got %v", len(directorMatch),
-		)
-	}
-	page.Directors = SplitOnCommaAndTrim(string(directorMatch[1]))
-
-	actorMatch := p.ActorExtractor.FindSubmatch(pageText)
-	if len(actorMatch) != 2 {
-		return nil, fmt.Errorf(
-			"expected 2 matches for actor, got %v", len(actorMatch),
-		)
-	}
-	page.Actors = SplitOnCommaAndTrim(string(actorMatch[1]))
-
-	writerMatch := p.WriterExtractor.FindSubmatch(pageText)
-	if len(writerMatch) != 2 {
-		return nil, fmt.Errorf(
-			"expected 2 matches for writer, got %v", len(writerMatch),
-		)
-	}
-	page.Writers = SplitOnCommaAndTrim(string(writerMatch[1]))
-
-	yearMatch := p.YearExtractor.FindSubmatch(pageText)
-	if len(yearMatch) != 2 {
-		return nil, fmt.Errorf(
-			"expected 2 matches for year, got %v", len(yearMatch),
-		)
-	}
-	year, err := strconv.Atoi(string(yearMatch[1]))
-	if err != nil {
-		return nil, fmt.Errorf(
-			"error converting %v to int: %v", string(yearMatch[1]), err,
-		)
-	}
-	page.Year = year
-
-	runtimeMinutesMatch := p.RuntimeMinutesExtractor.FindSubmatch(pageText)
-	if len(runtimeMinutesMatch) != 2 {
-		return nil, fmt.Errorf(
-			"expected 2 matches for runtime minutes, got %v",
-			len(runtimeMinutesMatch),
-		)
-	}
-	runtime, err := ParseRuntime(string(runtimeMinutesMatch[1]))
-	if err != nil {
-		return nil, fmt.Errorf(
-			"error parsing runtime %v: %v", string(runtimeMinutesMatch[1]), err,
-		)
-	}
-	page.RuntimeMinutes = runtime
-
-	ratingMatch := p.RatedExtractor.FindSubmatch(pageText)
-	if len(ratingMatch) != 2 {
-		return nil, fmt.Errorf(
-			"expected 2 matches for rating, got %v", err,
-		)
-	}
-	page.Rating = string(ratingMatch[1])
-
-	releasedMatch := p.ReleasedExtractor.FindSubmatch(pageText)
-	if len(releasedMatch) != 2 {
-		return nil, fmt.Errorf(
-			"expected 2 matches for released, got %v", err,
-		)
-	}
-	page.Released = string(releasedMatch[1])
-
-	plotMatch := p.PlotExtractor.FindSubmatch(pageText)
-	if len(plotMatch) != 2 {
-		return nil, fmt.Errorf(
-			"expected 2 matches for plot, got %v", err,
-		)
-	}
-	page.Plot = string(plotMatch[1])
-
-	countryMatch := p.CountryExtractor.FindSubmatch(pageText)
-	if len(countryMatch) != 2 {
-		return nil, fmt.Errorf(
-			"expected 2 matches for country, got %v", err,
-		)
-	}
-	page.Country = string(countryMatch[1])
-
-	languageMatch := p.LanguageExtractor.FindSubmatch(pageText)
-	if len(languageMatch) != 2 {
-		return nil, fmt.Errorf(
-			"expected 2 matches for language, got %v", err,
-		)
-	}
-	page.Language = string(languageMatch[1])
-
-	boxOfficeMatch := p.BoxOfficeExtractor.FindSubmatch(pageText)
-	if len(boxOfficeMatch) != 2 {
-		return nil, fmt.Errorf(
-			"expected 2 matches for box office, got %v", err,
-		)
-	}
-	page.BoxOffice = string(boxOfficeMatch[1])
-
-	productionMatch := p.ProductionExtractor.FindSubmatch(pageText)
-	if len(productionMatch) != 2 {
-		return nil, fmt.Errorf(
-			"expected 2 matches for production, got %v", err,
-		)
-	}
-	page.Production = string(productionMatch[1])
-
-	callFelissaMatch := p.CallFelissaExtractor.FindSubmatch(pageText)
-	if len(callFelissaMatch) != 2 {
-		return nil, fmt.Errorf(
-			"expected 2 matches for call felissa, got %v", err,
-		)
-	}
-	callFelissa, err := strconv.ParseBool(string(callFelissaMatch[1]))
-	if err != nil {
-		return nil, fmt.Errorf(
-			"error parsing %v as bool: %v", string(callFelissaMatch[1]), err,
-		)
-	}
-	page.CallFelissa = callFelissa
-
-	slasherMatch := p.SlasherExtractor.FindSubmatch(pageText)
-	if len(slasherMatch) != 2 {
-		return nil, fmt.Errorf(
-			"expected 2 matches for slasher, got %v", err,
-		)
-	}
-	slasher, err := strconv.ParseBool(string(slasherMatch[1]))
-	if err != nil {
-		return nil, fmt.Errorf(
-			"error parsing %v as bool: %v", string(slasherMatch[1]), err,
-		)
-	}
-	page.Slasher = slasher
-
-	zombiesMatch := p.ZombiesExtractor.FindSubmatch(pageText)
-	if len(zombiesMatch) != 2 {
-		return nil, fmt.Errorf(
-			"expected 2 matches for zombies, got %v", err,
-		)
-	}
-	zombies, err := strconv.ParseBool(string(zombiesMatch[1]))
-	if err != nil {
-		return nil, fmt.Errorf(
-			"error parsing %v as bool: %v", string(zombiesMatch[1]), err,
-		)
-	}
-	page.Zombies = zombies
-
-	beastMatch := p.BeastExtractor.FindSubmatch(pageText)
-	if len(beastMatch) != 2 {
-		return nil, fmt.Errorf(
-			"expected 2 matches for beast, got %v", err,
-		)
-	}
-	beast, err := strconv.ParseBool(string(beastMatch[1]))
-	if err != nil {
-		return nil, fmt.Errorf(
-			"error parsing %v as bool: %v", string(beastMatch[1]), err,
-		)
-	}
-	page.Beast = beast
-
-	godzillaMatch := p.GodzillaExtractor.FindSubmatch(pageText)
-	if len(godzillaMatch) != 2 {
-		return nil, fmt.Errorf(
-			"expected 2 matches for godzilla, got %v", err,
-		)
-	}
-	godzilla, err := strconv.ParseBool(string(godzillaMatch[1]))
-	if err != nil {
-		return nil, fmt.Errorf(
-			"error parsing %v as bool: %v", string(godzillaMatch[1]), err,
-		)
-	}
-	page.Godzilla = godzilla
-
-	wallpaperFuMatch := p.WallpaperFuExtractor.FindSubmatch(pageText)
-	if len(wallpaperFuMatch) != 2 {
-		return nil, fmt.Errorf(
-			"expected 2 matches for wallpaper_fu, got %v", err,
-		)
-	}
-	wallpaperFu, err := strconv.ParseBool(string(wallpaperFuMatch[1]))
-	if err != nil {
-		return nil, fmt.Errorf(
-			"error parsing %v as bool: %v", string(wallpaperFuMatch[1]), err,
-		)
-	}
-	page.WallpaperFu = wallpaperFu
 
 	return &page, nil
 }

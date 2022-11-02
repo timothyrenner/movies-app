@@ -409,7 +409,7 @@ func TestCreateInsertMovieRatingParams(t *testing.T) {
 			Uuid:      answer[0].Uuid,
 			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
 			Source:    "Internet Movie Database",
-			Value:     "7.0/10",
+			Value:     "7.0/10.0",
 		}, {
 			Uuid:      answer[1].Uuid,
 			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
@@ -423,7 +423,7 @@ func TestCreateInsertMovieRatingParams(t *testing.T) {
 		},
 	}
 	if !cmp.Equal(truth, answer) {
-		t.Errorf("Expected %v, got %v", truth, answer)
+		t.Errorf("Expected \n%v, got \n%v", truth, answer)
 	}
 }
 
@@ -588,7 +588,7 @@ func TestInsertMovieDetails(t *testing.T) {
 			Uuid:            answer.Rating[0],
 			MovieUuid:       sql.NullString{String: answer.Movie, Valid: true},
 			Source:          "Internet Movie Database",
-			Value:           "7.0/10",
+			Value:           "7.0/10.0",
 			CreatedDatetime: movieRatingAnswer[0].CreatedDatetime,
 		}, {
 			Uuid:            answer.Rating[1],

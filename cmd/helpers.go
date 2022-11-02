@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-var runtimeRegex = regexp.MustCompile("([0-9]+)( min)?")
+var runtimeRegex = regexp.MustCompile("([0-9]+) min")
 
 func ParseRuntime(runtimeString string) (int, error) {
 	runtimeMatch := runtimeRegex.FindStringSubmatch(runtimeString)

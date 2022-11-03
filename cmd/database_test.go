@@ -101,6 +101,32 @@ func sampleMovieWatchPage() *MovieWatchPage {
 	}
 }
 
+func sampleMoviePage() *MoviePage {
+	return &MoviePage{
+		Title:          "Tenebrae",
+		ImdbLink:       "https://www.imdb.com/title/tt0084777/",
+		Genres:         []string{"Horror", "Mystery", "Thriller"},
+		Directors:      []string{"Dario Argento"},
+		Actors:         []string{"Anthony Franciosa", "Giuliano Gemma", "John Saxon"},
+		Writers:        []string{"Dario Argento"},
+		Year:           1982,
+		Rating:         "R",
+		Released:       "1984-02-17",
+		RuntimeMinutes: 101,
+		Plot:           "An American writer in Rome is stalked and harassed by a serial killer who is murdering everyone associated with his work on his latest book.",
+		Country:        "Italy",
+		Language:       "Italian, Spanish",
+		BoxOffice:      "",
+		Production:     "",
+		CallFelissa:    false,
+		Slasher:        true,
+		Zombies:        false,
+		Beast:          false,
+		Godzilla:       false,
+		WallpaperFu:    false,
+	}
+}
+
 func sampleReviewPage() *MovieReviewPage {
 	return &MovieReviewPage{
 		MovieTitle: "Things",
@@ -110,10 +136,9 @@ func sampleReviewPage() *MovieReviewPage {
 }
 
 func TestCreateInsertMovieParams(t *testing.T) {
-	movieRecord := omdbSampleMovie()
-	movieWatch := *sampleMovieWatchPage()
+	moviePage := sampleMoviePage()
 
-	insertMovieParams, err := CreateInsertMovieParams(movieRecord, &movieWatch)
+	insertMovieParams, err := CreateInsertMovieParams(moviePage)
 	if err != nil {
 		t.Errorf("Encountered error: %v", err)
 	}
@@ -144,52 +169,31 @@ func TestCreateInsertMovieParams(t *testing.T) {
 	}
 
 	// Now test when there's a null runtime.
-	prey := OmdbMovieResponse{
-		Title:      "Prey",
-		Year:       "2022",
-		Rated:      "R",
-		Released:   "05 Aug 2022",
-		Runtime:    "N/A",
-		Genre:      "Action, Drama, Horror",
-		Director:   "Dan Trachtenberg",
-		Writer:     "Patrick Aison",
-		Actors:     "Amber Midthunder, Dane DiLiegro, Harlan Blayne Kytwayhat",
-		Plot:       "The origin story of the Predator in the world of the Comanche Nation 300 years ago. Naru, a skilled female warrior, fights to protect her tribe against one of the first highly-evolved Predators to land on Earth.",
-		Language:   "English",
-		Country:    "United States",
-		Awards:     "N/A",
-		Poster:     "https://m.media-amazon.com/images/M/MV5BMWE2YjY4MGQtNjRkYy00ZTQxLTkyNTUtODI1Y2I3M2M3ODE2XkEyXkFqcGdeQXVyMTEyMjM2NDc2._V1_SX300.jpg",
-		Ratings:    []Rating{},
-		Metascore:  "N/A",
-		ImdbRating: "N/A",
-		ImdbVotes:  "N/A",
-		ImdbID:     "tt11866324",
-		Type:       "movie",
-		DVD:        "05 Aug 2022",
-		BoxOffice:  "N/A",
-		Production: "N/A",
-		Website:    "N/A",
-		Response:   "True",
-	}
-	preyWatch := MovieWatchPage{
-		Title:       "Prey",
-		FileTitle:   "Prey",
-		Watched:     "2022-08-06",
-		ImdbLink:    "https://www.imdb.com/title/tt11866324/",
-		ImdbId:      "tt11866324",
-		FirstTime:   true,
-		JoeBob:      false,
-		CallFelissa: false,
-		Beast:       true,
-		Godzilla:    false,
-		Zombies:     false,
-		Slasher:     false,
-		WallpaperFu: false,
-		Service:     "Hulu",
-		Notes:       "",
+	prey := MoviePage{
+		Title:          "Prey",
+		ImdbLink:       "https://www.imdb.com/title/tt11866324/",
+		Genres:         []string{"Action", "Drama", "Horror"},
+		Directors:      []string{"Dan Trachtenberg"},
+		Actors:         []string{"Amber Midthunder", "Dane DiLiegro", "Harlan Blayne Kytwayhat"},
+		Writers:        []string{"Patrick Aison"},
+		Year:           2022,
+		Rating:         "R",
+		Released:       "2022-08-05",
+		RuntimeMinutes: 0,
+		Plot:           "The origin story of the Predator in the world of the Comanche Nation 300 years ago. Naru, a skilled female warrior, fights to protect her tribe against one of the first highly-evolved Predators to land on Earth.",
+		Country:        "United States",
+		Language:       "English",
+		BoxOffice:      "",
+		Production:     "",
+		CallFelissa:    false,
+		Slasher:        false,
+		Zombies:        false,
+		Beast:          true,
+		Godzilla:       false,
+		WallpaperFu:    false,
 	}
 
-	preyRow, err := CreateInsertMovieParams(&prey, &preyWatch)
+	preyRow, err := CreateInsertMovieParams(&prey)
 	if err != nil {
 		t.Errorf("Encountered error: %v", err)
 	}
@@ -217,80 +221,6 @@ func TestCreateInsertMovieParams(t *testing.T) {
 
 	if !cmp.Equal(preyTruth, *preyRow) {
 		t.Errorf("Expected \n%v, got \n%v", preyTruth, *preyRow)
-	}
-
-	// Now test when the row is invalid format.
-	barbarian := OmdbMovieResponse{
-		Title:      "Barbarian",
-		Year:       "2022",
-		Rated:      "R",
-		Released:   "09 Sep 2022",
-		Runtime:    "31S min",
-		Genre:      "Horror, Thriller",
-		Director:   "Zach Cregger",
-		Writer:     "Zach Cregger",
-		Actors:     "Georgina Campbell, Bill Skarsgård, Justin Long",
-		Plot:       "A woman staying at an Airbnb discovers that the house she has rented is not what it seems.",
-		Language:   "English",
-		Country:    "United States",
-		Awards:     "N/A", // <- travesty cause this movie R U L E S
-		Poster:     "https://m.media-amazon.com/images/M/MV5BN2M3Y2NhMGYtYjUxOS00M2UwLTlmMGUtYzY4MzFlNjZkYzY2XkEyXkFqcGdeQXVyODc0OTEyNDU@._V1_SX300.jpg",
-		Ratings:    []Rating{},
-		Metascore:  "N/A",
-		ImdbRating: "N/A",
-		ImdbVotes:  "N/A",
-		ImdbID:     "tt15791034",
-		Type:       "movie",
-		DVD:        "N/A",
-		BoxOffice:  "N/A",
-		Production: "N/A",
-		Website:    "N/A",
-		Response:   "True",
-	}
-	barbarianWatch := MovieWatchPage{
-		Title:       "Barbarian",
-		FileTitle:   "Barbarian",
-		Watched:     "2022-09-12",
-		ImdbLink:    "https://www.imdb.com/title/tt15791034/",
-		ImdbId:      "tt15791034",
-		FirstTime:   true,
-		JoeBob:      false,
-		CallFelissa: false,
-		Beast:       false,
-		Zombies:     false,
-		Godzilla:    false,
-		Slasher:     false,
-		WallpaperFu: true,
-		Service:     "Theater",
-		Notes:       "",
-	}
-	barbarianRow, err := CreateInsertMovieParams(&barbarian, &barbarianWatch)
-	if err != nil {
-		t.Errorf("Encountered error: %v", err)
-	}
-
-	barbarianTruth := database.InsertMovieParams{
-		Uuid:           barbarianRow.Uuid,
-		Title:          "Barbarian",
-		ImdbLink:       "https://www.imdb.com/title/tt15791034/",
-		ImdbID:         "tt15791034",
-		Year:           2022,
-		Rated:          sql.NullString{String: "R", Valid: true},
-		Released:       sql.NullString{String: "2022-09-09", Valid: true},
-		RuntimeMinutes: sql.NullInt64{Int64: 0, Valid: false},
-		Plot:           sql.NullString{String: "A woman staying at an Airbnb discovers that the house she has rented is not what it seems.", Valid: true},
-		Country:        sql.NullString{String: "United States", Valid: true},
-		Language:       sql.NullString{String: "English", Valid: true},
-		BoxOffice:      sql.NullString{String: "", Valid: false},
-		Production:     sql.NullString{String: "", Valid: false},
-		CallFelissa:    0,
-		Beast:          0,
-		Slasher:        0,
-		Godzilla:       0,
-		WallpaperFu:    sql.NullBool{Bool: true, Valid: true},
-	}
-	if !cmp.Equal(barbarianTruth, *barbarianRow) {
-		t.Errorf("Expected \n%v, got \n%v", barbarianTruth, *barbarianRow)
 	}
 }
 
@@ -336,10 +266,10 @@ func TestCreateInsertMovieWatchParams(t *testing.T) {
 }
 
 func TestCreateInsertMovieGenreParams(t *testing.T) {
-	movieRecord := omdbSampleMovie()
+	moviePage := sampleMoviePage()
 
 	movieUuid := uuid.New().String()
-	answer := CreateInsertMovieGenreParams(movieRecord, movieUuid)
+	answer := CreateInsertMovieGenreParams(moviePage, movieUuid)
 	if len(answer) != 3 {
 		t.Errorf("Expected 3 rows, got %v", len(answer))
 	}
@@ -387,10 +317,10 @@ func TestTextToNullString(t *testing.T) {
 }
 
 func TestCreateInsertMovieActorParams(t *testing.T) {
-	movieRecord := omdbSampleMovie()
+	moviePage := sampleMoviePage()
 
 	movieUuid := uuid.New().String()
-	answer := CreateInsertMovieActorParams(movieRecord, movieUuid)
+	answer := CreateInsertMovieActorParams(moviePage, movieUuid)
 	if len(answer) != 3 {
 		t.Errorf("Expected 3 rows, got %v", len(answer))
 	}
@@ -415,10 +345,10 @@ func TestCreateInsertMovieActorParams(t *testing.T) {
 }
 
 func TestCreateInsertMovieDirectorParams(t *testing.T) {
-	movieRecord := omdbSampleMovie()
+	moviePage := sampleMoviePage()
 	movieUuid := uuid.New().String()
 
-	answer := CreateInsertMovieDirectorParams(movieRecord, movieUuid)
+	answer := CreateInsertMovieDirectorParams(moviePage, movieUuid)
 	if len(answer) != 1 {
 		t.Errorf("Expected 1 row, got %v", len(answer))
 	}
@@ -435,10 +365,10 @@ func TestCreateInsertMovieDirectorParams(t *testing.T) {
 }
 
 func TestCreateInsertMovieWriterParams(t *testing.T) {
-	movieRecord := omdbSampleMovie()
+	moviePage := sampleMoviePage()
 	movieUuid := uuid.New().String()
 
-	answer := CreateInsertMovieWriterParams(movieRecord, movieUuid)
+	answer := CreateInsertMovieWriterParams(moviePage, movieUuid)
 	if len(answer) != 1 {
 		t.Errorf("Expected 1 row, got %v", len(answer))
 	}
@@ -455,10 +385,21 @@ func TestCreateInsertMovieWriterParams(t *testing.T) {
 }
 
 func TestCreateInsertMovieRatingParams(t *testing.T) {
-	movieRecord := omdbSampleMovie()
+	movieRatings := []Rating{
+		{
+			Source: "Internet Movie Database",
+			Value:  "7.0/10.0",
+		}, {
+			Source: "Rotten Tomatoes",
+			Value:  "77%",
+		}, {
+			Source: "Metacritic",
+			Value:  "83/100",
+		},
+	}
 	movieUuid := uuid.New().String()
 
-	answer := CreateInsertMovieRatingParams(movieRecord, movieUuid)
+	answer := CreateInsertMovieRatingParams(movieRatings, movieUuid)
 	if len(answer) != 3 {
 		t.Errorf("Expected 3 rows, got %v", len(answer))
 	}
@@ -468,7 +409,7 @@ func TestCreateInsertMovieRatingParams(t *testing.T) {
 			Uuid:      answer[0].Uuid,
 			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
 			Source:    "Internet Movie Database",
-			Value:     "7.0/10",
+			Value:     "7.0/10.0",
 		}, {
 			Uuid:      answer[1].Uuid,
 			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
@@ -482,7 +423,7 @@ func TestCreateInsertMovieRatingParams(t *testing.T) {
 		},
 	}
 	if !cmp.Equal(truth, answer) {
-		t.Errorf("Expected %v, got %v", truth, answer)
+		t.Errorf("Expected \n%v, got \n%v", truth, answer)
 	}
 }
 
@@ -508,8 +449,19 @@ func TestInsertMovieDetails(t *testing.T) {
 	db, m := setupDatabase()
 	defer teardownDatabase(db, m)
 
-	movie := omdbSampleMovie()
-	movieWatch := sampleMovieWatchPage()
+	moviePage := sampleMoviePage()
+	movieRatings := []Rating{
+		{
+			Source: "Internet Movie Database",
+			Value:  "7.0/10.0",
+		}, {
+			Source: "Rotten Tomatoes",
+			Value:  "77%",
+		}, {
+			Source: "Metacritic",
+			Value:  "83/100",
+		},
+	}
 
 	queries := database.New(db)
 	ctx := context.Background()
@@ -517,8 +469,8 @@ func TestInsertMovieDetails(t *testing.T) {
 		db,
 		ctx,
 		queries,
-		movie,
-		movieWatch,
+		moviePage,
+		movieRatings,
 	)
 	if err != nil {
 		t.Errorf("Encountered error: %v", err)
@@ -636,7 +588,7 @@ func TestInsertMovieDetails(t *testing.T) {
 			Uuid:            answer.Rating[0],
 			MovieUuid:       sql.NullString{String: answer.Movie, Valid: true},
 			Source:          "Internet Movie Database",
-			Value:           "7.0/10",
+			Value:           "7.0/10.0",
 			CreatedDatetime: movieRatingAnswer[0].CreatedDatetime,
 		}, {
 			Uuid:            answer.Rating[1],
@@ -655,53 +607,5 @@ func TestInsertMovieDetails(t *testing.T) {
 
 	if !cmp.Equal(movieRatingTruth, movieRatingAnswer) {
 		t.Errorf("Expected \n%v, got \n%v", movieRatingTruth, movieRatingAnswer)
-	}
-
-	// Now do one where the runtime minutes is null. We just need to make
-	// sure this is going to error.
-	prey := OmdbMovieResponse{
-		Title:      "Prey",
-		Year:       "2022",
-		Rated:      "R",
-		Released:   "05 Aug 2022",
-		Runtime:    "N/A",
-		Genre:      "Action, Drama, Horror",
-		Director:   "Dan Trachtenberg",
-		Writer:     "Patrick Aison",
-		Actors:     "Amber Midthunder, Dane DiLiegro, Harlan Blayne Kytwayhat",
-		Plot:       "The origin story of the Predator in the world of the Comanche Nation 300 years ago. Naru, a skilled female warrior, fights to protect her tribe against one of the first highly-evolved Predators to land on Earth.",
-		Language:   "English",
-		Country:    "United States",
-		Awards:     "N/A",
-		Poster:     "https://m.media-amazon.com/images/M/MV5BMWE2YjY4MGQtNjRkYy00ZTQxLTkyNTUtODI1Y2I3M2M3ODE2XkEyXkFqcGdeQXVyMTEyMjM2NDc2._V1_SX300.jpg",
-		Ratings:    []Rating{},
-		Metascore:  "N/A",
-		ImdbRating: "N/A",
-		ImdbVotes:  "N/A",
-		ImdbID:     "tt11866324",
-		Type:       "movie",
-		DVD:        "05 Aug 2022",
-		BoxOffice:  "N/A",
-		Production: "N/A",
-		Website:    "N/A",
-		Response:   "True",
-	}
-	preyWatch := MovieWatchPage{
-		Title:       "Prey",
-		ImdbId:      "tt11866324",
-		Watched:     "2022-08-06",
-		Service:     "Hulu",
-		FirstTime:   true,
-		JoeBob:      false,
-		CallFelissa: false,
-		Beast:       true,
-		Godzilla:    false,
-		Zombies:     false,
-		Slasher:     false,
-		WallpaperFu: false,
-	}
-	_, err = InsertMovieDetails(db, ctx, queries, &prey, &preyWatch)
-	if err != nil {
-		t.Errorf("Error inserting movie with null runtime: %v", err)
 	}
 }

@@ -13,11 +13,10 @@ import (
 var DB = cmd.DB
 
 func main() {
-	dbc, err := sql.Open("sqlite3", fmt.Sprintf("%v?mode=ro", DB))
+	db, err := sql.Open("sqlite3", fmt.Sprintf("%v?mode=ro", DB))
 	if err != nil {
 		log.Panicf("Error opening database %v: %v", DB, err)
 	}
-	db := cmd.DBClient{DB: dbc}
 	defer func() {
 		if err := db.Close(); err != nil {
 			log.Panicf("Error closing DB: %v", err)
@@ -25,7 +24,7 @@ func main() {
 	}()
 
 	log.Println("Getting all movies.")
-	allMovieRows, err := db.DB.Query(`SELECT uuid, imdb_link FROM movie`)
+	allMovieRows, err := db.Query(`SELECT uuid, imdb_link FROM movie`)
 	if err != nil {
 		log.Panicf("Error getting movie rows: %v", err)
 	}
@@ -56,7 +55,7 @@ func main() {
 	log.Printf("Got %v movies for update.", len(movieRows))
 	log.Println("Creating prepared statements.")
 
-	updateMovieStatement, err := db.DB.Prepare(
+	updateMovieStatement, err := db.Prepare(
 		`UPDATE movie SET imdb_id = ? WHERE uuid = ?`,
 	)
 	if err != nil {
@@ -66,7 +65,7 @@ func main() {
 	}
 	defer updateMovieStatement.Close()
 
-	updateMovieWatchStatement, err := db.DB.Prepare(
+	updateMovieWatchStatement, err := db.Prepare(
 		`UPDATE movie_watch SET imdb_id = ? WHERE movie_uuid = ?`,
 	)
 	if err != nil {
@@ -78,7 +77,7 @@ func main() {
 
 	log.Println("Updating movies and movie watches to add IMDB id.")
 	for ii := range movieRows {
-		tx, err := db.DB.Begin()
+		tx, err := db.Begin()
 		if err != nil {
 			log.Panicf("Error beginning transaction: %v", err)
 		}

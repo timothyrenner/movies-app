@@ -51,7 +51,10 @@ func SplitOnCommaAndTrim(toSplit string) []string {
 	splitStrings := strings.Split(toSplit, ",")
 	stringSlice := make([]string, len(splitStrings))
 	for ii := range stringSlice {
-		stringSlice[ii] = strings.TrimSpace(splitStrings[ii])
+		spacesTrimmed := strings.TrimSpace(splitStrings[ii])
+		leftBracketsTrimmed := strings.Trim(spacesTrimmed, "[")
+		rightBracketsTrimmed := strings.Trim(leftBracketsTrimmed, "]")
+		stringSlice[ii] = rightBracketsTrimmed
 	}
 	return stringSlice
 }

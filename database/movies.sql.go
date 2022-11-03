@@ -10,6 +10,46 @@ import (
 	"database/sql"
 )
 
+const deleteActorsForMovie = `-- name: DeleteActorsForMovie :exec
+DELETE FROM movie_actor
+WHERE movie_uuid = ?
+`
+
+func (q *Queries) DeleteActorsForMovie(ctx context.Context, movieUuid sql.NullString) error {
+	_, err := q.db.ExecContext(ctx, deleteActorsForMovie, movieUuid)
+	return err
+}
+
+const deleteDirectorsForMovie = `-- name: DeleteDirectorsForMovie :exec
+DELETE FROM movie_director
+WHERE movie_uuid = ?
+`
+
+func (q *Queries) DeleteDirectorsForMovie(ctx context.Context, movieUuid sql.NullString) error {
+	_, err := q.db.ExecContext(ctx, deleteDirectorsForMovie, movieUuid)
+	return err
+}
+
+const deleteGenresForMovie = `-- name: DeleteGenresForMovie :exec
+DELETE FROM movie_genre
+WHERE movie_uuid = ?
+`
+
+func (q *Queries) DeleteGenresForMovie(ctx context.Context, movieUuid sql.NullString) error {
+	_, err := q.db.ExecContext(ctx, deleteGenresForMovie, movieUuid)
+	return err
+}
+
+const deleteWritersForMovie = `-- name: DeleteWritersForMovie :exec
+DELETE FROM movie_writer
+WHERE movie_uuid = ?
+`
+
+func (q *Queries) DeleteWritersForMovie(ctx context.Context, movieUuid sql.NullString) error {
+	_, err := q.db.ExecContext(ctx, deleteWritersForMovie, movieUuid)
+	return err
+}
+
 const findMovie = `-- name: FindMovie :one
 SELECT uuid
 FROM movie
@@ -18,6 +58,19 @@ WHERE imdb_id = ?
 
 func (q *Queries) FindMovie(ctx context.Context, imdbID string) (string, error) {
 	row := q.db.QueryRowContext(ctx, findMovie, imdbID)
+	var uuid string
+	err := row.Scan(&uuid)
+	return uuid, err
+}
+
+const findMovieUuid = `-- name: FindMovieUuid :one
+SELECT uuid
+FROM movie
+WHERE imdb_id = ?
+`
+
+func (q *Queries) FindMovieUuid(ctx context.Context, imdbID string) (string, error) {
+	row := q.db.QueryRowContext(ctx, findMovieUuid, imdbID)
 	var uuid string
 	err := row.Scan(&uuid)
 	return uuid, err
@@ -361,7 +414,26 @@ VALUES (
         ?,
         ?,
         ?
-    )
+    ) ON CONFLICT (uuid) DO
+UPDATE
+SET title = excluded.title,
+    imdb_link = excluded.imdb_link,
+    imdb_id = excluded.imdb_id,
+    year = excluded.year,
+    rated = excluded.rated,
+    released = excluded.released,
+    runtime_minutes = excluded.runtime_minutes,
+    plot = excluded.plot,
+    country = excluded.country,
+    language = excluded.language,
+    box_office = excluded.box_office,
+    production = excluded.production,
+    call_felissa = excluded.call_felissa,
+    slasher = excluded.slasher,
+    zombies = excluded.zombies,
+    beast = excluded.beast,
+    godzilla = excluded.godzilla,
+    wallpaper_fu = excluded.wallpaper_fu
 `
 
 type InsertMovieParams struct {
@@ -498,7 +570,15 @@ INSERT INTO movie_watch (
         joe_bob,
         notes
     )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (uuid) DO
+UPDATE
+SET movie_uuid = excluded.movie_uuid,
+    movie_title = excluded.movie_title,
+    imdb_id = excluded.imdb_id,
+    service = excluded.service,
+    first_time = excluded.first_time,
+    joe_bob = excluded.joe_bob,
+    notes = excluded.notes
 `
 
 type InsertMovieWatchParams struct {

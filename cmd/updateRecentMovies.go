@@ -20,13 +20,13 @@ import (
 )
 
 // updateMoviesCmd represents the updateMovies command
-var updateMoviesCmd = &cobra.Command{
-	Use:   "update-movies",
+var updateRecentMoviesCmd = &cobra.Command{
+	Use:   "update-recent-movies",
 	Short: "Runs the data pipeline for pulling movies.",
 	Long: `Pulls new movie watches from the vault and updates the local database.
 	Hydrates the movies with additional info from OMDB if required.
 	`,
-	Run:  updateMovies,
+	Run:  updateRecentMovies,
 	Args: cobra.RangeArgs(1, 1),
 }
 
@@ -53,7 +53,7 @@ func GetMovieImdbIdFromWatchFile(fileContents []byte) (string, error) {
 	return string(matches[1]), nil
 }
 
-func updateMovies(cmd *cobra.Command, args []string) {
+func updateRecentMovies(cmd *cobra.Command, args []string) {
 	vaultDir := args[0]
 
 	checkAll, err := cmd.Flags().GetBool("check-all")
@@ -131,7 +131,9 @@ func updateMovies(cmd *cobra.Command, args []string) {
 				},
 			},
 		)
-		if err != nil {
+		if err == sql.ErrNoRows {
+			log.Println("Movie watch not found.")
+		} else if err != nil {
 			log.Panicf("Encountered error obtaining movie watch: %v", err)
 		}
 
@@ -146,7 +148,9 @@ func updateMovies(cmd *cobra.Command, args []string) {
 
 		// See if the movie and details are already in the database.
 		movieUuid, err := queries.FindMovie(ctx, movieWatchPage.ImdbId)
-		if err != nil {
+		if err == sql.ErrNoRows {
+			log.Println("Movie not found. Creating.")
+		} else if err != nil {
 			log.Panicf("Error finding movie: %v", err)
 		}
 		// If the movie's not in the database, we need to insert it and the
@@ -157,8 +161,14 @@ func updateMovies(cmd *cobra.Command, args []string) {
 			if err != nil {
 				log.Panicf("Error fetching movie from OMDB: %v", err)
 			}
+
+			moviePage, err := CreateMoviePage(omdbResponse, movieWatchPage)
+			if err != nil {
+				log.Panicf("Error creating movie page: %v", err)
+			}
+
 			movieDetailUuids, err := InsertMovieDetails(
-				db, ctx, queries, omdbResponse, movieWatchPage,
+				db, ctx, queries, moviePage, omdbResponse.Ratings,
 			)
 			if err != nil {
 				log.Panicf(
@@ -166,13 +176,7 @@ func updateMovies(cmd *cobra.Command, args []string) {
 				)
 			}
 			movieUuid = movieDetailUuids.Movie
-			// ! There's some repeated code here with buildObsidianVault.
-			// ! Opportunity to put this into its own function. An item for
-			// ! later I think, after I've let the design marinate a bit.
-			moviePage, err := CreateMoviePage(omdbResponse, movieWatchPage)
-			if err != nil {
-				log.Panicf("Error creating movie page: %v", err)
-			}
+
 			moviePageFileName := fmt.Sprintf(
 				"%v (%v).md", movieWatchPage.FileTitle, movieWatchPage.ImdbId,
 			)
@@ -211,8 +215,8 @@ func updateMovies(cmd *cobra.Command, args []string) {
 }
 
 func init() {
-	rootCmd.AddCommand(updateMoviesCmd)
-	updateMoviesCmd.Flags().BoolP(
+	rootCmd.AddCommand(updateRecentMoviesCmd)
+	updateRecentMoviesCmd.Flags().BoolP(
 		"check-all", "c", false, "Whether to check all the movie watches or not.",
 	)
 }

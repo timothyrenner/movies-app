@@ -131,7 +131,9 @@ func updateRecentMovies(cmd *cobra.Command, args []string) {
 				},
 			},
 		)
-		if err != nil {
+		if err == sql.ErrNoRows {
+			log.Println("Movie watch not found.")
+		} else if err != nil {
 			log.Panicf("Encountered error obtaining movie watch: %v", err)
 		}
 
@@ -146,7 +148,9 @@ func updateRecentMovies(cmd *cobra.Command, args []string) {
 
 		// See if the movie and details are already in the database.
 		movieUuid, err := queries.FindMovie(ctx, movieWatchPage.ImdbId)
-		if err != nil {
+		if err == sql.ErrNoRows {
+			log.Println("Movie not found. Creating.")
+		} else if err != nil {
 			log.Panicf("Error finding movie: %v", err)
 		}
 		// If the movie's not in the database, we need to insert it and the

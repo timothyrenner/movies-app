@@ -12,7 +12,7 @@ migrate_down:
 database: migrations/*.sql queries/*.sql
 	sqlc generate
 
-movies-app: database cmd main.go go.mod go.sum
+movies-app: database cmd/*.go main.go go.mod go.sum
 	go build
 
 test:

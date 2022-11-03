@@ -20,13 +20,13 @@ import (
 )
 
 // updateMoviesCmd represents the updateMovies command
-var updateMoviesCmd = &cobra.Command{
-	Use:   "update-movies",
+var updateRecentMoviesCmd = &cobra.Command{
+	Use:   "update-recent-movies",
 	Short: "Runs the data pipeline for pulling movies.",
 	Long: `Pulls new movie watches from the vault and updates the local database.
 	Hydrates the movies with additional info from OMDB if required.
 	`,
-	Run:  updateMovies,
+	Run:  updateRecentMovies,
 	Args: cobra.RangeArgs(1, 1),
 }
 
@@ -53,7 +53,7 @@ func GetMovieImdbIdFromWatchFile(fileContents []byte) (string, error) {
 	return string(matches[1]), nil
 }
 
-func updateMovies(cmd *cobra.Command, args []string) {
+func updateRecentMovies(cmd *cobra.Command, args []string) {
 	vaultDir := args[0]
 
 	checkAll, err := cmd.Flags().GetBool("check-all")
@@ -211,8 +211,8 @@ func updateMovies(cmd *cobra.Command, args []string) {
 }
 
 func init() {
-	rootCmd.AddCommand(updateMoviesCmd)
-	updateMoviesCmd.Flags().BoolP(
+	rootCmd.AddCommand(updateRecentMoviesCmd)
+	updateRecentMoviesCmd.Flags().BoolP(
 		"check-all", "c", false, "Whether to check all the movie watches or not.",
 	)
 }

@@ -15,7 +15,7 @@ import (
 // updateMovieCmd represents the updateMovie command
 var updateMovieCmd = &cobra.Command{
 	Use:   "update-movie",
-	Short: "Updates a movie from a movie watch page.",
+	Short: "Updates a movie from a movie page.",
 	Run:   updateMovie,
 	Args:  cobra.RangeArgs(1, 1),
 }
@@ -26,10 +26,6 @@ func init() {
 
 func updateMovie(cmd *cobra.Command, args []string) {
 	moviePageFile := args[0]
-
-	if OMDB_KEY == "" {
-		log.Panic("OMDB_KEY must be present for this script to run.")
-	}
 
 	ctx := context.Background()
 	log.Println("Opening database.")

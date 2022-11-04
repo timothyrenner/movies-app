@@ -40,6 +40,36 @@ func (q *Queries) DeleteGenresForMovie(ctx context.Context, movieUuid sql.NullSt
 	return err
 }
 
+const deleteMovie = `-- name: DeleteMovie :exec
+DELETE FROM movie
+WHERE uuid = ?
+`
+
+func (q *Queries) DeleteMovie(ctx context.Context, uuid string) error {
+	_, err := q.db.ExecContext(ctx, deleteMovie, uuid)
+	return err
+}
+
+const deleteMovieWatch = `-- name: DeleteMovieWatch :exec
+DELETE FROM movie_watch
+WHERE uuid = ?
+`
+
+func (q *Queries) DeleteMovieWatch(ctx context.Context, uuid string) error {
+	_, err := q.db.ExecContext(ctx, deleteMovieWatch, uuid)
+	return err
+}
+
+const deleteRatingsForMovie = `-- name: DeleteRatingsForMovie :exec
+DELETE FROM movie_rating
+WHERE movie_uuid = ?
+`
+
+func (q *Queries) DeleteRatingsForMovie(ctx context.Context, movieUuid sql.NullString) error {
+	_, err := q.db.ExecContext(ctx, deleteRatingsForMovie, movieUuid)
+	return err
+}
+
 const deleteWritersForMovie = `-- name: DeleteWritersForMovie :exec
 DELETE FROM movie_writer
 WHERE movie_uuid = ?

@@ -172,3 +172,12 @@ WHERE movie_uuid = ?;
 -- name: DeleteGenresForMovie :exec
 DELETE FROM movie_genre
 WHERE movie_uuid = ?;
+-- name: DeleteMovieWatch :exec
+DELETE FROM movie_watch
+WHERE uuid = ?;
+-- name: DeleteRatingsForMovie :exec
+DELETE FROM movie_rating
+WHERE movie_uuid = ?;
+-- name: DeleteMovie :exec
+DELETE FROM movie
+WHERE uuid = ?;

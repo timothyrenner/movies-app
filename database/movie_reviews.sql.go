@@ -66,3 +66,17 @@ func (q *Queries) InsertReview(ctx context.Context, arg InsertReviewParams) erro
 	)
 	return err
 }
+
+const updateMovieUuidForReview = `-- name: UpdateMovieUuidForReview :exec
+UPDATE review SET movie_uuid = ? WHERE uuid = ?
+`
+
+type UpdateMovieUuidForReviewParams struct {
+	MovieUuid string
+	Uuid      string
+}
+
+func (q *Queries) UpdateMovieUuidForReview(ctx context.Context, arg UpdateMovieUuidForReviewParams) error {
+	_, err := q.db.ExecContext(ctx, updateMovieUuidForReview, arg.MovieUuid, arg.Uuid)
+	return err
+}

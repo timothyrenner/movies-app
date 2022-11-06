@@ -125,10 +125,8 @@ func updateRecentMovies(cmd *cobra.Command, args []string) {
 
 		movieWatchUuid, err := queries.FindMovieWatch(
 			ctx, database.FindMovieWatchParams{
-				ImdbID: movieWatchPage.ImdbId,
-				Watched: sql.NullString{
-					String: movieWatchPage.Watched, Valid: true,
-				},
+				ImdbID:  movieWatchPage.ImdbId,
+				Watched: movieWatchPage.Watched,
 			},
 		)
 		if err == sql.ErrNoRows {

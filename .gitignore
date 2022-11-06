@@ -137,3 +137,5 @@ scripts/addNotes_20220726
 data/letterboxd_export.csv
 # Ignore the executable.
 movies-app
+# Ignore the backup.
+movies.backup.db

@@ -94,10 +94,10 @@ func CreateInsertMovieWatchParams(movieWatch *MovieWatchPage, movieUuid string) 
 	}
 	return &database.InsertMovieWatchParams{
 		Uuid:       uuid.New().String(),
-		MovieUuid:  sql.NullString{String: movieUuid, Valid: true},
-		MovieTitle: sql.NullString{String: movieWatch.Title, Valid: true},
+		MovieUuid:  movieUuid,
+		MovieTitle: movieWatch.Title,
 		ImdbID:     movieWatch.ImdbId,
-		Watched:    sql.NullString{String: movieWatch.Watched, Valid: true},
+		Watched:    movieWatch.Watched,
 		Service:    movieWatch.Service,
 		FirstTime:  firstTime,
 		JoeBob:     joeBob,
@@ -113,7 +113,7 @@ func CreateInsertMovieGenreParams(
 	for ii := range moviePage.Genres {
 		rows[ii] = database.InsertMovieGenreParams{
 			Uuid:      uuid.New().String(),
-			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
+			MovieUuid: movieUuid,
 			Name:      moviePage.Genres[ii],
 		}
 	}
@@ -128,7 +128,7 @@ func CreateInsertMovieActorParams(
 	for ii := range moviePage.Actors {
 		rows[ii] = database.InsertMovieActorParams{
 			Uuid:      uuid.New().String(),
-			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
+			MovieUuid: movieUuid,
 			Name:      moviePage.Actors[ii],
 		}
 	}
@@ -154,7 +154,7 @@ func CreateInsertMovieDirectorParams(
 	for ii := range moviePage.Directors {
 		rows[ii] = database.InsertMovieDirectorParams{
 			Uuid:      uuid.New().String(),
-			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
+			MovieUuid: movieUuid,
 			Name:      moviePage.Directors[ii],
 		}
 	}
@@ -169,7 +169,7 @@ func CreateInsertMovieWriterParams(
 	for ii := range moviePage.Writers {
 		rows[ii] = database.InsertMovieWriterParams{
 			Uuid:      uuid.New().String(),
-			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
+			MovieUuid: movieUuid,
 			Name:      moviePage.Writers[ii],
 		}
 	}
@@ -184,7 +184,7 @@ func CreateInsertMovieRatingParams(
 	for ii := range ratings {
 		rows[ii] = database.InsertMovieRatingParams{
 			Uuid:      uuid.New().String(),
-			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
+			MovieUuid: movieUuid,
 			Source:    ratings[ii].Source,
 			Value:     ratings[ii].Value,
 		}

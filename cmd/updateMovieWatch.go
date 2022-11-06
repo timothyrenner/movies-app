@@ -123,7 +123,7 @@ func updateMovieWatch(cmd *cobra.Command, args []string) {
 	log.Println("Getting movie watch uuid out of the database.")
 	findMovieWatchParams := database.FindMovieWatchParams{
 		ImdbID:  page.ImdbId,
-		Watched: sql.NullString{String: page.Watched, Valid: true},
+		Watched: page.Watched,
 	}
 	movieWatchUuid, err := queries.FindMovieWatch(ctx, findMovieWatchParams)
 	if err == sql.ErrNoRows {

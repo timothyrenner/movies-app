@@ -234,7 +234,7 @@ func buildObsidianVault(cmd *cobra.Command, args []string) {
 				}
 
 				movieRow, err := queries.GetMovie(
-					ctx, movieWatches[ii].MovieUuid.String,
+					ctx, movieWatches[ii].MovieUuid,
 				)
 				if err != nil {
 					log.Panicf(

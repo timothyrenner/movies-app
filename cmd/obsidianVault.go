@@ -217,9 +217,9 @@ type MovieWatchPage struct {
 
 func CreateMovieWatchPage(row *database.GetAllMovieWatchesRow) *MovieWatchPage {
 	return &MovieWatchPage{
-		Title:       row.MovieTitle.String,
-		FileTitle:   cleanTitle(row.MovieTitle.String),
-		Watched:     row.Watched.String,
+		Title:       row.MovieTitle,
+		FileTitle:   cleanTitle(row.MovieTitle),
+		Watched:     row.Watched,
 		ImdbLink:    row.ImdbLink,
 		ImdbId:      row.ImdbID,
 		FirstTime:   row.FirstTime != 0,

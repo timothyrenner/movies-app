@@ -48,13 +48,13 @@ func main() {
 	}
 
 	for ii := range MOVIE_UUIDS_TO_REMOVE {
-		movieUuid := sql.NullString{String: MOVIE_UUIDS_TO_REMOVE[ii], Valid: true}
+		movieUuid := MOVIE_UUIDS_TO_REMOVE[ii]
 
 		// delete actors.
 		if err := qtx.DeleteActorsForMovie(ctx, movieUuid); err != nil {
 			log.Panicf(
 				"Error deleting actors for movie %v: %v",
-				movieUuid.String, err,
+				movieUuid, err,
 			)
 		}
 
@@ -62,7 +62,7 @@ func main() {
 		if err := qtx.DeleteDirectorsForMovie(ctx, movieUuid); err != nil {
 			log.Panicf(
 				"Error deleting directors for movie %v: %v",
-				movieUuid.String, err,
+				movieUuid, err,
 			)
 		}
 
@@ -70,7 +70,7 @@ func main() {
 		if err := qtx.DeleteWritersForMovie(ctx, movieUuid); err != nil {
 			log.Panicf(
 				"Error deleting writers for movie %v: %v",
-				movieUuid.String, err,
+				movieUuid, err,
 			)
 		}
 
@@ -78,7 +78,7 @@ func main() {
 		if err := qtx.DeleteGenresForMovie(ctx, movieUuid); err != nil {
 			log.Panicf(
 				"Error deleting genres for movie %v: %v",
-				movieUuid.String, err,
+				movieUuid, err,
 			)
 		}
 
@@ -86,15 +86,15 @@ func main() {
 		if err := qtx.DeleteRatingsForMovie(ctx, movieUuid); err != nil {
 			log.Panicf(
 				"Error deleting ratings for movie %v: %v",
-				movieUuid.String, err,
+				movieUuid, err,
 			)
 		}
 
 		// delete movie
-		if err := qtx.DeleteMovie(ctx, movieUuid.String); err != nil {
+		if err := qtx.DeleteMovie(ctx, movieUuid); err != nil {
 			log.Panicf(
 				"Error deleting movie %v: %v",
-				movieUuid.String, err,
+				movieUuid, err,
 			)
 		}
 	}

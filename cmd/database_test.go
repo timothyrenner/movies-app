@@ -232,10 +232,10 @@ func TestCreateInsertMovieWatchParams(t *testing.T) {
 	// Test with null notes.
 	truth := database.InsertMovieWatchParams{
 		Uuid:       answer.Uuid,
-		MovieUuid:  sql.NullString{String: movieUuid, Valid: true},
-		MovieTitle: sql.NullString{String: "Tenebrae", Valid: true},
+		MovieUuid:  movieUuid,
+		MovieTitle: "Tenebrae",
 		ImdbID:     "tt0084777",
-		Watched:    sql.NullString{String: "2022-05-27", Valid: true},
+		Watched:    "2022-05-27",
 		Service:    "Shudder",
 		FirstTime:  0,
 		JoeBob:     1,
@@ -251,10 +251,10 @@ func TestCreateInsertMovieWatchParams(t *testing.T) {
 	answerNotes := CreateInsertMovieWatchParams(movieWatchPageWithNotes, movieUuid)
 	truthNotes := database.InsertMovieWatchParams{
 		Uuid:       answerNotes.Uuid,
-		MovieUuid:  sql.NullString{String: movieUuid, Valid: true},
-		MovieTitle: sql.NullString{String: "Tenebrae", Valid: true},
+		MovieUuid:  movieUuid,
+		MovieTitle: "Tenebrae",
 		ImdbID:     "tt0084777",
-		Watched:    sql.NullString{String: "2022-05-27", Valid: true},
+		Watched:    "2022-05-27",
 		Service:    "Shudder",
 		FirstTime:  0,
 		JoeBob:     1,
@@ -276,15 +276,15 @@ func TestCreateInsertMovieGenreParams(t *testing.T) {
 	truth := []database.InsertMovieGenreParams{
 		{
 			Uuid:      answer[0].Uuid,
-			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
+			MovieUuid: movieUuid,
 			Name:      "Horror",
 		}, {
 			Uuid:      answer[1].Uuid,
-			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
+			MovieUuid: movieUuid,
 			Name:      "Mystery",
 		}, {
 			Uuid:      answer[2].Uuid,
-			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
+			MovieUuid: movieUuid,
 			Name:      "Thriller",
 		},
 	}
@@ -327,15 +327,15 @@ func TestCreateInsertMovieActorParams(t *testing.T) {
 	truth := []database.InsertMovieActorParams{
 		{
 			Uuid:      answer[0].Uuid,
-			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
+			MovieUuid: movieUuid,
 			Name:      "Anthony Franciosa",
 		}, {
 			Uuid:      answer[1].Uuid,
-			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
+			MovieUuid: movieUuid,
 			Name:      "Giuliano Gemma",
 		}, {
 			Uuid:      answer[2].Uuid,
-			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
+			MovieUuid: movieUuid,
 			Name:      "John Saxon",
 		},
 	}
@@ -355,7 +355,7 @@ func TestCreateInsertMovieDirectorParams(t *testing.T) {
 	truth := []database.InsertMovieDirectorParams{
 		{
 			Uuid:      answer[0].Uuid,
-			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
+			MovieUuid: movieUuid,
 			Name:      "Dario Argento",
 		},
 	}
@@ -375,7 +375,7 @@ func TestCreateInsertMovieWriterParams(t *testing.T) {
 	truth := []database.InsertMovieWriterParams{
 		{
 			Uuid:      answer[0].Uuid,
-			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
+			MovieUuid: movieUuid,
 			Name:      "Dario Argento",
 		},
 	}
@@ -407,17 +407,17 @@ func TestCreateInsertMovieRatingParams(t *testing.T) {
 	truth := []database.InsertMovieRatingParams{
 		{
 			Uuid:      answer[0].Uuid,
-			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
+			MovieUuid: movieUuid,
 			Source:    "Internet Movie Database",
 			Value:     "7.0/10.0",
 		}, {
 			Uuid:      answer[1].Uuid,
-			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
+			MovieUuid: movieUuid,
 			Source:    "Rotten Tomatoes",
 			Value:     "77%",
 		}, {
 			Uuid:      answer[2].Uuid,
-			MovieUuid: sql.NullString{String: movieUuid, Valid: true},
+			MovieUuid: movieUuid,
 			Source:    "Metacritic",
 			Value:     "83/100",
 		},
@@ -515,7 +515,7 @@ func TestInsertMovieDetails(t *testing.T) {
 	movieGenreTruth := []string{"Horror", "Mystery", "Thriller"}
 
 	movieGenreAnswer, err := queries.GetGenreNamesForMovie(
-		ctx, sql.NullString{String: answer.Movie, Valid: true},
+		ctx, answer.Movie,
 	)
 
 	if err != nil {
@@ -532,7 +532,7 @@ func TestInsertMovieDetails(t *testing.T) {
 	}
 	movieActorTruth := []string{"Anthony Franciosa", "Giuliano Gemma", "John Saxon"}
 	movieActorAnswer, err := queries.GetActorNamesForMovie(
-		ctx, sql.NullString{String: answer.Movie, Valid: true},
+		ctx, answer.Movie,
 	)
 	if err != nil {
 		t.Errorf("Encountered error querying movie_actor: %v", err)
@@ -547,7 +547,7 @@ func TestInsertMovieDetails(t *testing.T) {
 	}
 	movieDirectorTruth := []string{"Dario Argento"}
 	movieDirectorAnswer, err := queries.GetDirectorNamesForMovie(
-		ctx, sql.NullString{String: answer.Movie, Valid: true},
+		ctx, answer.Movie,
 	)
 	if err != nil {
 		t.Errorf("Encountered error querying for movie director: %v", err)
@@ -562,7 +562,7 @@ func TestInsertMovieDetails(t *testing.T) {
 	}
 	movieWriterTruth := []string{"Dario Argento"}
 	movieWriterAnswer, err := queries.GetWriterNamesForMovie(
-		ctx, sql.NullString{String: answer.Movie, Valid: true},
+		ctx, answer.Movie,
 	)
 	if err != nil {
 		t.Errorf("Encountered error querying for movie writer: %v", err)
@@ -575,7 +575,7 @@ func TestInsertMovieDetails(t *testing.T) {
 		t.Errorf("Expected 3 rating uuids, got %v", len(answer.Rating))
 	}
 	movieRatingAnswer, err := queries.GetRatingsForMovie(
-		ctx, sql.NullString{String: answer.Movie, Valid: true},
+		ctx, answer.Movie,
 	)
 	if err != nil {
 		t.Errorf("Encountered error querying for movie ratings: %v", err)
@@ -586,19 +586,19 @@ func TestInsertMovieDetails(t *testing.T) {
 	movieRatingTruth := []database.MovieRating{
 		{
 			Uuid:            answer.Rating[0],
-			MovieUuid:       sql.NullString{String: answer.Movie, Valid: true},
+			MovieUuid:       answer.Movie,
 			Source:          "Internet Movie Database",
 			Value:           "7.0/10.0",
 			CreatedDatetime: movieRatingAnswer[0].CreatedDatetime,
 		}, {
 			Uuid:            answer.Rating[1],
-			MovieUuid:       sql.NullString{String: answer.Movie, Valid: true},
+			MovieUuid:       answer.Movie,
 			Source:          "Rotten Tomatoes",
 			Value:           "77%",
 			CreatedDatetime: movieRatingAnswer[1].CreatedDatetime,
 		}, {
 			Uuid:            answer.Rating[2],
-			MovieUuid:       sql.NullString{String: answer.Movie, Valid: true},
+			MovieUuid:       answer.Movie,
 			Source:          "Metacritic",
 			Value:           "83/100",
 			CreatedDatetime: movieRatingAnswer[2].CreatedDatetime,

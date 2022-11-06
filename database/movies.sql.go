@@ -15,7 +15,7 @@ DELETE FROM movie_actor
 WHERE movie_uuid = ?
 `
 
-func (q *Queries) DeleteActorsForMovie(ctx context.Context, movieUuid sql.NullString) error {
+func (q *Queries) DeleteActorsForMovie(ctx context.Context, movieUuid string) error {
 	_, err := q.db.ExecContext(ctx, deleteActorsForMovie, movieUuid)
 	return err
 }
@@ -25,7 +25,7 @@ DELETE FROM movie_director
 WHERE movie_uuid = ?
 `
 
-func (q *Queries) DeleteDirectorsForMovie(ctx context.Context, movieUuid sql.NullString) error {
+func (q *Queries) DeleteDirectorsForMovie(ctx context.Context, movieUuid string) error {
 	_, err := q.db.ExecContext(ctx, deleteDirectorsForMovie, movieUuid)
 	return err
 }
@@ -35,7 +35,7 @@ DELETE FROM movie_genre
 WHERE movie_uuid = ?
 `
 
-func (q *Queries) DeleteGenresForMovie(ctx context.Context, movieUuid sql.NullString) error {
+func (q *Queries) DeleteGenresForMovie(ctx context.Context, movieUuid string) error {
 	_, err := q.db.ExecContext(ctx, deleteGenresForMovie, movieUuid)
 	return err
 }
@@ -65,7 +65,7 @@ DELETE FROM movie_rating
 WHERE movie_uuid = ?
 `
 
-func (q *Queries) DeleteRatingsForMovie(ctx context.Context, movieUuid sql.NullString) error {
+func (q *Queries) DeleteRatingsForMovie(ctx context.Context, movieUuid string) error {
 	_, err := q.db.ExecContext(ctx, deleteRatingsForMovie, movieUuid)
 	return err
 }
@@ -75,7 +75,7 @@ DELETE FROM movie_writer
 WHERE movie_uuid = ?
 `
 
-func (q *Queries) DeleteWritersForMovie(ctx context.Context, movieUuid sql.NullString) error {
+func (q *Queries) DeleteWritersForMovie(ctx context.Context, movieUuid string) error {
 	_, err := q.db.ExecContext(ctx, deleteWritersForMovie, movieUuid)
 	return err
 }
@@ -115,7 +115,7 @@ WHERE imdb_id = ?
 
 type FindMovieWatchParams struct {
 	ImdbID  string
-	Watched sql.NullString
+	Watched string
 }
 
 func (q *Queries) FindMovieWatch(ctx context.Context, arg FindMovieWatchParams) (string, error) {
@@ -131,7 +131,7 @@ FROM movie_actor
 WHERE movie_uuid = ?
 `
 
-func (q *Queries) GetActorNamesForMovie(ctx context.Context, movieUuid sql.NullString) ([]string, error) {
+func (q *Queries) GetActorNamesForMovie(ctx context.Context, movieUuid string) ([]string, error) {
 	rows, err := q.db.QueryContext(ctx, getActorNamesForMovie, movieUuid)
 	if err != nil {
 		return nil, err
@@ -177,10 +177,10 @@ FROM movie_watch AS w
 
 type GetAllMovieWatchesRow struct {
 	Uuid        string
-	MovieUuid   sql.NullString
-	MovieTitle  sql.NullString
+	MovieUuid   string
+	MovieTitle  string
 	ImdbID      string
-	Watched     sql.NullString
+	Watched     string
 	Service     string
 	FirstTime   int64
 	JoeBob      int64
@@ -240,7 +240,7 @@ FROM movie_director
 WHERE movie_uuid = ?
 `
 
-func (q *Queries) GetDirectorNamesForMovie(ctx context.Context, movieUuid sql.NullString) ([]string, error) {
+func (q *Queries) GetDirectorNamesForMovie(ctx context.Context, movieUuid string) ([]string, error) {
 	rows, err := q.db.QueryContext(ctx, getDirectorNamesForMovie, movieUuid)
 	if err != nil {
 		return nil, err
@@ -269,7 +269,7 @@ FROM movie_genre
 WHERE movie_uuid = ?
 `
 
-func (q *Queries) GetGenreNamesForMovie(ctx context.Context, movieUuid sql.NullString) ([]string, error) {
+func (q *Queries) GetGenreNamesForMovie(ctx context.Context, movieUuid string) ([]string, error) {
 	rows, err := q.db.QueryContext(ctx, getGenreNamesForMovie, movieUuid)
 	if err != nil {
 		return nil, err
@@ -344,7 +344,7 @@ FROM movie_rating
 WHERE movie_uuid = ?
 `
 
-func (q *Queries) GetRatingsForMovie(ctx context.Context, movieUuid sql.NullString) ([]MovieRating, error) {
+func (q *Queries) GetRatingsForMovie(ctx context.Context, movieUuid string) ([]MovieRating, error) {
 	rows, err := q.db.QueryContext(ctx, getRatingsForMovie, movieUuid)
 	if err != nil {
 		return nil, err
@@ -379,7 +379,7 @@ FROM movie_writer
 WHERE movie_uuid = ?
 `
 
-func (q *Queries) GetWriterNamesForMovie(ctx context.Context, movieUuid sql.NullString) ([]string, error) {
+func (q *Queries) GetWriterNamesForMovie(ctx context.Context, movieUuid string) ([]string, error) {
 	rows, err := q.db.QueryContext(ctx, getWriterNamesForMovie, movieUuid)
 	if err != nil {
 		return nil, err
@@ -520,7 +520,7 @@ VALUES (?, ?, ?)
 
 type InsertMovieActorParams struct {
 	Uuid      string
-	MovieUuid sql.NullString
+	MovieUuid string
 	Name      string
 }
 
@@ -536,7 +536,7 @@ VALUES (?, ?, ?)
 
 type InsertMovieDirectorParams struct {
 	Uuid      string
-	MovieUuid sql.NullString
+	MovieUuid string
 	Name      string
 }
 
@@ -552,7 +552,7 @@ VALUES (?, ?, ?)
 
 type InsertMovieGenreParams struct {
 	Uuid      string
-	MovieUuid sql.NullString
+	MovieUuid string
 	Name      string
 }
 
@@ -573,7 +573,7 @@ VALUES (?, ?, ?, ?)
 
 type InsertMovieRatingParams struct {
 	Uuid      string
-	MovieUuid sql.NullString
+	MovieUuid string
 	Source    string
 	Value     string
 }
@@ -613,10 +613,10 @@ SET movie_uuid = excluded.movie_uuid,
 
 type InsertMovieWatchParams struct {
 	Uuid       string
-	MovieUuid  sql.NullString
-	MovieTitle sql.NullString
+	MovieUuid  string
+	MovieTitle string
 	ImdbID     string
-	Watched    sql.NullString
+	Watched    string
 	Service    string
 	FirstTime  int64
 	JoeBob     int64
@@ -645,7 +645,7 @@ VALUES (?, ?, ?)
 
 type InsertMovieWriterParams struct {
 	Uuid      string
-	MovieUuid sql.NullString
+	MovieUuid string
 	Name      string
 }
 

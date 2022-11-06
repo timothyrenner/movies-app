@@ -33,28 +33,28 @@ type Movie struct {
 
 type MovieActor struct {
 	Uuid            string
-	MovieUuid       sql.NullString
+	MovieUuid       string
 	Name            string
 	CreatedDatetime int64
 }
 
 type MovieDirector struct {
 	Uuid            string
-	MovieUuid       sql.NullString
+	MovieUuid       string
 	Name            string
 	CreatedDatetime int64
 }
 
 type MovieGenre struct {
 	Uuid            string
-	MovieUuid       sql.NullString
+	MovieUuid       string
 	Name            string
 	CreatedDatetime int64
 }
 
 type MovieRating struct {
 	Uuid            string
-	MovieUuid       sql.NullString
+	MovieUuid       string
 	Source          string
 	Value           string
 	CreatedDatetime int64
@@ -62,20 +62,20 @@ type MovieRating struct {
 
 type MovieWatch struct {
 	Uuid            string
-	MovieUuid       sql.NullString
-	MovieTitle      sql.NullString
+	MovieUuid       string
+	MovieTitle      string
 	Service         string
 	FirstTime       int64
 	JoeBob          int64
 	CreatedDatetime int64
 	ImdbID          string
-	Watched         sql.NullString
+	Watched         string
 	Notes           sql.NullString
 }
 
 type MovieWriter struct {
 	Uuid            string
-	MovieUuid       sql.NullString
+	MovieUuid       string
 	Name            string
 	CreatedDatetime int64
 }

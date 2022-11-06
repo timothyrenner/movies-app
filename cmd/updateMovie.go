@@ -81,7 +81,7 @@ func updateMovie(cmd *cobra.Command, args []string) {
 	// page for.
 	// Delete and repopulate actors.
 	if err := qtx.DeleteActorsForMovie(
-		ctx, sql.NullString{String: movieUuid, Valid: true},
+		ctx, movieUuid,
 	); err != nil {
 		log.Panicf("Error deleting actors for movie %v: %v", movieUuid, err)
 	}
@@ -96,7 +96,7 @@ func updateMovie(cmd *cobra.Command, args []string) {
 	}
 	// Delete and repopulate directors.
 	if err := qtx.DeleteDirectorsForMovie(
-		ctx, sql.NullString{String: movieUuid, Valid: true},
+		ctx, movieUuid,
 	); err != nil {
 		log.Panicf("Error deleting directors for movie %v: %v", movieUuid, err)
 	}
@@ -111,7 +111,7 @@ func updateMovie(cmd *cobra.Command, args []string) {
 	}
 	// Delete and repopulate writers.
 	if err := qtx.DeleteWritersForMovie(
-		ctx, sql.NullString{String: movieUuid, Valid: true},
+		ctx, movieUuid,
 	); err != nil {
 		log.Panicf("Error deleting writers for movie %v: %v", movieUuid, err)
 	}
@@ -126,7 +126,7 @@ func updateMovie(cmd *cobra.Command, args []string) {
 	}
 	// Delete and repopulate genres.
 	if err := qtx.DeleteGenresForMovie(
-		ctx, sql.NullString{String: movieUuid, Valid: true},
+		ctx, movieUuid,
 	); err != nil {
 		log.Panicf("Error deleting genres for movie %v: %v", movieUuid, err)
 	}

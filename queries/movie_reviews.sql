@@ -12,3 +12,5 @@ VALUES (?, ?, ?, ?, ?) ON CONFLICT (movie_uuid) DO
 UPDATE
 SET review = excluded.review,
     liked = excluded.liked;
+-- name: UpdateMovieUuidForReview :exec
+UPDATE review SET movie_uuid = ? WHERE uuid = ?;

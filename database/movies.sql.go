@@ -653,3 +653,17 @@ func (q *Queries) InsertMovieWriter(ctx context.Context, arg InsertMovieWriterPa
 	_, err := q.db.ExecContext(ctx, insertMovieWriter, arg.Uuid, arg.MovieUuid, arg.Name)
 	return err
 }
+
+const updateMovieUuidForWatch = `-- name: UpdateMovieUuidForWatch :exec
+UPDATE movie_watch SET movie_uuid = ? WHERE uuid = ?
+`
+
+type UpdateMovieUuidForWatchParams struct {
+	MovieUuid string
+	Uuid      string
+}
+
+func (q *Queries) UpdateMovieUuidForWatch(ctx context.Context, arg UpdateMovieUuidForWatchParams) error {
+	_, err := q.db.ExecContext(ctx, updateMovieUuidForWatch, arg.MovieUuid, arg.Uuid)
+	return err
+}

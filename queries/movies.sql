@@ -181,3 +181,5 @@ WHERE movie_uuid = ?;
 -- name: DeleteMovie :exec
 DELETE FROM movie
 WHERE uuid = ?;
+-- name: UpdateMovieUuidForWatch :exec
+UPDATE movie_watch SET movie_uuid = ? WHERE uuid = ?;

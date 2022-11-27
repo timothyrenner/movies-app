@@ -191,7 +191,7 @@ type GetAllMovieWatchesRow struct {
 	Beast       int64
 	Godzilla    int64
 	Zombies     int64
-	WallpaperFu sql.NullBool
+	WallpaperFu int64
 }
 
 func (q *Queries) GetAllMovieWatches(ctx context.Context) ([]GetAllMovieWatchesRow, error) {
@@ -305,7 +305,7 @@ func (q *Queries) GetLatestMovieWatchDate(ctx context.Context) (interface{}, err
 }
 
 const getMovie = `-- name: GetMovie :one
-SELECT uuid, title, imdb_link, year, rated, released, plot, country, language, box_office, production, call_felissa, slasher, zombies, beast, godzilla, created_datetime, imdb_id, wallpaper_fu, runtime_minutes
+SELECT uuid, title, imdb_link, year, rated, released, plot, country, language, box_office, production, call_felissa, slasher, zombies, beast, godzilla, created_datetime, imdb_id, runtime_minutes, wallpaper_fu
 FROM movie
 WHERE uuid = ?
 `
@@ -332,8 +332,8 @@ func (q *Queries) GetMovie(ctx context.Context, uuid string) (Movie, error) {
 		&i.Godzilla,
 		&i.CreatedDatetime,
 		&i.ImdbID,
-		&i.WallpaperFu,
 		&i.RuntimeMinutes,
+		&i.WallpaperFu,
 	)
 	return i, err
 }
@@ -485,7 +485,7 @@ type InsertMovieParams struct {
 	Zombies        int64
 	Beast          int64
 	Godzilla       int64
-	WallpaperFu    sql.NullBool
+	WallpaperFu    int64
 }
 
 func (q *Queries) InsertMovie(ctx context.Context, arg InsertMovieParams) error {

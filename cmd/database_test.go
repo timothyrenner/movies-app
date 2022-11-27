@@ -161,7 +161,7 @@ func TestCreateInsertMovieParams(t *testing.T) {
 		Beast:          0,
 		Slasher:        1,
 		Godzilla:       0,
-		WallpaperFu:    sql.NullBool{Bool: false, Valid: true},
+		WallpaperFu:    0,
 	}
 
 	if !cmp.Equal(truth, *insertMovieParams) {
@@ -216,7 +216,7 @@ func TestCreateInsertMovieParams(t *testing.T) {
 		Beast:          1,
 		Slasher:        0,
 		Godzilla:       0,
-		WallpaperFu:    sql.NullBool{Bool: false, Valid: true},
+		WallpaperFu:    0,
 	}
 
 	if !cmp.Equal(preyTruth, *preyRow) {
@@ -500,7 +500,7 @@ func TestInsertMovieDetails(t *testing.T) {
 		Zombies:         0,
 		Beast:           0,
 		Godzilla:        0,
-		WallpaperFu:     sql.NullBool{Bool: false, Valid: true},
+		WallpaperFu:     0,
 	}
 
 	if !cmp.Equal(movieRowTruth, movieRowAnswer) {

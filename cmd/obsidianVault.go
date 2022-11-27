@@ -229,7 +229,7 @@ func CreateMovieWatchPage(row *database.GetAllMovieWatchesRow) *MovieWatchPage {
 		Godzilla:    row.Godzilla != 0,
 		Zombies:     row.Zombies != 0,
 		Slasher:     row.Slasher != 0,
-		WallpaperFu: row.WallpaperFu.Bool,
+		WallpaperFu: row.WallpaperFu != 0,
 		Service:     row.Service,
 		Notes:       row.Notes.String,
 	}
@@ -461,7 +461,7 @@ func CreateMoviePageFromRow(
 		Zombies:        row.Zombies != 0,
 		Beast:          row.Beast != 0,
 		Godzilla:       row.Godzilla != 0,
-		WallpaperFu:    row.WallpaperFu.Bool,
+		WallpaperFu:    row.WallpaperFu != 0,
 	}
 }
 

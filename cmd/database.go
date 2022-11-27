@@ -55,6 +55,11 @@ func CreateInsertMovieParams(
 		godzilla = 1
 	}
 
+	var wallpaperFu int64
+	if moviePage.WallpaperFu{
+		wallpaperFu = 1
+	}
+
 	return &database.InsertMovieParams{
 		Uuid:           uuid.New().String(),
 		Title:          moviePage.Title,
@@ -73,7 +78,7 @@ func CreateInsertMovieParams(
 		Slasher:        slasher,
 		Beast:          beast,
 		Godzilla:       godzilla,
-		WallpaperFu:    sql.NullBool{Bool: moviePage.WallpaperFu, Valid: true},
+		WallpaperFu:    wallpaperFu,
 	}, nil
 }
 

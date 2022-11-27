@@ -27,8 +27,8 @@ type Movie struct {
 	Godzilla        int64
 	CreatedDatetime int64
 	ImdbID          string
-	WallpaperFu     sql.NullBool
 	RuntimeMinutes  sql.NullInt64
+	WallpaperFu     int64
 }
 
 type MovieActor struct {

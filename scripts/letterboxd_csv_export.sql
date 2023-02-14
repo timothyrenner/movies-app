@@ -8,6 +8,6 @@ SELECT
 FROM movie_watch AS watch
 INNER JOIN movie ON
 watch.movie_uuid = movie.uuid
-WHERE watched > '2022-11-18'
+WHERE watched > '2023-01-07'
 ORDER BY watch.watched DESC;
 .quit

@@ -139,3 +139,6 @@ data/letterboxd_export.csv
 movies-app
 # Ignore the backup.
 movies.backup.db
+data/movies.db-shm
+data/movies.db-wal
+data/.movies.db-litestream/
